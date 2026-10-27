@@ -1,54 +1,35 @@
 import Store from 'electron-store'
+import {
+  DEFAULT_SETTINGS, SCHEMA_VERSION,
+  DockItem, DockSettings, Persisted, WidgetInstance,
+} from '../src/shared/types'
 
-export type DockItemType = 'app' | 'separator' | 'trash' | 'widget'
-
-export interface DockItem {
-  id: string
-  type: DockItemType
-  /** Absolute path to the .exe / .lnk this icon launches. Not used for separator/trash. */
-  targetPath?: string
-  /** Manual icon override chosen by the user (.ico/.png). If absent, we auto-extract from targetPath. */
-  customIconPath?: string
-  /** Display label shown in tooltip. */
-  label?: string
-  /** Sort order within the dock. */
-  order: number
+const defaults: Persisted = {
+  schemaVersion: SCHEMA_VERSION,
+  items: [{ id: 'trash', type: 'trash' }],
+  settings: DEFAULT_SETTINGS,
+  widgets: [],
 }
 
-export interface DockSettings {
-  position: 'bottom' | 'top' | 'left' | 'right'
-  iconSize: number // px, base (unmagnified) size
-  magnifiedSize: number // px, size at peak magnification
-  magnificationRadius: number // how many neighboring icons feel the effect
-  autoHide: boolean
-  theme: string // theme id, resolved against themes/ directory
-  animationCurve: 'linear' | 'spring' | 'bounce' | 'ease'
-}
+export const store = new Store<Persisted>({ defaults })
 
-export interface StoreSchema {
-  items: DockItem[]
-  settings: DockSettings
+/** Upgrades whatever an older build wrote. Each step only knows about the version before it. */
+function migrate() {
+  const version = (store.get('schemaVersion') as number | undefined) ?? 1
+  if (version < 2) {
+    const old = store.get('items') as (DockItem & { order?: number })[]
+    const sorted = [...old].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    store.set('items', sorted.map(({ order: _order, ...rest }) => rest as DockItem))
+    store.set('widgets', [])
+  }
+  // Fill settings added since the file was written.
+  store.set('settings', { ...DEFAULT_SETTINGS, ...store.get('settings') })
+  store.set('schemaVersion', SCHEMA_VERSION)
 }
-
-const defaults: StoreSchema = {
-  items: [
-    { id: 'trash', type: 'trash', order: 999 },
-  ],
-  settings: {
-    position: 'bottom',
-    iconSize: 48,
-    magnifiedSize: 84,
-    magnificationRadius: 2,
-    autoHide: false,
-    theme: 'glass-dark',
-    animationCurve: 'spring',
-  },
-}
-
-export const store = new Store<StoreSchema>({ defaults })
+migrate()
 
 export function getItems(): DockItem[] {
-  return store.get('items').sort((a, b) => a.order - b.order)
+  return store.get('items')
 }
 
 export function setItems(items: DockItem[]) {
@@ -56,9 +37,19 @@ export function setItems(items: DockItem[]) {
 }
 
 export function getSettings(): DockSettings {
-  return store.get('settings')
+  return { ...DEFAULT_SETTINGS, ...store.get('settings') }
 }
 
-export function updateSettings(partial: Partial<DockSettings>) {
-  store.set('settings', { ...store.get('settings'), ...partial })
+export function updateSettings(partial: Partial<DockSettings>): DockSettings {
+  const next = { ...getSettings(), ...partial }
+  store.set('settings', next)
+  return next
+}
+
+export function getWidgets(): WidgetInstance[] {
+  return store.get('widgets')
+}
+
+export function setWidgets(widgets: WidgetInstance[]) {
+  store.set('widgets', widgets)
 }

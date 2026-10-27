@@ -25,7 +25,7 @@ internal static class Program
         var arr = new JsonArray();
         foreach (var w in Windows.List())
             arr.Add(new JsonObject { ["hwnd"] = w.hwnd, ["pid"] = w.pid, ["exePath"] = w.exePath, ["title"] = w.title, ["minimized"] = w.minimized });
-        return new JsonObject { ["windows"] = arr, ["fullscreen"] = Windows.ForegroundIsFullscreen(ignorePid) };
+        return new JsonObject { ["windows"] = arr, ["fullscreen"] = Windows.ForegroundIsFullscreen(ignorePid), ["foreground"] = Native.GetForegroundWindow().ToInt64() };
     }
 
     static void PushSnapshot()

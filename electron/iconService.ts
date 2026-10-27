@@ -9,14 +9,14 @@ import { helper } from './helper'
 const CACHE_DIR = path.join(app.getPath('userData'), 'icon-cache')
 const memory = new Map<string, string>()
 
-function cacheFile(targetPath: string, size: number): string {
+function cacheFile(targetPath: string, size: number, variant: string): string {
   let stamp = 0
   try {
     stamp = fs.statSync(targetPath).mtimeMs
   } catch {
     /* missing file: cache by path only */
   }
-  const hash = crypto.createHash('sha1').update(`${targetPath.toLowerCase()}|${size}|${stamp}`).digest('hex')
+  const hash = crypto.createHash('sha1').update(`${targetPath.toLowerCase()}|${size}|${stamp}|${variant}`).digest('hex')
   return path.join(CACHE_DIR, `${hash}.png`)
 }
 
@@ -25,9 +25,9 @@ function toDataUrl(buf: Buffer, ext = 'png'): string {
 }
 
 /** Shell icon for any file, folder or shortcut as a data URL, or null when none could be produced. */
-export async function shellIcon(rawPath: string, size = 128): Promise<string | null> {
+export async function shellIcon(rawPath: string, size = 128, variant = ''): Promise<string | null> {
   const targetPath = path.win32.normalize(rawPath)
-  const file = cacheFile(targetPath, size)
+  const file = cacheFile(targetPath, size, variant)
   const hit = memory.get(file)
   if (hit) return hit
   if (fs.existsSync(file)) {

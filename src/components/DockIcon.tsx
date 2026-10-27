@@ -1,41 +1,41 @@
-import { useState } from 'react'
-import type { DockItem } from '@/types'
+import type { CSSProperties } from 'react'
+import type { DockItem, DockPosition } from '@/shared/types'
 
 interface DockIconProps {
   item: DockItem
+  style: CSSProperties
   size: number
-  transition: string
   iconSrc?: string
-  isRunning: boolean
+  running?: { count: number; minimized: boolean }
+  launching: boolean
+  position: DockPosition
+  hovered: boolean
+  dragging: boolean
   onClick: () => void
+  onDragStart: (e: React.DragEvent) => void
+  onDragEnd: (e: React.DragEvent) => void
   onContextMenu: (e: React.MouseEvent) => void
 }
 
-export default function DockIcon({ item, size, transition, iconSrc, isRunning, onClick, onContextMenu }: DockIconProps) {
-  const [showTooltip, setShowTooltip] = useState(false)
-
+export default function DockIcon({ item, style, iconSrc, running, launching, position, hovered, dragging, onClick, onDragStart, onDragEnd, onContextMenu }: DockIconProps) {
+  const label = item.label ?? (item.type === 'trash' ? 'Çöp kutusu' : '')
   return (
     <div
-      className="dock-icon"
-      style={{ width: size, height: size, transition: `width 120ms ${transition}, height 120ms ${transition}` }}
-      onMouseEnter={() => setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
+      className={`dock-icon${launching ? ' dock-icon--launching' : ''}${dragging ? ' dock-icon--dragging' : ''}`}
+      style={style}
+      data-item-type={item.type}
+      data-position={position}
+      draggable={item.type !== 'trash'}
       onClick={onClick}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
       onContextMenu={onContextMenu}
       role="button"
-      aria-label={item.label ?? item.type}
+      aria-label={label}
     >
-      {showTooltip && item.label && <div className="dock-icon__tooltip">{item.label}</div>}
-
-      {item.type === 'trash' ? (
-        <div className="dock-icon__trash" data-empty="true" />
-      ) : iconSrc ? (
-        <img className="dock-icon__image" src={iconSrc} alt={item.label ?? ''} draggable={false} />
-      ) : (
-        <div className="dock-icon__placeholder" />
-      )}
-
-      {isRunning && <span className="dock-icon__indicator" />}
+      {hovered && label && <div className="dock-icon__tooltip">{label}</div>}
+      {iconSrc ? <img className="dock-icon__image" src={iconSrc} alt="" draggable={false} /> : <div className="dock-icon__placeholder" />}
+      {running && <span className={`dock-icon__indicator${running.minimized ? ' dock-icon__indicator--dim' : ''}`} />}
     </div>
   )
 }

@@ -1,126 +1,307 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { DockItem, DockSettings, RunningApp } from '@/types'
+import type { DockItem, DockSettings, RunningState } from '@/shared/types'
+import { invoke } from '@/api'
 import DockIcon from './DockIcon'
-import Separator from './Separator'
 
 interface DockProps {
   items: DockItem[]
   settings: DockSettings
-  runningApps: RunningApp[]
-  iconSrcById: Record<string, string>
+  running: RunningState
+  icons: Record<string, string>
+  launching: Set<string>
+  hidden: boolean
   onActivate: (item: DockItem) => void
-  onLayoutChange: (width: number, height: number) => void
-  onEmptyContextMenu: () => void
-  onIconContextMenu: (item: DockItem) => void
 }
 
-const GAP = 10 // px between icon centers at rest, feeds the magnification falloff
+const GAP = 8 // px between icons at rest
+const PAD = 10 // surface padding along the dock axis
+const PAD_CROSS = 8 // surface padding on the cross axis
+const SEPARATOR = 0.35 // separator width as a share of the icon size
+const TOOLTIP_ROOM = 34
 
-/** Cosine falloff: 1 at distance 0, tapering to 0 past `radiusPx`. Feels closer to
- *  the macOS "wave" than a hard linear or gaussian curve, and is cheap to compute
- *  on every mousemove for a couple dozen icons. */
-function falloff(distance: number, radiusPx: number): number {
-  if (distance >= radiusPx) return 0
-  return (Math.cos((distance / radiusPx) * Math.PI) + 1) / 2
+/** Cosine falloff: 1 at distance 0, tapering to 0 at `radius`. */
+function falloff(distance: number, radius: number): number {
+  if (distance >= radius) return 0
+  return (Math.cos((distance / radius) * Math.PI) + 1) / 2
 }
 
-const CURVE_TO_TRANSITION: Record<DockSettings['animationCurve'], string> = {
-  linear: 'linear',
-  ease: 'cubic-bezier(0.4, 0, 0.2, 1)',
-  bounce: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-  spring: 'cubic-bezier(0.22, 1, 0.36, 1)',
+const SPRINGS: Record<DockSettings['animationCurve'], { k: number; zeta: number }> = {
+  spring: { k: 320, zeta: 0.78 },
+  bounce: { k: 380, zeta: 0.5 },
+  ease: { k: 220, zeta: 1 },
+  linear: { k: 600, zeta: 1 },
 }
 
-export default function Dock({ items, settings, runningApps, iconSrcById, onActivate, onLayoutChange, onEmptyContextMenu, onIconContextMenu }: DockProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [pointer, setPointer] = useState<number | null>(null) // mouse position along the dock axis, in px
+const DRAG_TYPE = 'application/x-dock-item'
 
-  const isHorizontal = settings.position === 'bottom' || settings.position === 'top'
-  const radiusPx = (settings.magnifiedSize + GAP) * settings.magnificationRadius
+export default function Dock({ items, settings, running, icons, launching, hidden, onActivate }: DockProps) {
+  const horizontal = settings.position === 'bottom' || settings.position === 'top'
+  const { iconSize, magnifiedSize } = settings
 
-  const runningByPath = useMemo(() => {
-    const map = new Map<string, RunningApp>()
-    for (const app of runningApps) map.set(app.exePath.toLowerCase(), app)
-    return map
-  }, [runningApps])
+  // ---- rest layout (no magnification): the stable coordinate space for pointer maths ----
+  const rest = useMemo(() => {
+    let cursor = 0
+    const left: number[] = []
+    const width: number[] = []
+    items.forEach((item, i) => {
+      const w = item.type === 'separator' ? iconSize * SEPARATOR : iconSize
+      left.push(cursor)
+      width.push(w)
+      cursor += w + (i < items.length - 1 ? GAP : 0)
+    })
+    return { left, width, length: cursor }
+  }, [items, iconSize])
 
-  const handlePointerMove = useCallback(
-    (e: React.MouseEvent) => {
-      const rect = containerRef.current?.getBoundingClientRect()
-      if (!rect) return
-      setPointer(isHorizontal ? e.clientX - rect.left : e.clientY - rect.top)
+  const growth = (magnifiedSize - iconSize) * (settings.magnificationRadius + 1) * 0.5 + 12
+  const surfaceThickness = iconSize + PAD_CROSS * 2
+  const windowMain = Math.ceil(rest.length + PAD * 2 + growth * 2)
+  const windowCross = Math.ceil(surfaceThickness + (magnifiedSize - iconSize) + TOOLTIP_ROOM + 6)
+  const restStart = (windowMain - rest.length) / 2
+
+  useEffect(() => {
+    invoke('dock:layout', {
+      main: windowMain,
+      cross: windowCross,
+      shelfMain: rest.length + PAD * 2,
+      shelfCross: surfaceThickness,
+    })
+  }, [windowMain, windowCross, rest.length, surfaceThickness])
+
+  // ---- spring animation of icon sizes ----
+  const sizes = useRef<number[]>([])
+  const velocity = useRef<number[]>([])
+  const pointer = useRef<number | null>(null) // main-axis pointer in rest space, null when away
+  const lastPointer = useRef(rest.length / 2)
+  const raf = useRef(0)
+  const [, repaint] = useState(0)
+
+  const targets = useCallback((): number[] => {
+    const radius = (iconSize + GAP) * settings.magnificationRadius * 1.15
+    return items.map((item, i) => {
+      if (item.type === 'separator') return rest.width[i]
+      const p = pointer.current
+      if (p === null || !settings.magnification) return iconSize
+      const center = rest.left[i] + rest.width[i] / 2
+      return iconSize + falloff(Math.abs(p - center), radius) * (magnifiedSize - iconSize)
+    })
+  }, [items, rest, iconSize, magnifiedSize, settings.magnification, settings.magnificationRadius])
+
+  const step = useCallback(
+    (last: number) => (now: number) => {
+      const dt = Math.min((now - last) / 1000, 0.032)
+      const spring = SPRINGS[settings.animationCurve]
+      const damping = 2 * Math.sqrt(spring.k) * spring.zeta
+      const goal = targets()
+      let moving = false
+      goal.forEach((target, i) => {
+        const x = sizes.current[i] ?? target
+        const v = velocity.current[i] ?? 0
+        const accel = spring.k * (target - x) - damping * v
+        const nv = v + accel * dt
+        const nx = x + nv * dt
+        velocity.current[i] = nv
+        sizes.current[i] = nx
+        if (Math.abs(target - nx) > 0.05 || Math.abs(nv) > 0.05) moving = true
+        else {
+          sizes.current[i] = target
+          velocity.current[i] = 0
+        }
+      })
+      repaint((n) => n + 1)
+      raf.current = moving ? requestAnimationFrame(step(now)) : 0
     },
-    [isHorizontal],
+    [settings.animationCurve, targets],
   )
 
-  const handlePointerLeave = useCallback(() => setPointer(null), [])
+  const kick = useCallback(() => {
+    if (!raf.current) raf.current = requestAnimationFrame(step(performance.now()))
+  }, [step])
 
-  // Compute each icon's rest-position center along the axis (before magnification
-  // shifts things around) so the falloff distance is stable frame to frame.
-  const baseCenters = useMemo(() => {
-    let cursor = GAP / 2
-    return items.map((item) => {
-      const w = item.type === 'separator' ? settings.iconSize * 0.4 : settings.iconSize
-      const center = cursor + w / 2
-      cursor += w + GAP
-      return center
-    })
-  }, [items, settings.iconSize])
-
-  const sizes = useMemo(() => {
-    return items.map((item, i) => {
-      if (item.type === 'separator') return settings.iconSize * 0.4
-      if (pointer === null) return settings.iconSize
-      const distance = Math.abs(pointer - baseCenters[i])
-      const t = falloff(distance, radiusPx)
-      return settings.iconSize + t * (settings.magnifiedSize - settings.iconSize)
-    })
-  }, [items, pointer, baseCenters, radiusPx, settings.iconSize, settings.magnifiedSize])
-
-  // Report total content size back to main so it can resize/reposition the frameless window.
+  // Item list or sizes changed: re-seed arrays and settle.
   useEffect(() => {
-    if (!containerRef.current) return
-    const totalMain = sizes.reduce((sum, s) => sum + s + GAP, GAP)
-    const totalCross = settings.magnifiedSize + 24 // breathing room for the magnification pop + dock chrome
-    onLayoutChange(isHorizontal ? totalMain : totalCross, isHorizontal ? totalCross : totalMain)
-  }, [sizes, isHorizontal, settings.magnifiedSize, onLayoutChange])
+    sizes.current = items.map((_, i) => sizes.current[i] ?? rest.width[i])
+    velocity.current = items.map((_, i) => velocity.current[i] ?? 0)
+    cancelAnimationFrame(raf.current)
+    raf.current = 0
+    kick()
+  }, [items, rest, kick])
 
-  const transition = CURVE_TO_TRANSITION[settings.animationCurve]
+  useEffect(() => () => cancelAnimationFrame(raf.current), [])
+
+  // ---- pointer handling ----
+  const mainCoord = (e: { clientX: number; clientY: number }) => (horizontal ? e.clientX : e.clientY)
+  const crossDistanceFromEdge = (e: { clientX: number; clientY: number }) => {
+    const size = horizontal ? window.innerHeight : window.innerWidth
+    const c = horizontal ? e.clientY : e.clientX
+    return settings.position === 'bottom' || settings.position === 'right' ? size - c : c
+  }
+
+  const track = (e: { clientX: number; clientY: number }) => {
+    if (crossDistanceFromEdge(e) > surfaceThickness + (magnifiedSize - iconSize) + 8) {
+      pointer.current = null
+    } else {
+      pointer.current = mainCoord(e) - restStart
+      lastPointer.current = Math.min(Math.max(pointer.current, 0), rest.length)
+    }
+    kick()
+  }
+  const leave = () => {
+    pointer.current = null
+    kick()
+  }
+
+  // ---- drag and drop ----
+  const [dragging, setDragging] = useState<string | null>(null)
+  const [insertAt, setInsertAt] = useState<number | null>(null)
+
+  const trashIndex = items.findIndex((i) => i.type === 'trash')
+  const insertionIndex = (p: number) => {
+    const limit = trashIndex >= 0 ? trashIndex : items.length
+    for (let i = 0; i < limit; i++) if (p < rest.left[i] + rest.width[i] / 2) return i
+    return limit
+  }
+
+  const acceptsDrop = (e: React.DragEvent) => e.dataTransfer.types.includes('Files') || e.dataTransfer.types.includes(DRAG_TYPE)
+
+  const onDragOver = (e: React.DragEvent) => {
+    if (!acceptsDrop(e)) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = dragging ? 'move' : 'copy'
+    track(e)
+    setInsertAt(insertionIndex(mainCoord(e) - restStart))
+  }
+
+  const onDrop = async (e: React.DragEvent) => {
+    if (!acceptsDrop(e)) return
+    e.preventDefault()
+    const at = insertionIndex(mainCoord(e) - restStart)
+    setInsertAt(null)
+    const overTrash = (e.target as HTMLElement).closest('[data-item-type="trash"]')
+    const internal = e.dataTransfer.getData(DRAG_TYPE)
+    if (internal) {
+      setDragging(null)
+      if (overTrash) return void invoke('items:remove', internal)
+      const from = items.findIndex((i) => i.id === internal)
+      if (from < 0) return
+      const next = [...items]
+      const [moved] = next.splice(from, 1)
+      next.splice(at > from ? at - 1 : at, 0, moved)
+      invoke('items:set', next)
+      return
+    }
+    const paths = Array.from(e.dataTransfer.files)
+      .map((f) => window.api.pathFor(f))
+      .filter(Boolean)
+    if (!paths.length) return
+    if (overTrash) invoke('trash:drop', paths)
+    else invoke('items:add-paths', paths, at)
+  }
+
+  // ---- render ----
+  const current = items.map((_, i) => sizes.current[i] ?? rest.width[i])
+  const positions: number[] = []
+  let cursor = 0
+  current.forEach((s, i) => {
+    positions.push(cursor)
+    cursor += s + (i < items.length - 1 ? GAP : 0)
+  })
+  const length = cursor
+
+  // Anchor: the point of the row under the pointer stays under the pointer while icons grow around it.
+  let anchorIndex = items.length - 1
+  for (let i = 0; i < items.length; i++) {
+    if (lastPointer.current <= rest.left[i] + rest.width[i] + GAP / 2) {
+      anchorIndex = i
+      break
+    }
+  }
+  const frac = items.length ? Math.min(Math.max((lastPointer.current - rest.left[anchorIndex]) / rest.width[anchorIndex], 0), 1) : 0
+  const mapped = items.length ? positions[anchorIndex] + frac * current[anchorIndex] : 0
+  const rowStart = restStart + lastPointer.current - mapped
+
+  const side = settings.position
+  const flat = settings.material !== 'none'
+  const edgeStyle = (main: number, cross: number, w: number, h: number): React.CSSProperties => {
+    const box = { width: horizontal ? w : h, height: horizontal ? h : w }
+    const mainProp = horizontal ? { left: main } : { top: main }
+    const crossProp = { [side]: cross }
+    return { position: 'absolute', ...box, ...mainProp, ...crossProp }
+  }
 
   return (
     <div
-      ref={containerRef}
-      className={`dock dock--${settings.position} theme-${settings.theme}`}
-      onMouseMove={handlePointerMove}
-      onMouseLeave={handlePointerLeave}
+      className={`dock dock--${side}${hidden ? ' dock--hidden' : ''}${flat ? ' dock--flat' : ''}`}
+      onMouseMove={track}
+      onMouseLeave={leave}
+      onDragOver={onDragOver}
+      onDragLeave={() => setInsertAt(null)}
+      onDrop={onDrop}
       onContextMenu={(e) => {
         e.preventDefault()
-        onEmptyContextMenu()
+        invoke('menu:show', { kind: 'empty' })
       }}
     >
-      <div className="dock__surface" />
-      <div className="dock__row">
-        {items.map((item, i) =>
-          item.type === 'separator' ? (
-            <Separator key={item.id} size={sizes[i]} orientation={isHorizontal ? 'vertical' : 'horizontal'} transition={transition} />
-          ) : (
-            <DockIcon
-              key={item.id}
-              item={item}
-              size={sizes[i]}
-              transition={transition}
-              iconSrc={iconSrcById[item.id]}
-              isRunning={!!(item.targetPath && runningByPath.has(item.targetPath.toLowerCase()))}
-              onClick={() => onActivate(item)}
-              onContextMenu={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                onIconContextMenu(item)
-              }}
+      <div className="dock__surface" style={edgeStyle(rowStart - PAD, 0, length + PAD * 2, surfaceThickness)} />
+      {items.map((item, i) => {
+        const size = current[i]
+        const base = edgeStyle(rowStart + positions[i], PAD_CROSS, size, size)
+        if (item.type === 'separator') {
+          return (
+            <div key={item.id} className="dock__separator" data-horizontal={horizontal} style={{ ...base, [horizontal ? 'height' : 'width']: iconSize * 0.7 }}
+              draggable onDragStart={(e) => { e.dataTransfer.setData(DRAG_TYPE, item.id); setDragging(item.id) }}
+              onDragEnd={(e) => { setDragging(null); if (outside(e)) invoke('items:remove', item.id) }}
+              onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); invoke('menu:show', { kind: 'icon', itemId: item.id }) }}
             />
-          ),
-        )}
-      </div>
+          )
+        }
+        const state = running[item.id]
+        return (
+          <DockIcon
+            key={item.id}
+            item={item}
+            style={base}
+            size={size}
+            iconSrc={icons[item.id]}
+            running={settings.showRunningIndicators ? state : undefined}
+            launching={launching.has(item.id)}
+            position={side}
+            hovered={pointer.current !== null && Math.abs(pointer.current - (rest.left[i] + rest.width[i] / 2)) < rest.width[i] / 2 + GAP / 2}
+            dragging={dragging === item.id}
+            onClick={() => onActivate(item)}
+            onDragStart={(e) => {
+              e.dataTransfer.setData(DRAG_TYPE, item.id)
+              e.dataTransfer.effectAllowed = 'move'
+              setDragging(item.id)
+            }}
+            onDragEnd={(e) => {
+              setDragging(null)
+              setInsertAt(null)
+              if (outside(e)) invoke('items:remove', item.id)
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              invoke('menu:show', { kind: 'icon', itemId: item.id })
+            }}
+          />
+        )
+      })}
+      {insertAt !== null && (
+        <div
+          className="dock__insert"
+          style={edgeStyle(
+            rowStart + (insertAt < items.length ? positions[insertAt] - GAP / 2 : length) - 1,
+            PAD_CROSS,
+            2,
+            iconSize,
+          )}
+        />
+      )}
     </div>
   )
+}
+
+/** True when a drag ended outside the dock window: the user flicked the icon away to remove it. */
+function outside(e: React.DragEvent): boolean {
+  return e.clientX < 0 || e.clientY < 0 || e.clientX > window.innerWidth || e.clientY > window.innerHeight
 }

@@ -1,0 +1,126 @@
+.widget {
+  position: absolute;
+  inset: 6px;
+  padding: 14px 16px;
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--shadow);
+  color: var(--tooltip-text);
+  -webkit-app-region: drag;
+  overflow: hidden;
+}
+
+.widget button {
+  -webkit-app-region: no-drag;
+}
+
+.widget__big {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+}
+.widget__muted {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 3px;
+}
+.widget__title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: capitalize;
+  margin-bottom: 8px;
+}
+.widget__ellipsis {
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 230px;
+}
+
+.widget__weather {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.widget__icon {
+  font-size: 40px;
+}
+
+.widget__system {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: center;
+  height: 100%;
+}
+.widget__row {
+  display: grid;
+  grid-template-columns: 36px 1fr 40px;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+.widget__bar {
+  height: 5px;
+  background: var(--surface-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.widget__bar div {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 400ms ease;
+}
+.widget__value {
+  text-align: right;
+  opacity: 0.8;
+}
+
+.widget__media {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+.widget__buttons {
+  display: flex;
+  gap: 8px;
+}
+.widget__buttons button {
+  flex: 1;
+  height: 30px;
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.widget__buttons button:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.widget__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+  font-size: 12px;
+}
+.widget__grid span {
+  padding: 4px 0;
+  border-radius: 6px;
+}
+.widget__dow {
+  opacity: 0.55;
+  font-size: 11px;
+}
+.widget__today {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}

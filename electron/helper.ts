@@ -17,6 +17,7 @@ export interface HelperWindow {
 export interface WindowsSnapshot {
   windows: HelperWindow[]
   fullscreen: boolean
+  foreground: number
 }
 
 export interface LinkInfo {

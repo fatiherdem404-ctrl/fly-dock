@@ -7,6 +7,6 @@ module.exports = {
   copyright: `Copyright © ${brand.copyrightYear} ${brand.company}`,
   artifactName: `${brand.slug}-\${version}-setup.\${ext}`,
   win: { target: 'nsis', icon: brand.logo.icon },
-  files: ['dist', 'dist-electron'],
+  files: ['dist', 'dist-electron', 'build/icon.ico', 'build/tray-icon.png', 'build/logo-mark.svg'],
   extraResources: [{ from: 'helper/bin', to: 'helper', filter: ['dock-helper.*', '*.json'] }],
 }
