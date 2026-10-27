@@ -1,0 +1,137 @@
+:root {
+  --dock-surface: rgba(24, 26, 32, 0.55);
+  --dock-border: rgba(255, 255, 255, 0.08);
+  --dock-highlight: rgba(255, 255, 255, 0.06);
+  --dock-accent: #f2b25c; /* running-app indicator: warm amber reads clearly against dark glass */
+  --dock-icon-fallback: rgba(255, 255, 255, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  background: transparent;
+}
+
+.dock {
+  position: relative;
+  display: inline-flex;
+  padding: 12px;
+}
+
+.dock--bottom,
+.dock--top {
+  flex-direction: row;
+  align-items: flex-end;
+}
+
+.dock--left,
+.dock--right {
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.dock__surface {
+  position: absolute;
+  inset: 6px;
+  border-radius: 20px;
+  background: var(--dock-surface);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--dock-border);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 var(--dock-highlight);
+}
+
+.dock__row {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.dock--left .dock__row,
+.dock--right .dock__row {
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.dock-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  will-change: width, height;
+}
+
+.dock-icon__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+  pointer-events: none;
+}
+
+.dock-icon__placeholder {
+  width: 70%;
+  height: 70%;
+  border-radius: 12px;
+  background: var(--dock-icon-fallback);
+}
+
+.dock-icon__trash {
+  width: 70%;
+  height: 70%;
+  border-radius: 8px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--dock-border);
+}
+
+.dock-icon__indicator {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--dock-accent);
+  box-shadow: 0 0 6px var(--dock-accent);
+}
+
+.dock-icon__tooltip {
+  position: absolute;
+  bottom: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(20, 20, 24, 0.9);
+  border: 1px solid var(--dock-border);
+  color: rgba(255, 255, 255, 0.9);
+  font: 500 12px/1.4 -apple-system, 'Segoe UI', system-ui, sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.dock-separator {
+  align-self: center;
+}
+
+.dock-separator--vertical {
+  width: 1px;
+  background: linear-gradient(180deg, transparent, var(--dock-border) 20%, var(--dock-border) 80%, transparent);
+}
+
+.dock-separator--horizontal {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--dock-border) 20%, var(--dock-border) 80%, transparent);
+}

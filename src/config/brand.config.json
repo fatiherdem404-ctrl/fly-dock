@@ -1,0 +1,27 @@
+{
+  "name": "Fly Dock",
+  "slug": "fly-dock",
+  "appId": "com.faer.flydock",
+  "tagline": {
+    "tr": "Masaüstün için modern dock",
+    "en": "A modern dock for your desktop"
+  },
+  "description": {
+    "tr": "RocketDock'tan ilham alan, açık kaynaklı Windows dock'u: widget'lar, temalar ve ikon paketleri.",
+    "en": "An open-source Windows dock inspired by RocketDock: widgets, themes and icon packs."
+  },
+  "company": "Fatih Erdem",
+  "copyrightYear": 2026,
+  "license": "GPL-3.0-only",
+  "iconColor": "#4da3ff",
+  "websiteUrl": "",
+  "repoUrl": "https://github.com/PLACEHOLDER/fly-dock",
+  "issuesUrl": "https://github.com/PLACEHOLDER/fly-dock/issues",
+  "kofiUser": "PLACEHOLDER",
+  "kofiUrl": "https://ko-fi.com/PLACEHOLDER",
+  "logo": {
+    "mark": "build/logo-mark.svg",
+    "icon": "build/icon.ico",
+    "tray": "build/tray-icon.png"
+  }
+}
