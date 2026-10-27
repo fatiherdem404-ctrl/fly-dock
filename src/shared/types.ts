@@ -101,7 +101,7 @@ export interface Persisted {
   widgets: WidgetInstance[]
 }
 
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 3
 
 export const DEFAULT_SETTINGS: DockSettings = {
   position: 'bottom',
@@ -113,7 +113,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   autoHideDelayMs: 600,
   hideInFullscreen: true,
   monitor: 'primary',
-  material: 'none',
+  material: 'acrylic',
   theme: 'glass-dark',
   iconPack: '',
   animationCurve: 'spring',
@@ -142,6 +142,7 @@ export interface InvokeMap {
   'trash:drop': { args: [paths: string[]]; result: void }
   'menu:show': { args: [payload: { kind: 'empty' | 'icon'; itemId?: string }]; result: void }
   'dock:layout': { args: [layout: { main: number; cross: number; shelfMain: number; shelfCross: number }]; result: void }
+  'dock:surface': { args: [surface: { start: number; length: number }]; result: void }
   'dock:state': { args: []; result: { hidden: boolean } }
   'stack:list': { args: [id: string]; result: StackEntry[] }
   'stack:open': { args: [path: string]; result: void }
@@ -163,7 +164,7 @@ export interface InvokeMap {
   'widgets:now-playing': { args: []; result: { app: string; title: string } | null }
   'app:open-settings': { args: []; result: void }
   'app:open-external': { args: [target: 'support' | 'repo' | 'issues']; result: void }
-  'app:info': { args: []; result: { name: string; version: string; tagline: string; kofiUrl: string } }
+  'app:info': { args: []; result: { name: string; version: string; tagline: string; kofiUrl: string; materialSupported: boolean } }
   'app:quit': { args: []; result: void }
 }
 

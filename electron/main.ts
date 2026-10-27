@@ -11,7 +11,7 @@ import {
 } from './items'
 import { iconForItem, setTrashState } from './icons'
 import { shellIcon } from './iconService'
-import { initDockWindows, syncDocks, setLayout, isDockHidden, setFullscreenHidden, toggleDockVisibility, disposeDockWindows } from './dockWindows'
+import { initDockWindows, syncDocks, setLayout, setSurface, materialSupported, refreshShelfTint, isDockHidden, setFullscreenHidden, toggleDockVisibility, disposeDockWindows } from './dockWindows'
 import { baseWebPreferences, loadRoute } from './windows'
 import {
   importPackDialog, exportPackDialog, listThemes, listInstalled, builtinThemeInfos, getTheme, removePack, clearPackCaches,
@@ -144,6 +144,7 @@ function applySettings(partial: Partial<DockSettings>): DockSettings {
   if (partial.iconPack !== undefined) clearPackCaches()
   const layoutChanged = (['position', 'monitor', 'material', 'autoHide'] as const).some((k) => k in partial && before[k] !== next[k])
   if (layoutChanged) syncDocks()
+  if (partial.theme !== undefined) refreshShelfTint()
   broadcast('settings:changed', next)
   return next
 }
@@ -230,6 +231,7 @@ function registerIpc() {
 
   handle('menu:show', showMenu)
   handle('dock:layout', (_e, layout) => setLayout(layout))
+  handle('dock:surface', (e, surface) => setSurface(e.sender.id, surface))
   handle('dock:state', () => ({ hidden: isDockHidden() }))
 
   handle('stack:list', (_e, id) => {
@@ -252,6 +254,7 @@ function registerIpc() {
     const result = await importPackDialog()
     if (result.ok) {
       clearPackCaches()
+      refreshShelfTint()
       broadcast('themes:changed', null)
     }
     return result
@@ -287,7 +290,7 @@ function registerIpc() {
     const url = target === 'support' ? brand.kofiUrl : target === 'repo' ? brand.repoUrl : brand.issuesUrl
     return shell.openExternal(url)
   })
-  handle('app:info', () => ({ name: brand.name, version: app.getVersion(), tagline: brand.tagline.tr, kofiUrl: brand.kofiUrl }))
+  handle('app:info', () => ({ name: brand.name, version: app.getVersion(), tagline: brand.tagline.tr, kofiUrl: brand.kofiUrl, materialSupported }))
   handle('app:quit', () => app.quit())
 }
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import Dock from '@/components/Dock'
-import { invoke, useActiveTheme, useEvent } from '@/api'
+import { invoke, useActiveTheme, useEvent, useRemote } from '@/api'
 import type { DockItem, DockSettings, RunningState } from '@/shared/types'
 
 export default function DockView() {
@@ -10,6 +10,7 @@ export default function DockView() {
   const [icons, setIcons] = useState<Record<string, string>>({})
   const [trashItems, setTrashItems] = useState(0)
   const [hidden, setHidden] = useState(false)
+  const [info] = useRemote('app:info', [])
   const [launching, setLaunching] = useState<Set<string>>(new Set())
 
   useEffect(() => {
@@ -54,5 +55,5 @@ export default function DockView() {
 
   if (!settings) return null
   const visible = items.filter((i) => i.type !== 'trash' || settings.showTrash)
-  return <Dock items={visible} settings={settings} running={running} icons={icons} launching={launching} hidden={hidden} onActivate={activate} />
+  return <Dock items={visible} settings={settings} running={running} icons={icons} launching={launching} hidden={hidden} flat={settings.material !== 'none' && !!info?.materialSupported} onActivate={activate} />
 }

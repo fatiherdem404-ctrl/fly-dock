@@ -10,6 +10,7 @@ interface DockProps {
   icons: Record<string, string>
   launching: Set<string>
   hidden: boolean
+  flat: boolean
   onActivate: (item: DockItem) => void
 }
 
@@ -34,7 +35,7 @@ const SPRINGS: Record<DockSettings['animationCurve'], { k: number; zeta: number 
 
 const DRAG_TYPE = 'application/x-dock-item'
 
-export default function Dock({ items, settings, running, icons, launching, hidden, onActivate }: DockProps) {
+export default function Dock({ items, settings, running, icons, launching, hidden, flat, onActivate }: DockProps) {
   const horizontal = settings.position === 'bottom' || settings.position === 'top'
   const { iconSize, magnifiedSize } = settings
 
@@ -220,13 +221,24 @@ export default function Dock({ items, settings, running, icons, launching, hidde
   const rowStart = restStart + lastPointer.current - mapped
 
   const side = settings.position
-  const flat = settings.material !== 'none'
   const edgeStyle = (main: number, cross: number, w: number, h: number): React.CSSProperties => {
     const box = { width: horizontal ? w : h, height: horizontal ? h : w }
     const mainProp = horizontal ? { left: main } : { top: main }
     const crossProp = { [side]: cross }
     return { position: 'absolute', ...box, ...mainProp, ...crossProp }
   }
+
+  // Keep the system-drawn shelf window glued to the (magnifying) surface.
+  const surfaceStart = rowStart - PAD
+  const surfaceLength = length + PAD * 2
+  const lastSurface = useRef('')
+  useEffect(() => {
+    if (!flat) return
+    const key = `${Math.round(surfaceStart)}:${Math.round(surfaceLength)}`
+    if (key === lastSurface.current) return
+    lastSurface.current = key
+    invoke('dock:surface', { start: surfaceStart, length: surfaceLength })
+  })
 
   return (
     <div
@@ -241,7 +253,7 @@ export default function Dock({ items, settings, running, icons, launching, hidde
         invoke('menu:show', { kind: 'empty' })
       }}
     >
-      <div className="dock__surface" style={edgeStyle(rowStart - PAD, 0, length + PAD * 2, surfaceThickness)} />
+      <div className="dock__surface" style={edgeStyle(surfaceStart, 0, surfaceLength, surfaceThickness)} />
       {items.map((item, i) => {
         const size = current[i]
         const base = edgeStyle(rowStart + positions[i], PAD_CROSS, size, size)

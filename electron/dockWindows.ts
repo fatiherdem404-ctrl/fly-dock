@@ -1,11 +1,17 @@
 // One dock window per target display. The window has a fixed size for a given layout (items + settings) so
 // magnification never resizes it; auto-hide and fullscreen hiding only flip click-through and visibility.
 import { BrowserWindow, Display, screen } from 'electron'
+import os from 'node:os'
 import { getSettings } from './store'
+import { getTheme } from './packs'
 import { overlayWindow, loadRoute } from './windows'
 import { broadcast } from './ipc'
 import { helper } from './helper'
 import type { DockPosition } from '../src/shared/types'
+
+// backgroundMaterial needs Windows 11 22H2 (build 22621) or newer.
+export const materialSupported = Number(os.release().split('.')[2]) >= 22621
+const activeMaterial = () => (materialSupported ? getSettings().material : 'none')
 
 const MARGIN = 6
 const EDGE_BAND = 4
@@ -67,6 +73,21 @@ function applyBounds(dock: DockWin) {
   }
 }
 
+/** Theme surface colour as #AARRGGBB. Set natively on the shelf window so it resizes in lockstep with the material. */
+function shelfTint(): string {
+  const css = getTheme(getSettings().theme)?.vars.surface ?? 'rgba(24, 26, 32, 0.62)'
+  const hex = (n: number) => Math.round(Math.min(Math.max(n, 0), 255)).toString(16).padStart(2, '0')
+  const rgba = css.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/)
+  if (rgba) return `#${hex(Number(rgba[4] ?? 1) * 255)}${hex(Number(rgba[1]))}${hex(Number(rgba[2]))}${hex(Number(rgba[3]))}`
+  const short = css.match(/^#([0-9a-f]{6})([0-9a-f]{2})?$/i)
+  return short ? `#${short[2] ?? 'ff'}${short[1]}` : '#9e181a20'
+}
+
+export function refreshShelfTint() {
+  const tint = shelfTint()
+  for (const dock of docks.values()) if (dock.shelf && !dock.shelf.isDestroyed()) dock.shelf.setBackgroundColor(tint)
+}
+
 function createShelf(material: 'acrylic' | 'mica'): BrowserWindow {
   const shelf = overlayWindow({
     transparent: false,
@@ -77,6 +98,7 @@ function createShelf(material: 'acrylic' | 'mica'): BrowserWindow {
   })
   shelf.setIgnoreMouseEvents(true)
   shelf.loadURL('data:text/html,<body style="margin:0;background:transparent"></body>')
+  shelf.setBackgroundColor(shelfTint())
   // Win11 only rounds frameless windows when asked; the dock surface radius is matched to DWM's 8px.
   shelf.once('ready-to-show', () => helper.roundCorners(Number(shelf.getNativeWindowHandle().readBigUInt64LE())).catch(() => {}))
   return shelf
@@ -85,7 +107,7 @@ function createShelf(material: 'acrylic' | 'mica'): BrowserWindow {
 function createDock(display: Display): DockWin {
   const win = overlayWindow()
   loadRoute(win, '/dock')
-  const { material } = getSettings()
+  const material = activeMaterial()
   const shelf = material === 'none' ? null : createShelf(material)
   const dock: DockWin = { displayId: display.id, win, shelf }
   win.once('ready-to-show', () => {
@@ -109,7 +131,7 @@ function destroyDock(dock: DockWin) {
 /** Creates, removes and re-positions dock windows to match the current settings and monitors. */
 export function syncDocks() {
   const wanted = targetDisplays()
-  const material = getSettings().material
+  const material = activeMaterial()
   for (const [id, dock] of docks) {
     const keep = wanted.some((d) => d.id === id) && (material === 'none') === (dock.shelf === null)
     if (!keep) {
@@ -130,6 +152,24 @@ export function setLayout(next: Layout) {
   if (same) return
   layout = next
   for (const dock of docks.values()) applyBounds(dock)
+}
+
+/** The renderer reports where the glass surface currently is (it widens while icons magnify); the shelf follows. */
+export function setSurface(webContentsId: number, surface: { start: number; length: number }) {
+  for (const dock of docks.values()) {
+    if (dock.win.isDestroyed() || dock.win.webContents.id !== webContentsId || !dock.shelf || dock.shelf.isDestroyed()) continue
+    const b = dock.win.getBounds()
+    const { position } = getSettings()
+    const start = Math.round(surface.start)
+    const length = Math.max(1, Math.round(surface.length))
+    const thick = Math.round(layout.shelfCross)
+    const shelf =
+      position === 'bottom' ? { x: b.x + start, y: b.y + b.height - thick, width: length, height: thick }
+      : position === 'top' ? { x: b.x + start, y: b.y, width: length, height: thick }
+      : position === 'left' ? { x: b.x, y: b.y + start, width: thick, height: length }
+      : { x: b.x + b.width - thick, y: b.y + start, width: thick, height: length }
+    dock.shelf.setBounds(shelf)
+  }
 }
 
 export function dockWindowList(): BrowserWindow[] {

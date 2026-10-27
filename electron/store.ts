@@ -22,6 +22,11 @@ function migrate() {
     store.set('items', sorted.map(({ order: _order, ...rest }) => rest as DockItem))
     store.set('widgets', [])
   }
+  if (version < 3) {
+    // The flat translucent surface cannot blur anything on a transparent window; acrylic is the real glass.
+    const settings = store.get('settings')
+    if (settings.material === 'none') store.set('settings', { ...settings, material: 'acrylic' })
+  }
   // Fill settings added since the file was written.
   store.set('settings', { ...DEFAULT_SETTINGS, ...store.get('settings') })
   store.set('schemaVersion', SCHEMA_VERSION)
