@@ -55,6 +55,11 @@ internal static class Program
                 Windows.OwnPid = ignorePid;
                 return true;
             case "windows": return Snapshot();
+            case "roundCorners":
+            {
+                int round = 2; // DWMWCP_ROUND
+                return Native.DwmSetWindowAttribute(new IntPtr(p["hwnd"]!.GetValue<long>()), 33, ref round, sizeof(int)) == 0;
+            }
             case "activate": Windows.Activate(p["hwnd"]!.GetValue<long>()); return true;
             case "minimize": Windows.Minimize(p["hwnd"]!.GetValue<long>()); return true;
             case "close": Windows.Close(p["hwnd"]!.GetValue<long>()); return true;

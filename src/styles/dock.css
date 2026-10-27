@@ -24,6 +24,7 @@
 
 /* With acrylic/mica the system draws the material in a window behind this one. */
 .dock--flat .dock__surface {
+  border-radius: 8px;
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;

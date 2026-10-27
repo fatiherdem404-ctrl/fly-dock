@@ -1,4 +1,4 @@
-| ✅ 0.4 || ✅ 0.3 || ✅ 0.2 |# Yol Haritası
+| ✅ 1.9 || ✅ 1.8 || ✅ 1.7 || ✅ 1.6 || ✅ 1.5 || ✅ 1.4 || ✅ 1.3 || ✅ 1.2 || ✅ 1.1 || ✅ 0.4 || ✅ 0.3 || ✅ 0.2 |# Yol Haritası
 
 Boyutlar: **S** ≈ 1-3 gün, **M** ≈ 1 hafta, **L** ≈ 2+ hafta (yarı zamanlı).
 Kararlar: wi-dock'tan devam · C# yardımcı süreç · GPLv3 · Ko-fi · kapsamın tamamı.
@@ -61,3 +61,8 @@ Windows'un varsayılan gezgini **değiştirilmez**; sadece "klasörü bizim gezg
 ## Sıralama özeti
 0.1 → 0.4 / 0.3 → 0.2 → 1.1, 1.2 → 1.3-1.9 → **v1 yayın** → 2.x → 3.x → 4.1 (risk kapısı) → 4.2-4.4
 Kritik yol: **0.2 (C# yardımcı)** — widget, çöp kutusu, ikon, duvar kağıdı ve 4.1 hepsi buna yaslanıyor.
+
+## Durum notu (v1 kodu yazıldı)
+v1 maddelerinin hepsi kodlandı. Çalıştırılıp doğrulananlar: C# yardımcı (pencere olayları, büyük ikonlar, çöp kutusu), büyütme, sağ tık menüsü, ayarlar penceresi, 5 widget (hava durumu canlı veriyle), akrilik arka plan, tam ekranda gizleme, paket doğrulama testleri (`npm test`).
+Elle denenmesi gerekenler (otomatik test edilemedi): dosya sürükle-bırak ile ekleme ve sıralama, simgeyi dışarı atarak kaldırma, yığın penceresi, otomatik gizleme kenar tetiği, çok monitör, global kısayollar.
+Bilinen sınırlar: medya widget'ı şarkı adını sadece Spotify/VLC gibi oynatıcıların pencere başlığından okur (Windows medya oturumu için WinRT paketi indirmek gerekir); UWP uygulamaları dock'a sabitlenemez; kurulum paketi .NET çalışma zamanı gerektirir (self-contained paket için NuGet indirmesi gerekecek).

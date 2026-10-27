@@ -4,6 +4,7 @@ import { BrowserWindow, Display, screen } from 'electron'
 import { getSettings } from './store'
 import { overlayWindow, loadRoute } from './windows'
 import { broadcast } from './ipc'
+import { helper } from './helper'
 import type { DockPosition } from '../src/shared/types'
 
 const MARGIN = 6
@@ -76,6 +77,8 @@ function createShelf(material: 'acrylic' | 'mica'): BrowserWindow {
   })
   shelf.setIgnoreMouseEvents(true)
   shelf.loadURL('data:text/html,<body style="margin:0;background:transparent"></body>')
+  // Win11 only rounds frameless windows when asked; the dock surface radius is matched to DWM's 8px.
+  shelf.once('ready-to-show', () => helper.roundCorners(Number(shelf.getNativeWindowHandle().readBigUInt64LE())).catch(() => {}))
   return shelf
 }
 

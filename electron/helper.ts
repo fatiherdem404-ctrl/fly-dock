@@ -143,6 +143,9 @@ class Helper extends EventEmitter {
   emptyTrash() {
     return this.call<boolean>('emptyTrash', {}, 120_000)
   }
+  roundCorners(hwnd: number) {
+    return this.call<boolean>('roundCorners', { hwnd })
+  }
   mediaKey(key: 'playpause' | 'next' | 'prev' | 'stop') {
     return this.call('mediaKey', { key })
   }

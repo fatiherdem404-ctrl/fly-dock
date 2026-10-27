@@ -13,17 +13,20 @@ A modern dock for your desktop — An open-source Windows dock inspired by Rocke
 
 Working today (skeleton):
 
-- Transparent, always-on-top dock window (bottom/top/left/right)
-- Hover magnification with a cosine falloff
-- Running-app indicators (polling via PowerShell for now)
-- Automatic `.exe` icon extraction with disk cache and manual override
-- Persistent config (`electron-store`)
+- Transparent, always-on-top dock window per monitor (bottom/top/left/right), auto-hide, hides over fullscreen apps
+- Spring-physics magnification, drag & drop to add, reorder and remove, recycle bin
+- Running-app indicators driven by window events from a C# helper process
+- Sharp shell icons (up to 256px), icon packs and manual overrides
+- Folder stacks, global shortcuts, multi-monitor, Win11 acrylic/mica
+- Desktop widgets: clock, weather, CPU/RAM/disk, media keys, calendar
+- JSON themes and icon packs (`.flypack`, import/export, validated)
+- Settings window
 
-Planned: drag & drop, settings window, auto-hide, multi-monitor, widgets, JSON themes, icon packs, wallpapers, sound packs. See [ROADMAP.md](ROADMAP.md).
+Planned: wallpapers, live backgrounds, sound packs, community pack sharing. See [ROADMAP.md](ROADMAP.md).
 
 ## Getting started
 
-Requires Node.js and Windows 10/11. No native build tools needed.
+Requires Node.js, the .NET 10 SDK (builds the helper process) and Windows 10/11.
 
 ```bash
 npm install
@@ -35,10 +38,9 @@ Useful scripts: `npm run typecheck`, `npm run brand:check`, `npm run brand:rende
 ## Architecture
 
 ```
-electron/   main process: dock window, tray, IPC, store, windowManager (PowerShell + user32.dll),
-            iconExtractor (PowerShell + System.Drawing). A C# helper process will replace the
-            PowerShell calls (see ROADMAP.md, item 0.2).
-src/        renderer (React): Dock, DockIcon, Separator, styles
+helper/     C# helper process: window events, shell icons, recycle bin (JSON over stdin/stdout)
+electron/   main process: dock windows, tray, typed IPC, store, packs, widgets
+src/        renderer (React): dock, settings, stack and widget views; src/shared holds the IPC contract
 src/config/brand.config.json   single source for name, ids, links and logo paths
 scripts/    brand check and docs rendering
 ```

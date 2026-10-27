@@ -14,16 +14,19 @@
 Şu an çalışan (iskelet):
 
 - Şeffaf, her zaman üstte dock penceresi (alt/üst/sol/sağ)
-- Üzerine gelince büyütme (cosine falloff)
-- Çalışan uygulama göstergesi (şimdilik PowerShell ile yoklama)
-- `.exe` ikonunu otomatik çıkarma, disk önbelleği ve elle değiştirme
-- Kalıcı ayarlar (`electron-store`)
+- Yay fiziğiyle büyütme, sürükle-bırakla ekleme, sıralama ve kaldırma, çöp kutusu
+- C# yardımcı süreçten gelen pencere olaylarıyla çalışan uygulama göstergesi
+- Net kabuk simgeleri (256 piksele kadar), simge paketleri ve elle değiştirme
+- Klasör yığınları, genel kısayollar, çok monitör, Win11 akrilik/mica
+- Masaüstü widget'ları: saat, hava durumu, CPU/RAM/disk, medya tuşları, takvim
+- JSON temalar ve simge paketleri (`.flypack`, içe/dışa aktarma, doğrulamalı)
+- Ayarlar penceresi
 
-Planlananlar: sürükle-bırak, ayarlar penceresi, otomatik gizleme, çok monitör, widget'lar, JSON temalar, ikon paketleri, duvar kağıtları, ses paketleri. Bkz. [ROADMAP.md](ROADMAP.md).
+Planlananlar: duvar kağıtları, canlı arka planlar, ses paketleri, topluluk paketleri. Bkz. [ROADMAP.md](ROADMAP.md).
 
 ## Başlarken
 
-Node.js ve Windows 10/11 gerekir. Derleme araçları gerekmez.
+Node.js, .NET 10 SDK (yardımcı süreci derler) ve Windows 10/11 gerekir.
 
 ```bash
 npm install
@@ -35,10 +38,9 @@ Faydalı komutlar: `npm run typecheck`, `npm run brand:check`, `npm run brand:re
 ## Mimari
 
 ```
-electron/   ana süreç: dock penceresi, tepsi, IPC, store, windowManager (PowerShell + user32.dll),
-            iconExtractor (PowerShell + System.Drawing). PowerShell çağrılarının yerini bir C#
-            yardımcı süreç alacak (ROADMAP.md, madde 0.2).
-src/        arayüz (React): Dock, DockIcon, Separator, stiller
+helper/     C# yardımcı süreç: pencere olayları, kabuk simgeleri, çöp kutusu (stdin/stdout üzerinden JSON)
+electron/   ana süreç: dock pencereleri, tepsi, tipli IPC, store, paketler, widget'lar
+src/        arayüz (React): dock, ayarlar, yığın ve widget görünümleri; src/shared IPC sözleşmesini tutar
 src/config/brand.config.json   ad, kimlikler, bağlantılar ve logo yolları için tek kaynak
 scripts/    marka denetimi ve doküman üretimi
 ```
