@@ -11,7 +11,7 @@ import {
 } from './items'
 import { iconForItem, setTrashState } from './icons'
 import { shellIcon } from './iconService'
-import { initDockWindows, syncDocks, setLayout, setSurface, materialSupported, refreshShelfTint, isDockHidden, setFullscreenHidden, toggleDockVisibility, disposeDockWindows } from './dockWindows'
+import { initDockWindows, syncDocks, setLayout, materialSupported, refreshShelfTint, isDockHidden, setFullscreenHidden, toggleDockVisibility, disposeDockWindows } from './dockWindows'
 import { baseWebPreferences, loadRoute } from './windows'
 import {
   importPackDialog, exportPackDialog, listThemes, listInstalled, builtinThemeInfos, getTheme, removePack, clearPackCaches,
@@ -237,7 +237,6 @@ function registerIpc() {
 
   handle('menu:show', showMenu)
   handle('dock:layout', (_e, layout) => setLayout(layout))
-  handle('dock:surface', (e, surface) => setSurface(e.sender.id, surface))
   handle('dock:state', () => ({ hidden: isDockHidden() }))
 
   handle('stack:list', (_e, id) => {

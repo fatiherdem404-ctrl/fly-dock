@@ -56,8 +56,10 @@ export default function Dock({ items, settings, running, icons, launching, hidde
   const restStart = (windowMain - rest.length) / 2
 
   useEffect(() => {
-    invoke('dock:layout', { main: windowMain, cross: windowCross, shelfMain: rest.length + PAD * 2, shelfCross: restThickness })
-  }, [windowMain, windowCross, rest.length, restThickness])
+    // A system-drawn shelf (acrylic/mica) is a separate window and cannot be animated in step with the icons,
+    // so it stays still: sized for the resting row plus the room magnification needs, never moved.
+    invoke('dock:layout', { main: windowMain, cross: windowCross, shelfMain: rest.length + PAD * 2 + growth, shelfCross: restThickness })
+  }, [windowMain, windowCross, rest.length, restThickness, growth])
 
   // ---- spring animation of icon sizes ----
   const sizes = useRef<number[]>([])
@@ -203,16 +205,6 @@ export default function Dock({ items, settings, running, icons, launching, hidde
   const thickness = Math.max(restThickness, biggest + PAD_CROSS * 2)
   const surfaceStart = rowStart - PAD
   const surfaceLength = length + PAD * 2
-
-  // Keep the system-drawn shelf window glued to the (magnifying) surface.
-  const lastSurface = useRef('')
-  useEffect(() => {
-    if (!flat) return
-    const key = `${Math.round(surfaceStart)}:${Math.round(surfaceLength)}:${Math.round(thickness)}`
-    if (key === lastSurface.current) return
-    lastSurface.current = key
-    invoke('dock:surface', { start: surfaceStart, length: surfaceLength, thickness })
-  })
 
   const side = settings.position
   const edgeStyle = (main: number, cross: number, w: number, h: number): React.CSSProperties => {

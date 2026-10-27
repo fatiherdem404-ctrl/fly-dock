@@ -67,23 +67,41 @@ try {
 
   // frame recorder: icon sizes and containment violations on every animation frame
   await evaluate(`(() => {
-    window.__rec = { t: [], sizes: [], violations: 0 }
+    window.__rec = { t: [], sizes: [], insets: [] }
     const horizontal = ${horizontal}
     const tick = (now) => {
       const icons = [...document.querySelectorAll('.dock-icon')]
       const surface = document.querySelector('.dock__surface').getBoundingClientRect()
       window.__rec.t.push(now)
       window.__rec.sizes.push(icons.map(e => horizontal ? e.getBoundingClientRect().width : e.getBoundingClientRect().height))
-      for (const e of icons) {
-        const r = e.getBoundingClientRect()
-        const slack = 1.5
-        if (r.left < surface.left - slack || r.right > surface.right + slack || r.top < surface.top - slack || r.bottom > surface.bottom + slack) { window.__rec.violations++; break }
-      }
+      // how far the glass reaches past the union of all icons, per side
+      const rects = icons.map(e => e.getBoundingClientRect())
+      const u = { l: Math.min(...rects.map(r => r.left)), r: Math.max(...rects.map(r => r.right)), t: Math.min(...rects.map(r => r.top)), b: Math.max(...rects.map(r => r.bottom)) }
+      window.__rec.insets.push([u.l - surface.left, surface.right - u.r, u.t - surface.top, surface.bottom - u.b])
       window.__rec.raf = requestAnimationFrame(tick)
     }
     window.__rec.raf = requestAnimationFrame(tick)
   })()`)
 
+  // --film=path: capture the bottom-centre of the real screen every 110 ms while the pointer sweeps in and out
+  // (bottom dock only), stacked into one image
+  const film = process.argv.find((a) => a.startsWith('--film='))?.slice(7)
+  if (film) {
+    const script = `Add-Type -AssemblyName System.Windows.Forms,System.Drawing
+Add-Type -MemberDefinition '[DllImport("user32.dll")] public static extern bool SetProcessDPIAware();' -Name W -Namespace D
+[D.W]::SetProcessDPIAware() | Out-Null
+$n = 14; $w = 1000; $h = 150
+$sheet = New-Object System.Drawing.Bitmap $w, ($h * $n)
+$g = [System.Drawing.Graphics]::FromImage($sheet)
+$b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+for ($i = 0; $i -lt $n; $i++) {
+  $g.CopyFromScreen([int](($b.Width - $w) / 2), $b.Height - $h - 60, 0, $i * $h, (New-Object System.Drawing.Size $w, $h))
+  Start-Sleep -Milliseconds 110
+}
+$sheet.Save('${film}')`
+    spawn('powershell', ['-NoProfile', '-Command', script], { stdio: 'ignore' })
+    await sleep(600)
+  }
   const move = (x, y) => send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: horizontal ? x : y, y: horizontal ? y : x })
   const first = centres[0]
   const last = centres[centres.length - 1]
@@ -114,7 +132,7 @@ $bmp.Save('${shot}')`
   }
   await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: -50, y: -50 })
   await sleep(900)
-  const rec = await evaluate('JSON.stringify({ t: window.__rec.t, sizes: window.__rec.sizes, violations: window.__rec.violations })')
+  const rec = await evaluate('JSON.stringify({ t: window.__rec.t, sizes: window.__rec.sizes, insets: window.__rec.insets })')
   const data = JSON.parse(rec)
 
   const dts = data.t.slice(1).map((t, i) => t - data.t[i]).filter((d) => d < 200)
@@ -135,20 +153,29 @@ $bmp.Save('${shot}')`
     }
     if (turns > 1) reversals++
   }
+  // The glass is drawn from the same numbers as the icons, so it must hug them with the same padding on every
+  // frame: 10 px along the dock, 8 px across it. Reported separately for pointer-in, resting and pointer-out.
+  const expected = horizontal ? [10, 10, 8, 8] : [8, 8, 10, 10]
+  const worst = (from, to) => Math.max(0, ...data.insets.slice(from, to).flatMap((row) => row.map((v, i) => Math.abs(v - expected[i]))))
+  const alignment = {
+    pointerIn: +worst(0, restFrom).toFixed(2),
+    resting: +worst(restFrom, restTo).toFixed(2),
+    pointerOut: +worst(restTo, data.insets.length).toFixed(2),
+  }
   const report = {
     position,
     frames: data.t.length,
     frameMs: { median: +pct(0.5).toFixed(1), p95: +pct(0.95).toFixed(1), max: +dts[dts.length - 1].toFixed(1) },
     peakIconPx: +peak.toFixed(1),
     jitterReversalsWhileResting: reversals,
-    framesWithIconOutsideGlass: data.violations,
+    glassAlignmentMaxErrorPx: alignment,
   }
   console.log(JSON.stringify(report))
   const failures = []
   if (report.frameMs.p95 > 25) failures.push('p95 frame time above 25 ms')
   if (reversals > 0) failures.push('icons jitter while the pointer rests')
   if (report.peakIconPx > 84.5) failures.push('icons overshoot the configured magnified size')
-  if (report.framesWithIconOutsideGlass > 0) failures.push('icons poke out of the glass')
+  for (const [phase, err] of Object.entries(alignment)) if (err >= 1) failures.push(`glass drifts from the icons while ${phase} (${err}px)`)
   ws.close()
   if (failures.length) {
     console.error('FAILED:', failures.join('; '))

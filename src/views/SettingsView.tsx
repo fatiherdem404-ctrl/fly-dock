@@ -101,8 +101,8 @@ function DisplayTab({ s, set }: { s: DockSettings; set: Update }) {
       <Field label="Monitör" hint="Birden çok monitörde her birine bir dock konabilir">
         <Select value={current} options={monitorOptions} onChange={(v) => set({ monitor: v === 'primary' || v === 'all' ? v : Number(v) })} />
       </Field>
-      <Field label="Arka plan malzemesi" hint="Windows 11: sistemin bulanık cam efekti">
-        <Select value={s.material} onChange={(material) => set({ material })} options={[['none', 'Tema camı'], ['acrylic', 'Akrilik'], ['mica', 'Mica']]} />
+      <Field label="Arka plan malzemesi" hint="Tema camı ikonlarla birebir hareket eder. Akrilik/Mica sistemin gerçek bulanıklığıdır ama ayrı bir pencere olduğu için sabit durur">
+        <Select value={s.material} onChange={(material) => set({ material })} options={[['none', 'Tema camı (önerilen)'], ['acrylic', 'Akrilik (deneysel)'], ['mica', 'Mica (deneysel)']]} />
       </Field>
     </>
   )

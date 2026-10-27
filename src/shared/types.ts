@@ -103,7 +103,7 @@ export interface Persisted {
   widgets: WidgetInstance[]
 }
 
-export const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = 4
 
 export const DEFAULT_SETTINGS: DockSettings = {
   position: 'bottom',
@@ -115,7 +115,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   autoHideDelayMs: 600,
   hideInFullscreen: true,
   monitor: 'primary',
-  material: 'acrylic',
+  material: 'none',
   theme: 'glass-dark',
   iconPack: '',
   animationCurve: 'spring',
@@ -145,7 +145,6 @@ export interface InvokeMap {
   'trash:drop': { args: [paths: string[]]; result: void }
   'menu:show': { args: [payload: { kind: 'empty' | 'icon'; itemId?: string }]; result: void }
   'dock:layout': { args: [layout: { main: number; cross: number; shelfMain: number; shelfCross: number }]; result: void }
-  'dock:surface': { args: [surface: { start: number; length: number; thickness: number }]; result: void }
   'dock:state': { args: []; result: { hidden: boolean } }
   'stack:list': { args: [id: string]; result: StackEntry[] }
   'stack:open': { args: [path: string]; result: void }

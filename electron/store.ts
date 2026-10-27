@@ -22,10 +22,10 @@ function migrate() {
     store.set('items', sorted.map(({ order: _order, ...rest }) => rest as DockItem))
     store.set('widgets', [])
   }
-  if (version < 3) {
-    // The flat translucent surface cannot blur anything on a transparent window; acrylic is the real glass.
+  if (version >= 3 && version < 4) {
+    // Version 3 switched everyone to a system-drawn shelf that had to chase the icons from another window.
     const settings = store.get('settings')
-    if (settings.material === 'none') store.set('settings', { ...settings, material: 'acrylic' })
+    if (settings.material === 'acrylic') store.set('settings', { ...settings, material: 'none' })
   }
   // Fill settings added since the file was written.
   store.set('settings', { ...DEFAULT_SETTINGS, ...store.get('settings') })
