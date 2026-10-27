@@ -175,6 +175,11 @@ export default function Dock({ items, settings, running, icons, launching, hidde
     if (locked && !overTrash) return
     e.preventDefault()
     e.dataTransfer.dropEffect = dragging ? 'move' : 'copy'
+    const overGroup = !!(e.target as HTMLElement).closest('[data-item-type="group"]')
+    if (overGroup) {
+      track(e)
+      return setInsertAt(null)
+    }
     track(e)
     setInsertAt(overTrash ? null : insertionIndex(mainCoord(e) - restStart))
   }
@@ -186,6 +191,7 @@ export default function Dock({ items, settings, running, icons, launching, hidde
     setInsertAt(null)
     const target = (e.target as HTMLElement).closest('[data-item-type]') as HTMLElement | null
     const overTrash = target?.dataset.itemType === 'trash'
+    const overGroup = target?.dataset.itemType === 'group' ? target.dataset.itemId : undefined
     const internal = e.dataTransfer.getData(DRAG_TYPE)
     if (internal) {
       setDragging(null)
@@ -204,6 +210,7 @@ export default function Dock({ items, settings, running, icons, launching, hidde
       .filter(Boolean)
     if (!paths.length) return
     if (overTrash) invoke('trash:drop', paths)
+    else if (overGroup) invoke('group:add', overGroup, paths)
     else if (!locked) invoke('items:add-paths', paths, at)
   }
 

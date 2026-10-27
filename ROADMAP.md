@@ -72,3 +72,18 @@ Bulunan ve düzeltilenler: ikonlar dikey ters çiziliyordu (kabuk bitmap'i altta
 Yeni: çalışan ama sabitlenmemiş programlar ayraçtan sonra geçici simge olarak görünür ("Dock'ta tut" ile sabitlenir).
 Otomatik kontroller: `npm test` (paket doğrulama, fizik), `npm run e2e` (14 uçtan uca senaryo), `npm run perf <konum>` (kare süresi, titreme, taşma; 4 konumda geçiyor).
 Hâlâ elle denenmesi gereken: gerçek fareyle dosya sürükle-bırak (Explorer'dan), kısayol tuşları, çok monitör.
+
+## v1.5 — Dock tamamlama
+| # | Madde | Durum |
+|---|---|---|
+| ✅ 1.5.1 | Tek dock: ikinci başlatma yenisini açmaz, ayarlar penceresini öne getirir (e2e ile doğrulandı). Windows ile başlat: kurulu sürümde çalışır, geliştirme çalıştırmasında kapalı gösterilir | tamam |
+| ✅ 1.5.2 | Konum: 4 kenar seçici, kenara uzaklık ve kenar boyunca yer kaydırıcıları, monitör seçimi (e2e ile pencere konumu doğrulandı) | tamam |
+| ✅ 1.5.3 | Büyüme ayarları: simge boyutu, en büyük ölçek, yayılma, 4 etki eğrisi, simge aralığı; raf büyümesi ve raf kalınlığı ayrı | tamam |
+| ✅ 1.5.4 | Animasyon kütüphanesi: hız (hızlı/orta/yavaş/özel), hareket tipi, fare üzerine (büyüme/yükselme/dalga), başlatma (sıçrama/atlama/ışık atımı), gösterge stili (4), dock giriş/çıkış (3), pencere açılış (4) | tamam |
+| ✅ 1.5.5 | Dock pencereleri: klasör yığını ve uygulama grubu; boyut küçük/orta/tam ekran/özel; kaydırma ve temalı kaydırma çubuğu; simgeden büyüyerek açılma, kapanma; Esc ve dışarı tıklama | tamam |
+| ✅ 1.5.6 | Bağlam menüsü: cam stilli kendi penceresi, her satırda ikon, açılış animasyonu | tamam |
+| ✅ 1.5.7 | Raf kütüphanesi: 10 stil (düz cam, 3B cam, ahşap, metal, mermer, neon, kristal, mat siyah, yansımalı, tuğla), renk, saydamlık, 3B derinlik, önizleme kartları | tamam |
+| ✅ 1.5.8 | Ayarlar arayüzü baştan: kartlı bölümler, canlı önizleme, animasyonlu geçişler, tutarlı jetonlar | tamam |
+| ✅ 1.5.9 | Ek ayarlar: etiket modu/boyut/yazı tipi, kilitle, tam ekranda gizle, çalışan program göstergesi, yedekle/geri yükle, kısayol tuşları | tamam |
+
+Sınırlar: akrilik/Mica ayrı bir sistem penceresi olduğu için sabit durur (tema rafı simgelerle birebir hareket eder). Raf stillerinin 3B görünümü CSS perspektifidir, gerçek 3B değildir.

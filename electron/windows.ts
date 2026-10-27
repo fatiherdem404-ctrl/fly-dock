@@ -9,7 +9,7 @@ const devUrl = process.env.VITE_DEV_SERVER_URL
  * rendering (hidden ones would not run animation frames) but sit far off-screen.
  */
 export const HEADLESS = process.env.FLY_DOCK_HEADLESS === '1'
-export const OFFSCREEN = HEADLESS ? 30000 : 0
+export const OFFSCREEN = HEADLESS ? 15000 : 0
 
 /** Loads the single renderer bundle at a hash route such as /dock, /settings or /widget/abc. */
 export function loadRoute(win: BrowserWindow, route: string) {

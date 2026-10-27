@@ -20,7 +20,7 @@ Working today (skeleton):
 - Folder stacks, global shortcuts, multi-monitor, Win11 acrylic/mica
 - Desktop widgets: clock, weather, CPU/RAM/disk, media keys, calendar
 - JSON themes and icon packs (`.flypack`, import/export, validated)
-- Settings window
+- Settings window with live preview, 10 desk styles, animation library, backup and restore
 
 Planned: wallpapers, live backgrounds, sound packs, community pack sharing. See [ROADMAP.md](ROADMAP.md).
 

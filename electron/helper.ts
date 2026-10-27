@@ -34,6 +34,8 @@ interface Pending {
 }
 
 function helperPath(): string {
+  // tests can point at a separately built helper (the normal one stays locked while a dock is running)
+  if (process.env.FLY_DOCK_HELPER_DIR) return path.join(process.env.FLY_DOCK_HELPER_DIR, 'dock-helper.exe')
   const base = app.isPackaged ? path.join(process.resourcesPath, 'helper') : path.join(app.getAppPath(), 'helper', 'bin')
   return path.join(base, 'dock-helper.exe')
 }

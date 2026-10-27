@@ -20,7 +20,7 @@
 - Klasör yığınları, genel kısayollar, çok monitör, Win11 akrilik/mica
 - Masaüstü widget'ları: saat, hava durumu, CPU/RAM/disk, medya tuşları, takvim
 - JSON temalar ve simge paketleri (`.flypack`, içe/dışa aktarma, doğrulamalı)
-- Ayarlar penceresi
+- Canlı önizlemeli ayarlar penceresi, 10 raf stili, animasyon kütüphanesi, yedekle ve geri yükle
 
 Planlananlar: duvar kağıtları, canlı arka planlar, ses paketleri, topluluk paketleri. Bkz. [ROADMAP.md](ROADMAP.md).
 

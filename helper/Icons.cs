@@ -41,7 +41,7 @@ internal static class Icons
                 else if (link.target.Length > 0 && (File.Exists(link.target) || Directory.Exists(link.target))) target = link.target;
             }
         }
-        using var bmp = Fetch(target, size) ?? (target != path ? Fetch(path, size) : null);
+        using var bmp = Fetch(target, size) ?? (target != path ? Fetch(path, size) : null) ?? FileTypeIcon(path);
         if (bmp == null) return null;
         using var ms = new MemoryStream();
         bmp.Save(ms, ImageFormat.Png);
@@ -64,6 +64,25 @@ internal static class Icons
             finally { Native.DeleteObject(hbmp); }
         }
         catch (Exception e) { Console.Error.WriteLine(e); return null; }
+    }
+
+    /// Generic icon for the file type, for items the shell cannot parse as a file (entries of the Fonts folder, deleted targets).
+    static Bitmap? FileTypeIcon(string path)
+    {
+        try
+        {
+            var info = new Native.SHFILEINFO();
+            // 0x100 ICON | 0x0 LARGE | 0x10 USEFILEATTRIBUTES: look the type up by extension without touching the file
+            var ok = Native.SHGetFileInfo(path, 0x80, ref info, (uint)Marshal.SizeOf<Native.SHFILEINFO>(), 0x100 | 0x10);
+            if (ok == IntPtr.Zero || info.hIcon == IntPtr.Zero) return null;
+            try
+            {
+                using var icon = Icon.FromHandle(info.hIcon);
+                return new Bitmap(icon.ToBitmap());
+            }
+            finally { Native.DestroyIcon(info.hIcon); }
+        }
+        catch { return null; }
     }
 
     /// Reads the pixels top-down through GetDIBits: the raw bits of a shell bitmap may be stored bottom-up,

@@ -9,6 +9,10 @@ import { join } from 'node:path'
 import electronPath from 'electron'
 
 const position = process.argv.find((a) => ['bottom', 'top', 'left', 'right'].includes(a)) ?? 'bottom'
+// --setting=key:value overrides, e.g. --setting=deskStyle:wood --setting=deskDepth:26
+const extraSettings = Object.fromEntries(
+  process.argv.filter((a) => a.startsWith('--setting=')).map((a) => a.slice(10).split(':')).map(([k, v]) => [k, v === 'true' ? true : v === 'false' ? false : Number.isNaN(Number(v)) ? v : Number(v)]),
+)
 const profile = mkdtempSync(join(tmpdir(), 'dock-perf-'))
 const win = (p) => p.replaceAll('/', String.fromCharCode(92))
 const app = (name, p) => ({ id: name, type: 'app', targetPath: win(p), label: name })
@@ -24,7 +28,7 @@ writeFileSync(
       app('cmd', 'C:/Windows/System32/cmd.exe'),
       { id: 'trash', type: 'trash' },
     ],
-    settings: { position, material: 'none', theme: 'glass-dark' },
+    settings: { position, material: 'none', theme: 'glass-dark', ...extraSettings },
     widgets: [],
   }),
 )

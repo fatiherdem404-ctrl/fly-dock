@@ -1,6 +1,6 @@
 // Types shared by the main process, the preload bridge and every renderer view.
 
-export type DockItemType = 'app' | 'file' | 'folder' | 'stack' | 'separator' | 'trash'
+export type DockItemType = 'app' | 'file' | 'folder' | 'stack' | 'group' | 'separator' | 'trash'
 
 export interface DockItem {
   id: string
@@ -12,6 +12,17 @@ export interface DockItem {
   label?: string
   /** Global shortcut (Electron accelerator syntax) that launches or focuses this item. */
   hotkey?: string
+  /** For a group: the programs and files it holds. */
+  children?: string[]
+}
+
+export interface MenuItemView {
+  label?: string
+  icon?: string
+  separator?: boolean
+  checked?: boolean
+  danger?: boolean
+  disabled?: boolean
 }
 
 export type DockPosition = 'bottom' | 'top' | 'left' | 'right'
@@ -221,6 +232,11 @@ export interface InvokeMap {
   'dock:layout': { args: [layout: { main: number; cross: number; shelfMain: number; shelfCross: number }]; result: void }
   'dock:state': { args: []; result: { hidden: boolean } }
   'stack:list': { args: [id: string]; result: StackEntry[] }
+  'stack:close': { args: []; result: void }
+  'group:add': { args: [id: string, paths: string[]]; result: DockItem[] }
+  'menu:items': { args: []; result: MenuItemView[] }
+  'menu:pick': { args: [index: number]; result: void }
+  'menu:close': { args: []; result: void }
   'stack:open': { args: [path: string]; result: void }
   'stack:show': { args: [id: string, anchor: { x: number; y: number }]; result: void }
   'themes:list': { args: []; result: PackInfo[] }

@@ -16,6 +16,7 @@ writeFileSync(
     items: [
       { id: 'explorer', type: 'app', targetPath: win(`${windir}/explorer.exe`), label: 'explorer', order: 0 },
       { id: 'dl', type: 'folder', targetPath: win(`${windir}/System32`), label: 'System32', order: 1 },
+      { id: 'grp', type: 'group', label: 'Group', children: [win(`${windir}/System32/notepad.exe`), win(`${windir}/System32/calc.exe`)], order: 2 },
       { id: 'trash', type: 'trash', order: 999 },
     ],
     settings: { material: 'none' },
@@ -126,12 +127,65 @@ try {
     stack.ws.close()
   })
 
+  await check('an app group lists its children and accepts dropped files', async () => {
+    const before = await invoke('stack:list', 'grp')
+    assert.equal(before.length, 2)
+    const items = await invoke('group:add', 'grp', [win(`${windir}/System32/cmd.exe`), win(`${windir}/System32/calc.exe`)])
+    assert.equal(items.find((i) => i.id === 'grp').children.length, 3, 'duplicates are ignored')
+  })
+
+  await check('the stack window closes on Escape after its closing animation', async () => {
+    await invoke('stack:show', 'grp', { x: 800, y: 900 })
+    const page = await until(async () => (await pages()).find((p) => p.url.includes('#/stack/grp')), 'group window')
+    const conn = await connect(page)
+    await until(async () => conn.call("!!document.querySelector('.stack')"), 'stack rendered')
+    await sleep(300) // listeners attach right after the first render
+    await conn.call("window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))")
+    await until(async () => !(await pages()).some((p) => p.url.includes('#/stack/grp')), 'stack closed', 20)
+    conn.ws.close()
+  })
+
+  await check('the context menu opens with icons and runs the picked entry', async () => {
+    await invoke('menu:show', { kind: 'icon', itemId: 'explorer' })
+    const page = await until(async () => (await pages()).find((p) => p.url.includes('#/menu')), 'menu window')
+    const conn = await connect(page)
+    const count = await until(async () => conn.call("document.querySelectorAll('.menu__item svg').length"), 'menu entries')
+    assert.ok(count >= 5, `every entry has an icon (got ${count})`)
+    await conn.call("document.querySelector('.menu__item').click()")
+    await until(async () => !(await pages()).some((p) => p.url.includes('#/menu')), 'menu closed', 20)
+    conn.ws.close()
+  })
+
+  await check('a second launch does not open a second dock', async () => {
+    const second = spawn(electronPath, ['.', `--user-data-dir=${profile}`], { stdio: 'ignore', env: { ...process.env, FLY_DOCK_HEADLESS: '1' } })
+    const code = await new Promise((resolve) => { second.on('exit', resolve); setTimeout(() => resolve('still running'), 12000) })
+    if (code === 'still running') spawn('taskkill', ['/T', '/F', '/PID', String(second.pid)], { stdio: 'ignore' })
+    assert.notEqual(code, 'still running', 'the second instance exits by itself')
+    const docks = (await pages()).filter((p) => p.url.includes('#/dock'))
+    assert.equal(docks.length, 1)
+  })
+
   await check('moving the dock to the left resizes its window to a tall, narrow shape', async () => {
     await invoke('settings:update', { position: 'left' })
     await sleep(800)
     const size = await dock.call('({ w: innerWidth, h: innerHeight })')
     assert.ok(size.h > size.w, `expected portrait window, got ${size.w}x${size.h}`)
     await invoke('settings:update', { position: 'bottom' })
+  })
+
+  await check('edge offset and position along the edge move the dock window', async () => {
+    const at = async (settings) => {
+      await invoke('settings:update', settings)
+      await sleep(500)
+      return dock.call('({ x: window.screenX, y: window.screenY, w: window.outerWidth, h: window.outerHeight })')
+    }
+    const start = await at({ alignment: 0, edgeOffset: 6 })
+    const end = await at({ alignment: 100 })
+    assert.ok(end.x - start.x > 200, `sliding along the edge moves the window (${start.x} -> ${end.x})`)
+    const near = await at({ alignment: 50, edgeOffset: 6 })
+    const far = await at({ edgeOffset: 120 })
+    assert.ok(near.y + near.h - (far.y + far.h) >= 100, 'a bigger offset lifts the dock off the bottom edge')
+    await at({ alignment: 50, edgeOffset: 6 })
   })
 
   await check('widgets can be added, render and be removed', async () => {

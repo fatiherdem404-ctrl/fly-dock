@@ -53,3 +53,9 @@ Toplam kabaca 4-6 hafta yarı zamanlı.
 4. Lisans: GPLv3 mü MIT mi?
 5. İsim: "RocketDock Pro" kalsın mı, yeni isim mi?
 6. Bağış platformu: Ko-fi mi GitHub Sponsors mı?
+
+
+## Güncel durum (2026-10-27, v1.5)
+Yazılanlar ve doğrulananlar için ROADMAP.md sonundaki "v1 düzeltme turu" ve "v1.5 — Dock tamamlama" bölümlerine bak.
+Otomatik kontroller: `npm test`, `npm run e2e` (19 senaryo), `npm run perf <konum>`, `node scripts/shot-page.mjs <ayarlar|stack|menu> <dosya.png>`.
+Elle denenmesi gerekenler: Explorer'dan gerçek fareyle sürükle-bırak, kısayol tuşları, çok monitör, Windows ile başlat (kurulu sürüm).

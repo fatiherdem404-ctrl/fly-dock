@@ -155,17 +155,39 @@ export function replaceItems(next: DockItem[]): DockItem[] {
   return commit(cleaned)
 }
 
+export function createGroup(): DockItem[] {
+  const items = [...getItems()]
+  const trashAt = items.findIndex((i) => i.type === 'trash')
+  items.splice(trashAt >= 0 ? trashAt : items.length, 0, { id: crypto.randomUUID(), type: 'group', label: 'Grup', children: [] })
+  return commit(items)
+}
+
+export function addToGroup(id: string, paths: string[]): DockItem[] {
+  return commit(
+    getItems().map((i) => {
+      if (i.id !== id || i.type !== 'group') return i
+      const have = new Set((i.children ?? []).map((p) => p.toLowerCase()))
+      return { ...i, children: [...(i.children ?? []), ...paths.filter((p) => !have.has(p.toLowerCase()))] }
+    }),
+  )
+}
+
+export function removeFromGroup(id: string, target: string): DockItem[] {
+  return commit(getItems().map((i) => (i.id === id && i.type === 'group' ? { ...i, children: (i.children ?? []).filter((p) => p !== target) } : i)))
+}
+
 export function openRecycleBin() {
   spawn('explorer.exe', ['shell:RecycleBinFolder'], { detached: true, stdio: 'ignore' }).unref()
 }
 
 export async function activateItem(id: string, onStack: (item: DockItem) => void) {
   const item = visibleItems().find((i) => i.id === id)
-  if (!item?.targetPath && item?.type !== 'trash') return
+  if (!item?.targetPath && item?.type !== 'trash' && item?.type !== 'group') return
   switch (item!.type) {
     case 'trash':
       return openRecycleBin()
     case 'stack':
+    case 'group':
       return onStack(item!)
     case 'app': {
       const wins = windowsOf(item!)

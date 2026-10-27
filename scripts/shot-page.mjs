@@ -49,6 +49,7 @@ try {
   if (!page) throw new Error('app did not start')
   const dock = await connect(page)
   if (route.includes('settings')) await dock.evaluate("window.api.invoke('app:open-settings')")
+  if (route.includes('menu')) await dock.evaluate("window.api.invoke('menu:show', { kind: 'icon', itemId: 'folder' })")
   if (route.includes('stack')) await dock.evaluate("window.api.invoke('stack:show', 'folder', { x: 900, y: 800 })")
   let target
   for (let i = 0; i < 40 && !target; i++) {

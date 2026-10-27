@@ -26,6 +26,7 @@ export async function iconForItem(item: DockItem): Promise<string | null> {
     if (fromPack) return fromPack
   }
   if (item.type === 'trash') return shellIcon('shell:RecycleBinFolder', 128, trashFull ? 'full' : 'empty')
+  if (item.type === 'group') return shellIcon(process.env.SystemRoot ?? 'C:/Windows')
   if (item.targetPath) return shellIcon(item.targetPath)
   return null
 }

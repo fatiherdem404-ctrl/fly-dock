@@ -52,6 +52,15 @@ internal static class Native
     [DllImport("gdi32.dll")] public static extern int GetObject(IntPtr h, int size, out BITMAP bmp);
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     public static extern int SHCreateItemFromParsingName(string path, IntPtr pbc, ref Guid riid, out IntPtr ppv);
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr SHGetFileInfo(string path, uint attrs, ref SHFILEINFO info, uint size, uint flags);
+    [DllImport("user32.dll")] public static extern bool DestroyIcon(IntPtr icon);
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    public struct SHFILEINFO
+    {
+        public IntPtr hIcon; public int iIcon; public uint dwAttributes;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string szDisplayName;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)] public string szTypeName;
+    }
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)] public static extern int SHQueryRecycleBin(string? root, ref SHQUERYRBINFO info);
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)] public static extern int SHEmptyRecycleBin(IntPtr hwnd, string? root, uint flags);
 

@@ -7,7 +7,7 @@ import { handle, broadcast } from './ipc'
 import { helper } from './helper'
 import {
   setSnapshot, runningState, addPaths, addSeparator, removeItem, updateItem, replaceItems,
-  activateItem, openRecycleBin, launchAtLogin, loginEnabled, onItemsChanged, visibleItems, isRunningItem, broadcastItems,
+  activateItem, openRecycleBin, launchAtLogin, loginEnabled, onItemsChanged, visibleItems, isRunningItem, broadcastItems, createGroup, addToGroup,
 } from './items'
 import { iconForItem, setTrashState } from './icons'
 import { shellIcon } from './iconService'
@@ -16,6 +16,8 @@ import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN } from './windows'
 import {
   importPackDialog, exportPackDialog, listThemes, listInstalled, builtinThemeInfos, getTheme, removePack, clearPackCaches,
 } from './packs'
+import { showStack, closeStack, readEntries } from './stackWindow'
+import { popupMenu, menuItemsForRenderer, pickMenuItem, closeMenu, MenuSpec } from './contextMenu'
 import { initWidgets, addWidget, removeWidget, updateWidget, moveWidget, systemStats, weatherFor, nowPlaying, disposeWidgets } from './widgets'
 import type { DockItem, DockSettings, StackEntry } from '../src/shared/types'
 
@@ -25,7 +27,6 @@ app.commandLine.appendSwitch('disable-renderer-backgrounding')
 
 let tray: Tray | null = null
 let settingsWindow: BrowserWindow | null = null
-let stackWindow: BrowserWindow | null = null
 
 // ---- windows: settings and stack popup ----
 
@@ -51,52 +52,6 @@ function openSettings() {
   loadRoute(settingsWindow, '/settings')
   settingsWindow.on('closed', () => {
     settingsWindow = null
-  })
-}
-
-function readStack(item: DockItem): StackEntry[] {
-  if (!item.targetPath) return []
-  try {
-    return fs
-      .readdirSync(item.targetPath, { withFileTypes: true })
-      .filter((d) => !d.name.startsWith('.') && !/^(desktop\.ini|thumbs\.db)$/i.test(d.name))
-      .map((d) => ({ name: d.name, path: path.join(item.targetPath!, d.name), isDirectory: d.isDirectory() }))
-      .sort((a, b) => Number(b.isDirectory) - Number(a.isDirectory) || a.name.localeCompare(b.name))
-      .slice(0, 60)
-  } catch {
-    return []
-  }
-}
-
-function showStack(item: DockItem, anchor: { x: number; y: number }) {
-  stackWindow?.destroy()
-  const count = readStack(item).length
-  const cols = Math.min(Math.max(count, 1), 4)
-  const rows = Math.ceil(Math.max(count, 1) / cols)
-  const width = cols * 88 + 28
-  const height = Math.min(rows * 96 + 28, 480)
-  const display = screen.getDisplayNearestPoint(anchor)
-  const wa = display.workArea
-  const { position } = getSettings()
-  let x = anchor.x - width / 2
-  let y = anchor.y - height - 10
-  if (position === 'top') y = anchor.y + 10
-  if (position === 'left') { x = anchor.x + 10; y = anchor.y - height / 2 }
-  if (position === 'right') { x = anchor.x - width - 10; y = anchor.y - height / 2 }
-  x = Math.min(Math.max(x, wa.x + 4), wa.x + wa.width - width - 4)
-  y = Math.min(Math.max(y, wa.y + 4), wa.y + wa.height - height - 4)
-
-  stackWindow = new BrowserWindow({
-    x: Math.round(x) - OFFSCREEN, y: Math.round(y), width, height,
-    frame: false, transparent: true, hasShadow: false, resizable: false, skipTaskbar: true, alwaysOnTop: true,
-    show: false, webPreferences: baseWebPreferences(),
-  })
-  stackWindow.setAlwaysOnTop(true, 'screen-saver')
-  loadRoute(stackWindow, `/stack/${item.id}`)
-  stackWindow.once('ready-to-show', () => stackWindow?.show())
-  stackWindow.on('blur', () => stackWindow?.destroy())
-  stackWindow.on('closed', () => {
-    stackWindow = null
   })
 }
 
@@ -155,47 +110,50 @@ function applySettings(partial: Partial<DockSettings>): DockSettings {
   return next
 }
 
-function showMenu(e: Electron.IpcMainInvokeEvent, payload: { kind: 'empty' | 'icon'; itemId?: string }) {
-  const template: MenuItemConstructorOptions[] = []
+function showMenu(_e: Electron.IpcMainInvokeEvent, payload: { kind: 'empty' | 'icon'; itemId?: string }) {
+  const specs: MenuSpec[] = []
+  const add = (label: string, icon: string, action: () => void, extra: Partial<MenuSpec> = {}) => specs.push({ label, icon, action, ...extra })
+  const separator = () => specs.push({ separator: true })
   const item = payload.itemId ? visibleItems().find((i) => i.id === payload.itemId) : undefined
+  const locked = getSettings().lockItems
 
   if (payload.kind === 'icon' && item && isRunningItem(item.id)) {
-    template.push(
-      { label: "Dock'ta tut", click: () => addPaths([item.targetPath!], getItems().length) },
-      { label: 'Pencereyi kapat', click: () => closeWindowsOf(item) },
-    )
-  } else if (payload.kind === 'icon' && item) {
+    add('Aç', 'open', () => activateItem(item.id, showStackAtCursor))
+    add("Dock'ta tut", 'pin', () => addPaths([item.targetPath!], getItems().length), { disabled: locked })
+    add('Pencereyi kapat', 'close', () => closeWindowsOf(item))
+  } else if (payload.kind === 'icon' && item && item.type !== 'separator') {
     if (item.type === 'trash') {
-      template.push({ label: 'Aç', click: openRecycleBin }, { label: 'Çöp kutusunu boşalt', click: () => helper.emptyTrash().catch(() => {}) })
-    } else if (item.type !== 'separator') {
-      template.push({ label: 'Aç', click: () => activateItem(item.id, showStackAtCursor) })
-      if (item.type === 'app') {
-        template.push({ label: 'Çalışan pencereyi kapat', click: () => closeWindowsOf(item) })
-      }
-      if (item.type === 'folder') template.push({ label: 'Yığın olarak göster', click: () => updateItem(item.id, { type: 'stack' }) })
-      if (item.type === 'stack') template.push({ label: 'Klasör olarak göster', click: () => updateItem(item.id, { type: 'folder' }) })
-      if (item.targetPath) template.push({ label: 'Konumunu göster', click: () => shell.showItemInFolder(item.targetPath!) })
-      template.push(
-        { type: 'separator' },
-        { label: 'Simge değiştir…', click: () => pickIconFor(item.id) },
-        ...(item.customIconPath ? [{ label: 'Simgeyi sıfırla', click: () => updateItem(item.id, { customIconPath: undefined }) }] : []),
-      )
+      add('Aç', 'open', openRecycleBin)
+      add('Çöp kutusunu boşalt', 'trash', () => helper.emptyTrash().catch(() => {}), { danger: true })
+    } else {
+      add('Aç', 'open', () => activateItem(item.id, showStackAtCursor))
+      if (item.type === 'app') add('Çalışan pencereyi kapat', 'close', () => closeWindowsOf(item))
+      if (item.type === 'folder') add('Yığın olarak göster', 'stack', () => updateItem(item.id, { type: 'stack' }))
+      if (item.type === 'stack') add('Klasör olarak göster', 'folder', () => updateItem(item.id, { type: 'folder' }))
+      if (item.type === 'group') add('Gruba ekle…', 'plus', () => pickForGroup(item.id))
+      if (item.targetPath) add('Konumunu göster', 'location', () => shell.showItemInFolder(item.targetPath!))
+      separator()
+      add('Simge değiştir…', 'image', () => pickIconFor(item.id))
+      if (item.customIconPath) add('Simgeyi sıfırla', 'refresh', () => updateItem(item.id, { customIconPath: undefined }))
+      add("Dock'tan kaldır", 'trash', () => removeItem(item.id), { danger: true, disabled: locked })
     }
-    if (item.type !== 'trash') template.push({ label: 'Dock\'tan kaldır', click: () => removeItem(item.id) })
   } else {
-    template.push(
-      { label: 'Program ekle…', click: () => pickAndAdd(['openFile'], [{ name: 'Programlar', extensions: ['exe', 'lnk'] }]) },
-      { label: 'Klasör ekle…', click: () => pickAndAdd(['openDirectory']) },
-      { label: 'Ayraç ekle', click: addSeparator },
-    )
+    add('Program ekle…', 'plus', () => pickAndAdd(['openFile'], [{ name: 'Programlar', extensions: ['exe', 'lnk'] }]), { disabled: locked })
+    add('Klasör ekle…', 'folder', () => pickAndAdd(['openDirectory']), { disabled: locked })
+    add('Yeni grup', 'group', () => createGroup(), { disabled: locked })
+    add('Ayraç ekle', 'minus', addSeparator, { disabled: locked })
   }
-  template.push(
-    { type: 'separator' },
-    { label: 'Ayarlar', click: openSettings },
-    { label: 'Otomatik gizle', type: 'checkbox', checked: getSettings().autoHide, click: (m) => applySettings({ autoHide: m.checked }) },
-    { label: 'Çıkış', click: () => app.quit() },
-  )
-  Menu.buildFromTemplate(template).popup({ window: BrowserWindow.fromWebContents(e.sender) ?? undefined })
+  separator()
+  add('Ayarlar', 'settings', openSettings)
+  add('Otomatik gizle', 'eyeOff', () => applySettings({ autoHide: !getSettings().autoHide }), { checked: getSettings().autoHide })
+  add('Simgeleri kilitle', 'lock', () => applySettings({ lockItems: !locked }), { checked: locked })
+  add('Çıkış', 'power', () => app.quit(), { danger: true })
+  popupMenu(specs)
+}
+
+async function pickForGroup(id: string) {
+  const result = await dialog.showOpenDialog({ properties: ['openFile', 'multiSelections'] })
+  if (!result.canceled && result.filePaths.length) addToGroup(id, result.filePaths)
 }
 
 async function closeWindowsOf(item: DockItem) {
@@ -245,17 +203,22 @@ function registerIpc() {
   handle('dock:state', () => ({ hidden: isDockHidden() }))
 
   handle('stack:list', (_e, id) => {
-    const item = getItems().find((i) => i.id === id)
-    return item ? readStack(item) : []
+    const item = visibleItems().find((i) => i.id === id)
+    return item ? readEntries(item) : []
   })
   handle('stack:open', async (_e, target) => {
-    stackWindow?.destroy()
+    closeStack()
     await shell.openPath(target)
   })
+  handle('stack:close', () => closeStack())
   handle('stack:show', (_e, id, anchor) => {
-    const item = getItems().find((i) => i.id === id)
+    const item = visibleItems().find((i) => i.id === id)
     if (item) showStack(item, anchor)
   })
+  handle('group:add', (_e, id, paths) => addToGroup(id, paths))
+  handle('menu:items', () => menuItemsForRenderer())
+  handle('menu:pick', (_e, index) => pickMenuItem(index))
+  handle('menu:close', () => closeMenu())
 
   handle('themes:list', () => listThemes())
   handle('themes:get', (_e, id) => getTheme(id))

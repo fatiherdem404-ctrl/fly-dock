@@ -27,6 +27,7 @@ export default function DockIcon({ item, style, iconSrc, running, launching, lau
       className={`dock-icon${launchClass}${dragging ? ' dock-icon--dragging' : ''}`}
       style={style}
       data-item-type={item.type}
+      data-item-id={item.id}
       data-position={position}
       draggable={!locked && item.type !== 'trash'}
       onClick={onClick}
