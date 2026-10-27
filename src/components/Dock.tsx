@@ -40,7 +40,7 @@ export default function Dock({ items, settings, runningApps, iconSrcById, onActi
 
   const runningByPath = useMemo(() => {
     const map = new Map<string, RunningApp>()
-    for (const app of runningApps) map.set(app.exePath, app)
+    for (const app of runningApps) map.set(app.exePath.toLowerCase(), app)
     return map
   }, [runningApps])
 
@@ -110,7 +110,7 @@ export default function Dock({ items, settings, runningApps, iconSrcById, onActi
               size={sizes[i]}
               transition={transition}
               iconSrc={iconSrcById[item.id]}
-              isRunning={!!(item.targetPath && runningByPath.has(item.targetPath))}
+              isRunning={!!(item.targetPath && runningByPath.has(item.targetPath.toLowerCase()))}
               onClick={() => onActivate(item)}
               onContextMenu={(e) => {
                 e.preventDefault()

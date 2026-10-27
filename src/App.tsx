@@ -30,7 +30,7 @@ export default function App() {
           .filter((i) => i.type === 'app' && i.targetPath)
           .map(async (i) => [i.id, await window.dock.resolveIcon(i.targetPath!, i.customIconPath)] as const),
       )
-      if (!cancelled) setIconSrcById(Object.fromEntries(entries))
+      if (!cancelled) setIconSrcById(Object.fromEntries(entries.filter((e): e is readonly [string, string] => !!e[1])))
     })()
     return () => {
       cancelled = true
@@ -49,7 +49,7 @@ export default function App() {
         return
       }
       if (!item.targetPath) return
-      const running = runningApps.find((a) => a.exePath === item.targetPath)
+      const running = runningApps.find((a) => a.exePath.toLowerCase() === item.targetPath!.toLowerCase())
       if (running) {
         if (running.isMinimized) window.dock.activateWindow(running.windowId)
         else window.dock.minimizeWindow(running.windowId)

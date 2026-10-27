@@ -8,4 +8,5 @@ module.exports = {
   artifactName: `${brand.slug}-\${version}-setup.\${ext}`,
   win: { target: 'nsis', icon: brand.logo.icon },
   files: ['dist', 'dist-electron'],
+  extraResources: [{ from: 'helper/bin', to: 'helper', filter: ['dock-helper.*', '*.json'] }],
 }

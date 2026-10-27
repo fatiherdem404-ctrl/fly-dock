@@ -8,7 +8,7 @@ declare global {
       getSettings: () => Promise<DockSettings>
       updateSettings: (partial: Partial<DockSettings>) => Promise<void>
       resize: (width: number, height: number) => Promise<void>
-      resolveIcon: (targetPath: string, customIconPath?: string) => Promise<string>
+      resolveIcon: (targetPath: string, customIconPath?: string) => Promise<string | null>
       getRunningApps: () => Promise<RunningApp[]>
       activateWindow: (windowId: number) => Promise<void>
       minimizeWindow: (windowId: number) => Promise<void>

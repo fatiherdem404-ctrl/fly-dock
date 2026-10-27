@@ -1,4 +1,4 @@
-# Yol Haritası
+| ✅ 0.2 |# Yol Haritası
 
 Boyutlar: **S** ≈ 1-3 gün, **M** ≈ 1 hafta, **L** ≈ 2+ hafta (yarı zamanlı).
 Kararlar: wi-dock'tan devam · C# yardımcı süreç · GPLv3 · Ko-fi · kapsamın tamamı.

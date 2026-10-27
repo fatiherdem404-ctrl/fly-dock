@@ -1,0 +1,68 @@
+// Icons come from the C# helper (shell icon at up to 256px, with alpha) and are cached on disk
+// per path + modification time, so an updated exe gets a fresh icon.
+import { app } from 'electron'
+import path from 'node:path'
+import fs from 'node:fs'
+import crypto from 'node:crypto'
+import { helper } from './helper'
+
+const CACHE_DIR = path.join(app.getPath('userData'), 'icon-cache')
+const memory = new Map<string, string>()
+
+function cacheFile(targetPath: string, size: number): string {
+  let stamp = 0
+  try {
+    stamp = fs.statSync(targetPath).mtimeMs
+  } catch {
+    /* missing file: cache by path only */
+  }
+  const hash = crypto.createHash('sha1').update(`${targetPath.toLowerCase()}|${size}|${stamp}`).digest('hex')
+  return path.join(CACHE_DIR, `${hash}.png`)
+}
+
+function toDataUrl(buf: Buffer, ext = 'png'): string {
+  return `data:image/${ext};base64,${buf.toString('base64')}`
+}
+
+/** Shell icon for any file, folder or shortcut as a data URL, or null when none could be produced. */
+export async function shellIcon(rawPath: string, size = 128): Promise<string | null> {
+  const targetPath = path.win32.normalize(rawPath)
+  const file = cacheFile(targetPath, size)
+  const hit = memory.get(file)
+  if (hit) return hit
+  if (fs.existsSync(file)) {
+    const url = toDataUrl(fs.readFileSync(file))
+    memory.set(file, url)
+    return url
+  }
+  const b64 = await helper.icon(targetPath, size).catch(() => null)
+  if (!b64) return null
+  fs.mkdirSync(CACHE_DIR, { recursive: true })
+  fs.writeFileSync(file, Buffer.from(b64, 'base64'))
+  const url = `data:image/png;base64,${b64}`
+  memory.set(file, url)
+  return url
+}
+
+export function fileIcon(filePath: string): string | null {
+  try {
+    const ext = path.extname(filePath).slice(1).toLowerCase() || 'png'
+    return toDataUrl(fs.readFileSync(filePath), ext === 'svg' ? 'svg+xml' : ext)
+  } catch {
+    return null
+  }
+}
+
+/** Priority: user override > shell icon of the target. */
+export async function resolveIcon(targetPath: string, customIconPath?: string): Promise<string | null> {
+  if (customIconPath) {
+    const custom = fileIcon(customIconPath)
+    if (custom) return custom
+  }
+  return shellIcon(targetPath)
+}
+
+export function clearIconCache() {
+  memory.clear()
+  fs.rmSync(CACHE_DIR, { recursive: true, force: true })
+}

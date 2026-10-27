@@ -7,11 +7,12 @@
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
-    "dev": "vite",
-    "build": "npm run typecheck && vite build && electron-builder --config electron-builder.config.cjs",
-    "build:unpack": "npm run typecheck && vite build && electron-builder --config electron-builder.config.cjs --dir",
+    "dev": "npm run helper:build && vite",
+    "build": "npm run typecheck && npm run helper:build && vite build && electron-builder --config electron-builder.config.cjs",
+    "build:unpack": "npm run typecheck && npm run helper:build && vite build && electron-builder --config electron-builder.config.cjs --dir",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p electron/tsconfig.json",
+    "helper:build": "node scripts/build-helper.mjs",
     "brand:check": "node scripts/check-brand.mjs",
     "brand:render": "node scripts/render-docs.mjs",
     "icon:placeholder": "node scripts/make-placeholder-icon.mjs"

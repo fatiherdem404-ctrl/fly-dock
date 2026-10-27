@@ -5,14 +5,16 @@ import crypto from 'node:crypto'
 import {
   getItems, setItems, getSettings, updateSettings, DockItem,
 } from './store'
-import { listRunningApps, activateWindow, minimizeWindow, watchRunningApps } from './windowManager'
-import { resolveIcon } from './iconExtractor'
+import { helper, HelperWindow } from './helper'
+import { resolveIcon } from './iconService'
 import brand from './brand'
 
 const isDev = !app.isPackaged
 let dockWindow: BrowserWindow | null = null
 let tray: Tray | null = null
-let stopWatchingApps: (() => void) | null = null
+
+const toRunningApp = (w: HelperWindow) => ({ windowId: w.hwnd, processId: w.pid, exePath: w.exePath, title: w.title, isMinimized: w.minimized })
+let lastWindows: HelperWindow[] = []
 
 function computeDockBounds(contentWidth: number, contentHeight: number) {
   const { position } = getSettings()
@@ -96,8 +98,10 @@ app.whenReady().then(() => {
   createDockWindow()
   createTray()
 
-  stopWatchingApps = watchRunningApps((apps) => {
-    dockWindow?.webContents.send('running-apps-changed', apps)
+  helper.start()
+  helper.on('windows', (snap: { windows: HelperWindow[] }) => {
+    lastWindows = snap.windows
+    dockWindow?.webContents.send('running-apps-changed', lastWindows.map(toRunningApp))
   })
 
   app.on('activate', () => {
@@ -106,7 +110,7 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
-  stopWatchingApps?.()
+  helper.stop()
   if (process.platform !== 'darwin') app.quit()
 })
 
@@ -123,12 +127,12 @@ ipcMain.handle('dock:resize', (_e, { width, height }: { width: number; height: n
 })
 
 ipcMain.handle('dock:resolve-icon', (_e, { targetPath, customIconPath }: { targetPath: string; customIconPath?: string }) =>
-  resolveIcon(targetPath, customIconPath),
+  resolveIcon(targetPath, customIconPath).catch(() => null),
 )
 
-ipcMain.handle('dock:get-running-apps', () => listRunningApps())
-ipcMain.handle('dock:activate-window', (_e, windowId: number) => activateWindow(windowId))
-ipcMain.handle('dock:minimize-window', (_e, windowId: number) => minimizeWindow(windowId))
+ipcMain.handle('dock:get-running-apps', () => lastWindows.map(toRunningApp))
+ipcMain.handle('dock:activate-window', (_e, windowId: number) => helper.activate(windowId))
+ipcMain.handle('dock:minimize-window', (_e, windowId: number) => helper.minimize(windowId))
 
 ipcMain.handle('dock:pick-executable', async () => {
   const result = await dialog.showOpenDialog({

@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { DockItem, DockSettings } from './store'
-import type { RunningApp } from './windowManager'
+import type { RunningApp } from '../src/types'
 
 const dockBridge = {
   getItems: (): Promise<DockItem[]> => ipcRenderer.invoke('dock:get-items'),
@@ -10,7 +10,7 @@ const dockBridge = {
 
   resize: (width: number, height: number) => ipcRenderer.invoke('dock:resize', { width, height }),
 
-  resolveIcon: (targetPath: string, customIconPath?: string): Promise<string> =>
+  resolveIcon: (targetPath: string, customIconPath?: string): Promise<string | null> =>
     ipcRenderer.invoke('dock:resolve-icon', { targetPath, customIconPath }),
 
   getRunningApps: (): Promise<RunningApp[]> => ipcRenderer.invoke('dock:get-running-apps'),
