@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import type { DockItem, DockPosition } from '@/shared/types'
+import type { DockItem, DockPosition, IndicatorStyle, LaunchAnimation } from '@/shared/types'
 
 interface DockIconProps {
   item: DockItem
@@ -7,24 +7,28 @@ interface DockIconProps {
   iconSrc?: string
   running?: { count: number; minimized: boolean }
   launching: boolean
+  launchAnimation: LaunchAnimation
+  indicator: IndicatorStyle
   position: DockPosition
-  hovered: boolean
+  showLabel: boolean
   dragging: boolean
+  locked: boolean
   onClick: () => void
   onDragStart: (e: React.DragEvent) => void
   onDragEnd: (e: React.DragEvent) => void
   onContextMenu: (e: React.MouseEvent) => void
 }
 
-export default function DockIcon({ item, style, iconSrc, running, launching, position, hovered, dragging, onClick, onDragStart, onDragEnd, onContextMenu }: DockIconProps) {
+export default function DockIcon({ item, style, iconSrc, running, launching, launchAnimation, indicator, position, showLabel, dragging, locked, onClick, onDragStart, onDragEnd, onContextMenu }: DockIconProps) {
   const label = item.label ?? (item.type === 'trash' ? 'Çöp kutusu' : '')
+  const launchClass = launching && launchAnimation !== 'none' ? ` dock-icon--launch-${launchAnimation}` : ''
   return (
     <div
-      className={`dock-icon${launching ? ' dock-icon--launching' : ''}${dragging ? ' dock-icon--dragging' : ''}`}
+      className={`dock-icon${launchClass}${dragging ? ' dock-icon--dragging' : ''}`}
       style={style}
       data-item-type={item.type}
       data-position={position}
-      draggable={item.type !== 'trash'}
+      draggable={!locked && item.type !== 'trash'}
       onClick={onClick}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
@@ -32,9 +36,9 @@ export default function DockIcon({ item, style, iconSrc, running, launching, pos
       role="button"
       aria-label={label}
     >
-      {hovered && label && <div className="dock-icon__tooltip">{label}</div>}
+      {showLabel && label && <div className="dock-icon__label">{label}</div>}
       {iconSrc ? <img className="dock-icon__image" src={iconSrc} alt="" draggable={false} /> : <div className="dock-icon__placeholder" />}
-      {running && <span className={`dock-icon__indicator${running.minimized ? ' dock-icon__indicator--dim' : ''}`} />}
+      {running && <span className={`dock-icon__indicator dock-icon__indicator--${indicator}${running.minimized ? ' dock-icon__indicator--dim' : ''}`} />}
     </div>
   )
 }

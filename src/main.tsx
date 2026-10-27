@@ -8,6 +8,7 @@ import './styles/base.css'
 import './styles/dock.css'
 import './styles/panels.css'
 import './styles/widgets.css'
+import './styles/settings.css'
 
 const route = window.location.hash.replace(/^#/, '') || '/dock'
 const [, view, param] = route.split('/')

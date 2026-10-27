@@ -2,22 +2,26 @@ import { app, BrowserWindow, Menu, Tray, nativeImage, dialog, shell, screen, glo
 import path from 'node:path'
 import fs from 'node:fs'
 import brand from './brand'
-import { getItems, getSettings, updateSettings, getWidgets } from './store'
+import { getItems, setItems, getSettings, updateSettings, getWidgets, setWidgets } from './store'
 import { handle, broadcast } from './ipc'
 import { helper } from './helper'
 import {
   setSnapshot, runningState, addPaths, addSeparator, removeItem, updateItem, replaceItems,
-  activateItem, openRecycleBin, launchAtLogin, onItemsChanged, visibleItems, isRunningItem, broadcastItems,
+  activateItem, openRecycleBin, launchAtLogin, loginEnabled, onItemsChanged, visibleItems, isRunningItem, broadcastItems,
 } from './items'
 import { iconForItem, setTrashState } from './icons'
 import { shellIcon } from './iconService'
 import { initDockWindows, syncDocks, setLayout, materialSupported, refreshShelfTint, isDockHidden, setFullscreenHidden, toggleDockVisibility, disposeDockWindows } from './dockWindows'
-import { baseWebPreferences, loadRoute } from './windows'
+import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN } from './windows'
 import {
   importPackDialog, exportPackDialog, listThemes, listInstalled, builtinThemeInfos, getTheme, removePack, clearPackCaches,
 } from './packs'
 import { initWidgets, addWidget, removeWidget, updateWidget, moveWidget, systemStats, weatherFor, nowPlaying, disposeWidgets } from './widgets'
 import type { DockItem, DockSettings, StackEntry } from '../src/shared/types'
+
+// A dock that is covered by a full-screen window (or parked off-screen in tests) must keep animating.
+app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion')
+app.commandLine.appendSwitch('disable-renderer-backgrounding')
 
 let tray: Tray | null = null
 let settingsWindow: BrowserWindow | null = null
@@ -37,6 +41,7 @@ function openSettings() {
     minWidth: 780,
     minHeight: 520,
     title: `${brand.name} — Ayarlar`,
+    show: !HEADLESS,
     backgroundColor: '#14161c',
     autoHideMenuBar: true,
     icon: path.join(app.getAppPath(), brand.logo.icon),
@@ -82,7 +87,7 @@ function showStack(item: DockItem, anchor: { x: number; y: number }) {
   y = Math.min(Math.max(y, wa.y + 4), wa.y + wa.height - height - 4)
 
   stackWindow = new BrowserWindow({
-    x: Math.round(x), y: Math.round(y), width, height,
+    x: Math.round(x) - OFFSCREEN, y: Math.round(y), width, height,
     frame: false, transparent: true, hasShadow: false, resizable: false, skipTaskbar: true, alwaysOnTop: true,
     show: false, webPreferences: baseWebPreferences(),
   })
@@ -142,7 +147,7 @@ function applySettings(partial: Partial<DockSettings>): DockSettings {
   if (partial.launchAtLogin !== undefined) launchAtLogin(next.launchAtLogin)
   if (partial.toggleHotkey !== undefined) registerHotkeys()
   if (partial.iconPack !== undefined) clearPackCaches()
-  const layoutChanged = (['position', 'monitor', 'material', 'autoHide'] as const).some((k) => k in partial && before[k] !== next[k])
+  const layoutChanged = (['position', 'monitor', 'material', 'autoHide', 'edgeOffset', 'alignment'] as const).some((k) => k in partial && before[k] !== next[k])
   if (layoutChanged) syncDocks()
   if (partial.theme !== undefined) refreshShelfTint()
   if (partial.showRunningApps !== undefined) broadcastItems()
@@ -295,8 +300,45 @@ function registerIpc() {
     const url = target === 'support' ? brand.kofiUrl : target === 'repo' ? brand.repoUrl : brand.issuesUrl
     return shell.openExternal(url)
   })
-  handle('app:info', () => ({ name: brand.name, version: app.getVersion(), tagline: brand.tagline.tr, kofiUrl: brand.kofiUrl, materialSupported }))
+  handle('app:info', () => ({ name: brand.name, version: app.getVersion(), tagline: brand.tagline.tr, kofiUrl: brand.kofiUrl, materialSupported, loginSupported: app.isPackaged, loginEnabled: loginEnabled() }))
+  handle('backup:export', exportBackup)
+  handle('backup:import', importBackup)
   handle('app:quit', () => app.quit())
+}
+
+// ---- backup ----
+
+async function exportBackup() {
+  const result = await dialog.showSaveDialog({ defaultPath: `${brand.slug}-backup.json`, filters: [{ name: 'JSON', extensions: ['json'] }] })
+  if (result.canceled || !result.filePath) return { ok: false, message: 'cancelled' }
+  const data = { app: brand.slug, version: 1, items: getItems(), settings: getSettings(), widgets: getWidgets() }
+  fs.writeFileSync(result.filePath, JSON.stringify(data, null, 2))
+  return { ok: true, message: result.filePath }
+}
+
+async function importBackup() {
+  const result = await dialog.showOpenDialog({ properties: ['openFile'], filters: [{ name: 'JSON', extensions: ['json'] }] })
+  if (result.canceled || !result.filePaths[0]) return { ok: false, message: 'cancelled' }
+  try {
+    const data = JSON.parse(fs.readFileSync(result.filePaths[0], 'utf8'))
+    if (data?.app !== brand.slug || !Array.isArray(data.items) || typeof data.settings !== 'object') throw new Error('this is not a backup of this app')
+    const defaults = getSettings() as unknown as Record<string, unknown>
+    const settings: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(data.settings as Record<string, unknown>)) {
+      if (key in defaults && typeof value === typeof defaults[key]) settings[key] = value // unknown or mistyped keys are dropped
+    }
+    const items = (data.items as DockItem[]).filter((i) => i && typeof i.id === 'string' && typeof i.type === 'string')
+    updateSettings(settings as Partial<DockSettings>)
+    setItems(items)
+    if (Array.isArray(data.widgets)) setWidgets(data.widgets)
+    setTimeout(() => {
+      app.relaunch()
+      app.exit(0)
+    }, 300)
+    return { ok: true, message: 'restarting' }
+  } catch (err) {
+    return { ok: false, message: (err as Error).message }
+  }
 }
 
 // ---- lifecycle ----

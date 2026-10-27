@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
 import { getWidgets, setWidgets } from './store'
-import { baseWebPreferences, loadRoute } from './windows'
+import { baseWebPreferences, loadRoute, OFFSCREEN } from './windows'
 import { broadcast } from './ipc'
 import { currentSnapshot } from './items'
 import type { InvokeMap, WidgetInstance, WidgetType } from '../src/shared/types'
@@ -32,7 +32,7 @@ function createWindow(widget: WidgetInstance) {
   const size = SIZES[widget.type]
   const win = new BrowserWindow({
     ...size,
-    x: Math.round(widget.x),
+    x: Math.round(widget.x) - OFFSCREEN,
     y: Math.round(widget.y),
     show: false,
     frame: false,

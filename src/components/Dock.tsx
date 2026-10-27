@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { DockItem, DockSettings, RunningState } from '@/shared/types'
 import { invoke } from '@/api'
-import { SPRINGS, isSettled, layoutRow, stepSpring, targetSizes } from '@/physics'
+import { isSettled, layoutRow, springFor, speedToMs, stepSpring, targetLifts, targetSizes } from '@/physics'
+import { deskStyleVars, hoverProfile } from '@/desk'
 import DockIcon from './DockIcon'
 
 interface DockProps {
@@ -15,11 +16,9 @@ interface DockProps {
   onActivate: (item: DockItem) => void
 }
 
-const GAP = 8 // px between icons at rest
-const PAD = 10 // surface padding along the dock axis
-const PAD_CROSS = 8 // surface padding on the cross axis
+const PAD = 10 // desk padding along the dock axis
 const SEPARATOR = 0.35 // separator width as a share of the icon size
-const TOOLTIP_ROOM = 34
+const LABEL_ROOM = 34 // room above the biggest icon for its label
 
 const DRAG_TYPE = 'application/x-dock-item'
 
@@ -32,7 +31,12 @@ declare global {
 
 export default function Dock({ items, settings, running, icons, launching, hidden, flat, onActivate }: DockProps) {
   const horizontal = settings.position === 'bottom' || settings.position === 'top'
-  const { iconSize, magnifiedSize } = settings
+  const { iconSize, iconSpacing: GAP, shelfPadding: PAD_CROSS } = settings
+  const hover = hoverProfile(settings)
+  const magnifiedSize = settings.magnification ? iconSize + (iconSize * settings.maxScale - iconSize) * hover.sizeGain : iconSize
+  const liftMax = settings.magnification ? hover.liftMax : 0
+  const reflect = settings.deskStyle === 'mirror' && !flat
+  const baseOffset = reflect ? Math.round(iconSize * 0.4) : 0 // icons stand this far off the edge so the reflection has room
 
   // ---- rest layout (no magnification): the stable coordinate space for pointer maths ----
   const rest = useMemo(() => {
@@ -46,13 +50,15 @@ export default function Dock({ items, settings, running, icons, launching, hidde
       cursor += w + (i < items.length - 1 ? GAP : 0)
     })
     return { left, width, length: cursor, separator: items.map((i) => i.type === 'separator') }
-  }, [items, iconSize])
+  }, [items, iconSize, GAP])
 
   const growth = (magnifiedSize - iconSize) * (settings.magnificationRadius + 1) * 0.5 + 12
-  const restThickness = iconSize + PAD_CROSS * 2
-  const maxThickness = magnifiedSize + PAD_CROSS * 2
+  const restThickness = iconSize + PAD_CROSS * 2 + baseOffset
+  const popRoom = magnifiedSize - iconSize + liftMax
+  const maxThickness = restThickness + popRoom
+  const labelRoom = settings.labelMode === 'never' ? 8 : LABEL_ROOM
   const windowMain = Math.ceil(rest.length + PAD * 2 + growth * 2)
-  const windowCross = Math.ceil(maxThickness + TOOLTIP_ROOM + 6)
+  const windowCross = Math.ceil(maxThickness + labelRoom + 6 + settings.deskDepth * 0.4)
   const restStart = (windowMain - rest.length) / 2
 
   useEffect(() => {
@@ -61,28 +67,25 @@ export default function Dock({ items, settings, running, icons, launching, hidde
     invoke('dock:layout', { main: windowMain, cross: windowCross, shelfMain: rest.length + PAD * 2 + growth, shelfCross: restThickness })
   }, [windowMain, windowCross, rest.length, restThickness, growth])
 
-  // ---- spring animation of icon sizes ----
+  // ---- spring animation of icon sizes and lifts ----
   const sizes = useRef<number[]>([])
   const velocity = useRef<number[]>([])
+  const lifts = useRef<number[]>([])
+  const liftVelocity = useRef<number[]>([])
   const pointer = useRef<number | null>(null) // main-axis pointer in rest space, null when away
   const lastPointer = useRef(rest.length / 2)
   const raf = useRef(0)
   const [, repaint] = useState(0)
+  const spring = useMemo(() => springFor(settings.animationCurve, speedToMs(settings.speed, settings.speedMs)), [settings.animationCurve, settings.speed, settings.speedMs])
 
-  const goal = useCallback(
-    () =>
-      targetSizes({
-        restLeft: rest.left,
-        restWidth: rest.width,
-        separator: rest.separator,
-        pointer: settings.magnification ? pointer.current : null,
-        iconSize,
-        magnifiedSize,
-        radiusIcons: settings.magnificationRadius,
-        gap: GAP,
-      }),
-    [rest, iconSize, magnifiedSize, settings.magnification, settings.magnificationRadius],
-  )
+  const goal = useCallback(() => {
+    const p = settings.magnification ? pointer.current : null
+    const common = { restLeft: rest.left, restWidth: rest.width, separator: rest.separator, pointer: p, iconSize, radiusIcons: settings.magnificationRadius, gap: GAP, curve: settings.falloff }
+    return {
+      sizes: targetSizes({ ...common, magnifiedSize: iconSize + (iconSize * settings.maxScale - iconSize), gain: hover.sizeGain }),
+      lifts: targetLifts({ ...common, liftMax }),
+    }
+  }, [rest, iconSize, GAP, hover.sizeGain, liftMax, settings.magnification, settings.magnificationRadius, settings.maxScale, settings.falloff])
 
   const step = useCallback(
     (last: number) => (now: number) => {
@@ -91,33 +94,38 @@ export default function Dock({ items, settings, running, icons, launching, hidde
       if (frames.length >= 300) frames.shift()
       frames.push(frameMs)
       const dt = Math.min(frameMs / 1000, 0.05)
-      const spring = SPRINGS[settings.animationCurve]
+      const target = goal()
       let moving = false
-      goal().forEach((target, i) => {
-        const [x, v] = stepSpring(sizes.current[i] ?? target, velocity.current[i] ?? 0, target, dt, spring)
-        if (isSettled(x, v, target)) {
-          sizes.current[i] = target
-          velocity.current[i] = 0
-        } else {
-          sizes.current[i] = x
-          velocity.current[i] = v
-          moving = true
-        }
-      })
+      const advance = (pos: number[], vel: number[], to: number[]) =>
+        to.forEach((t, i) => {
+          const [x, v] = stepSpring(pos[i] ?? t, vel[i] ?? 0, t, dt, spring)
+          if (isSettled(x, v, t)) {
+            pos[i] = t
+            vel[i] = 0
+          } else {
+            pos[i] = x
+            vel[i] = v
+            moving = true
+          }
+        })
+      advance(sizes.current, velocity.current, target.sizes)
+      advance(lifts.current, liftVelocity.current, target.lifts)
       repaint((n) => n + 1)
       raf.current = moving ? requestAnimationFrame(step(now)) : 0
     },
-    [settings.animationCurve, goal],
+    [spring, goal],
   )
 
   const kick = useCallback(() => {
     if (!raf.current) raf.current = requestAnimationFrame(step(performance.now()))
   }, [step])
 
-  // Item list or sizes changed: re-seed arrays and settle.
+  // Item list or settings changed: re-seed arrays and settle.
   useEffect(() => {
     sizes.current = items.map((_, i) => sizes.current[i] ?? rest.width[i])
     velocity.current = items.map((_, i) => velocity.current[i] ?? 0)
+    lifts.current = items.map((_, i) => lifts.current[i] ?? 0)
+    liftVelocity.current = items.map((_, i) => liftVelocity.current[i] ?? 0)
     cancelAnimationFrame(raf.current)
     raf.current = 0
     kick()
@@ -148,6 +156,7 @@ export default function Dock({ items, settings, running, icons, launching, hidde
   }
 
   // ---- drag and drop ----
+  const locked = settings.lockItems
   const [dragging, setDragging] = useState<string | null>(null)
   const [insertAt, setInsertAt] = useState<number | null>(null)
 
@@ -162,10 +171,12 @@ export default function Dock({ items, settings, running, icons, launching, hidde
 
   const onDragOver = (e: React.DragEvent) => {
     if (!acceptsDrop(e)) return
+    const overTrash = !!(e.target as HTMLElement).closest('[data-item-type="trash"]')
+    if (locked && !overTrash) return
     e.preventDefault()
     e.dataTransfer.dropEffect = dragging ? 'move' : 'copy'
     track(e)
-    setInsertAt(insertionIndex(mainCoord(e) - restStart))
+    setInsertAt(overTrash ? null : insertionIndex(mainCoord(e) - restStart))
   }
 
   const onDrop = async (e: React.DragEvent) => {
@@ -173,10 +184,12 @@ export default function Dock({ items, settings, running, icons, launching, hidde
     e.preventDefault()
     const at = insertionIndex(mainCoord(e) - restStart)
     setInsertAt(null)
-    const overTrash = (e.target as HTMLElement).closest('[data-item-type="trash"]')
+    const target = (e.target as HTMLElement).closest('[data-item-type]') as HTMLElement | null
+    const overTrash = target?.dataset.itemType === 'trash'
     const internal = e.dataTransfer.getData(DRAG_TYPE)
     if (internal) {
       setDragging(null)
+      if (locked) return
       if (overTrash) return void invoke('items:remove', internal)
       const from = items.findIndex((i) => i.id === internal)
       if (from < 0) return
@@ -191,7 +204,7 @@ export default function Dock({ items, settings, running, icons, launching, hidde
       .filter(Boolean)
     if (!paths.length) return
     if (overTrash) invoke('trash:drop', paths)
-    else invoke('items:add-paths', paths, at)
+    else if (!locked) invoke('items:add-paths', paths, at)
   }
 
   // ---- render ----
@@ -200,9 +213,10 @@ export default function Dock({ items, settings, running, icons, launching, hidde
   const { positions, length } = row
   const rowStart = row.start
 
-  // The surface is as thick as the biggest icon, so a magnified icon never pokes out of the glass.
+  // The desk is as thick as the biggest icon when it is set to grow, so a magnified icon stays on the glass.
   const biggest = current.reduce((m, s, i) => (items[i]?.type === 'separator' ? m : Math.max(m, s)), iconSize)
-  const thickness = Math.max(restThickness, biggest + PAD_CROSS * 2)
+  const biggestLift = lifts.current.reduce((m, l) => Math.max(m, l), 0)
+  const thickness = settings.shelfGrows ? Math.max(restThickness, biggest + biggestLift + PAD_CROSS * 2 + baseOffset) : restThickness
   const surfaceStart = rowStart - PAD
   const surfaceLength = length + PAD * 2
 
@@ -214,9 +228,12 @@ export default function Dock({ items, settings, running, icons, launching, hidde
     return { position: 'absolute', ...box, ...mainProp, ...crossProp }
   }
 
+  const desk = deskStyleVars(settings, thickness, side)
+
   return (
     <div
-      className={`dock dock--${side}${hidden ? ' dock--hidden' : ''}${flat ? ' dock--flat' : ''}`}
+      className={`dock dock--${side} dock--show-${settings.showAnimation}${hidden ? ' dock--hidden' : ''}${flat ? ' dock--flat' : ''} dock--desk-${settings.deskStyle}${reflect ? ' dock--reflect' : ''}`}
+      style={{ ...desk.rootVars, '--label-size': `${settings.labelSize}px`, '--label-font': settings.labelFont || 'inherit', '--anim-ms': `${speedToMs(settings.speed, settings.speedMs)}ms` } as React.CSSProperties}
       onMouseMove={track}
       onMouseLeave={leave}
       onDragOver={onDragOver}
@@ -227,14 +244,17 @@ export default function Dock({ items, settings, running, icons, launching, hidde
         invoke('menu:show', { kind: 'empty' })
       }}
     >
-      <div className="dock__surface" style={edgeStyle(surfaceStart, 0, surfaceLength, thickness)} />
+      <div className="dock__desk" style={{ ...edgeStyle(surfaceStart, 0, surfaceLength, thickness), ...desk.plate }}>
+        <span className="dock__desk-tint" />
+        <span className="dock__desk-sheen" />
+      </div>
       {items.map((item, i) => {
         const size = current[i]
-        const base = edgeStyle(rowStart + positions[i], PAD_CROSS, size, size)
+        const base = edgeStyle(rowStart + positions[i], PAD_CROSS + baseOffset + (lifts.current[i] ?? 0), size, size)
         if (item.type === 'separator') {
           return (
             <div key={item.id} className="dock__separator" data-horizontal={horizontal} style={{ ...base, [horizontal ? 'height' : 'width']: iconSize * 0.7 }}
-              draggable onDragStart={(e) => { e.dataTransfer.setData(DRAG_TYPE, item.id); setDragging(item.id) }}
+              draggable={!locked} onDragStart={(e) => { e.dataTransfer.setData(DRAG_TYPE, item.id); setDragging(item.id) }}
               onDragEnd={(e) => { setDragging(null); if (outside(e)) invoke('items:remove', item.id) }}
               onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); invoke('menu:show', { kind: 'icon', itemId: item.id }) }}
             />
@@ -248,9 +268,12 @@ export default function Dock({ items, settings, running, icons, launching, hidde
             iconSrc={icons[item.id]}
             running={settings.showRunningIndicators ? running[item.id] : undefined}
             launching={launching.has(item.id)}
+            launchAnimation={settings.launchAnimation}
+            indicator={settings.indicatorStyle}
             position={side}
-            hovered={pointer.current !== null && Math.abs(pointer.current - (rest.left[i] + rest.width[i] / 2)) < rest.width[i] / 2 + GAP / 2}
+            showLabel={settings.labelMode === 'always' || (settings.labelMode === 'hover' && pointer.current !== null && Math.abs(pointer.current - (rest.left[i] + rest.width[i] / 2)) < rest.width[i] / 2 + GAP / 2)}
             dragging={dragging === item.id}
+            locked={locked}
             onClick={() => onActivate(item)}
             onDragStart={(e) => {
               e.dataTransfer.setData(DRAG_TYPE, item.id)
@@ -273,7 +296,7 @@ export default function Dock({ items, settings, running, icons, launching, hidde
       {insertAt !== null && (
         <div
           className="dock__insert"
-          style={edgeStyle(rowStart + (insertAt < items.length ? positions[insertAt] - GAP / 2 : length) - 1, PAD_CROSS, 2, iconSize)}
+          style={edgeStyle(rowStart + (insertAt < items.length ? positions[insertAt] - GAP / 2 : length) - 1, PAD_CROSS + baseOffset, 2, iconSize)}
         />
       )}
     </div>

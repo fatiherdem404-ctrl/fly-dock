@@ -15,7 +15,7 @@ const app = (name, p) => ({ id: name, type: 'app', targetPath: win(p), label: na
 writeFileSync(
   join(profile, 'config.json'),
   JSON.stringify({
-    schemaVersion: 3,
+    schemaVersion: 5,
     items: [
       app('notepad', 'C:/Windows/System32/notepad.exe'),
       app('calc', 'C:/Windows/System32/calc.exe'),
@@ -24,13 +24,13 @@ writeFileSync(
       app('cmd', 'C:/Windows/System32/cmd.exe'),
       { id: 'trash', type: 'trash' },
     ],
-    settings: { position, material: 'acrylic', theme: 'glass-dark' },
+    settings: { position, material: 'none', theme: 'glass-dark' },
     widgets: [],
   }),
 )
 
 const port = 9333 + Math.floor(Math.random() * 500)
-const child = spawn(electronPath, ['.', `--user-data-dir=${profile}`, `--remote-debugging-port=${port}`], { stdio: 'ignore' })
+const child = spawn(electronPath, ['.', `--user-data-dir=${profile}`, `--remote-debugging-port=${port}`], { stdio: 'ignore', env: { ...process.env, FLY_DOCK_HEADLESS: process.argv.some((a) => a.startsWith('--shot=') || a.startsWith('--film=')) ? '0' : '1' } })
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const stop = () => spawn('taskkill', ['/T', '/F', '/PID', String(child.pid)], { stdio: 'ignore' })
 
@@ -71,7 +71,7 @@ try {
     const horizontal = ${horizontal}
     const tick = (now) => {
       const icons = [...document.querySelectorAll('.dock-icon')]
-      const surface = document.querySelector('.dock__surface').getBoundingClientRect()
+      const surface = document.querySelector('.dock__desk').getBoundingClientRect()
       window.__rec.t.push(now)
       window.__rec.sizes.push(icons.map(e => horizontal ? e.getBoundingClientRect().width : e.getBoundingClientRect().height))
       // how far the glass reaches past the union of all icons, per side

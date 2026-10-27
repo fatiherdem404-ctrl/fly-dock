@@ -4,6 +4,13 @@ import path from 'node:path'
 
 const devUrl = process.env.VITE_DEV_SERVER_URL
 
+/**
+ * Automated tests run the real app without putting windows on the user's screen: the windows are real and
+ * rendering (hidden ones would not run animation frames) but sit far off-screen.
+ */
+export const HEADLESS = process.env.FLY_DOCK_HEADLESS === '1'
+export const OFFSCREEN = HEADLESS ? 30000 : 0
+
 /** Loads the single renderer bundle at a hash route such as /dock, /settings or /widget/abc. */
 export function loadRoute(win: BrowserWindow, route: string) {
   if (devUrl) win.loadURL(`${devUrl}#${route}`)

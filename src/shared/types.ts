@@ -17,29 +17,79 @@ export interface DockItem {
 export type DockPosition = 'bottom' | 'top' | 'left' | 'right'
 export type AnimationCurve = 'linear' | 'spring' | 'bounce' | 'ease'
 export type DockMaterial = 'none' | 'acrylic' | 'mica'
+export type HoverAnimation = 'zoom' | 'lift' | 'wave'
+export type LaunchAnimation = 'bounce' | 'hop' | 'pulse' | 'none'
+export type IndicatorStyle = 'dot' | 'bar' | 'glow' | 'ring'
+export type ShowAnimation = 'slide' | 'fade' | 'scale'
+export type WindowAnimation = 'genie' | 'scale' | 'fade' | 'slide'
+export type SpeedPreset = 'fast' | 'medium' | 'slow' | 'custom'
+export type FalloffCurve = 'cosine' | 'gaussian' | 'linear' | 'sharp'
+export type LabelMode = 'hover' | 'always' | 'never'
+export type StackSize = 'small' | 'medium' | 'full' | 'custom'
+export type DeskStyle = 'glass' | 'glass3d' | 'wood' | 'metal' | 'marble' | 'neon' | 'crystal' | 'matte' | 'mirror' | 'wall'
+
+export const DESK_STYLES: DeskStyle[] = ['glass', 'glass3d', 'wood', 'metal', 'marble', 'neon', 'crystal', 'matte', 'mirror', 'wall']
 
 export interface DockSettings {
+  // placement
   position: DockPosition
+  /** Distance from the screen edge in px. */
+  edgeOffset: number
+  /** Where along the edge the dock sits, 0 (start) to 100 (end); 50 is centred. */
+  alignment: number
+  /** 'primary', 'all', or the id of one display. */
+  monitor: 'primary' | 'all' | number
+  // icons and growth
   iconSize: number
-  magnifiedSize: number
+  magnification: boolean
+  /** Biggest icon size as a multiple of iconSize. */
+  maxScale: number
   /** How many neighbouring icons feel the magnification. */
   magnificationRadius: number
-  magnification: boolean
+  falloff: FalloffCurve
+  iconSpacing: number
+  // desk (the shelf the icons stand on)
+  deskStyle: DeskStyle
+  /** CSS colour that tints the desk; empty uses the theme. */
+  deskColor: string
+  deskOpacity: number
+  /** 3D depth of the desk in px (0 = flat). */
+  deskDepth: number
+  /** Whether the desk gets thicker with the magnified icons. */
+  shelfGrows: boolean
+  shelfPadding: number
+  material: DockMaterial
+  // animation
+  animationCurve: AnimationCurve
+  speed: SpeedPreset
+  speedMs: number
+  hoverAnimation: HoverAnimation
+  launchAnimation: LaunchAnimation
+  showAnimation: ShowAnimation
+  windowAnimation: WindowAnimation
+  indicatorStyle: IndicatorStyle
+  // dock windows (stacks and groups)
+  stackSize: StackSize
+  stackWidth: number
+  stackHeight: number
+  // labels
+  labelMode: LabelMode
+  labelSize: number
+  labelFont: string
+  // behaviour
   autoHide: boolean
   autoHideDelayMs: number
   hideInFullscreen: boolean
-  /** 'primary', 'all', or the id of one display. */
-  monitor: 'primary' | 'all' | number
-  material: DockMaterial
-  theme: string
-  iconPack: string
-  animationCurve: AnimationCurve
+  lockItems: boolean
   showRunningIndicators: boolean
   showTrash: boolean
   /** Also show running programs that are not pinned, after a separator. */
   showRunningApps: boolean
   launchAtLogin: boolean
   toggleHotkey: string
+  // look
+  theme: string
+  iconPack: string
 }
 
 export type WidgetType = 'clock' | 'weather' | 'system' | 'media' | 'calendar'
@@ -103,27 +153,51 @@ export interface Persisted {
   widgets: WidgetInstance[]
 }
 
-export const SCHEMA_VERSION = 4
+export const SCHEMA_VERSION = 5
 
 export const DEFAULT_SETTINGS: DockSettings = {
   position: 'bottom',
+  edgeOffset: 6,
+  alignment: 50,
+  monitor: 'primary',
   iconSize: 48,
-  magnifiedSize: 84,
-  magnificationRadius: 2,
   magnification: true,
+  maxScale: 1.75,
+  magnificationRadius: 2,
+  falloff: 'cosine',
+  iconSpacing: 8,
+  deskStyle: 'glass',
+  deskColor: '',
+  deskOpacity: 1,
+  deskDepth: 0,
+  shelfGrows: true,
+  shelfPadding: 8,
+  material: 'none',
+  animationCurve: 'spring',
+  speed: 'medium',
+  speedMs: 350,
+  hoverAnimation: 'zoom',
+  launchAnimation: 'bounce',
+  showAnimation: 'slide',
+  windowAnimation: 'genie',
+  indicatorStyle: 'dot',
+  stackSize: 'medium',
+  stackWidth: 520,
+  stackHeight: 420,
+  labelMode: 'hover',
+  labelSize: 12,
+  labelFont: '',
   autoHide: false,
   autoHideDelayMs: 600,
   hideInFullscreen: true,
-  monitor: 'primary',
-  material: 'none',
-  theme: 'glass-dark',
-  iconPack: '',
-  animationCurve: 'spring',
+  lockItems: false,
   showRunningIndicators: true,
   showTrash: true,
   showRunningApps: true,
   launchAtLogin: false,
   toggleHotkey: 'Control+Alt+D',
+  theme: 'glass-dark',
+  iconPack: '',
 }
 
 // ---- IPC contract: one table drives the preload bridge, the main-process handlers and the renderer calls ----
@@ -166,7 +240,9 @@ export interface InvokeMap {
   'widgets:now-playing': { args: []; result: { app: string; title: string } | null }
   'app:open-settings': { args: []; result: void }
   'app:open-external': { args: [target: 'support' | 'repo' | 'issues']; result: void }
-  'app:info': { args: []; result: { name: string; version: string; tagline: string; kofiUrl: string; materialSupported: boolean } }
+  'app:info': { args: []; result: { name: string; version: string; tagline: string; kofiUrl: string; materialSupported: boolean; loginSupported: boolean; loginEnabled: boolean } }
+  'backup:export': { args: []; result: { ok: boolean; message: string } }
+  'backup:import': { args: []; result: { ok: boolean; message: string } }
   'app:quit': { args: []; result: void }
 }
 

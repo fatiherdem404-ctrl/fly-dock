@@ -1,36 +1,115 @@
 .dock {
   position: absolute;
   inset: 0;
-  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease;
+  --anim-ms: 350ms;
+  transition: transform var(--anim-ms) cubic-bezier(0.22, 1, 0.36, 1), opacity var(--anim-ms) ease;
 }
 
+/* ---- dock entry / exit (auto-hide) ---- */
 .dock--hidden {
   opacity: 0;
   pointer-events: none;
 }
-.dock--hidden.dock--bottom { transform: translateY(40%); }
-.dock--hidden.dock--top { transform: translateY(-40%); }
-.dock--hidden.dock--left { transform: translateX(-40%); }
-.dock--hidden.dock--right { transform: translateX(40%); }
+.dock--show-slide.dock--hidden.dock--bottom { transform: translateY(40%); }
+.dock--show-slide.dock--hidden.dock--top { transform: translateY(-40%); }
+.dock--show-slide.dock--hidden.dock--left { transform: translateX(-40%); }
+.dock--show-slide.dock--hidden.dock--right { transform: translateX(40%); }
+.dock--show-fade.dock--hidden { transform: none; }
+.dock--show-scale.dock--hidden { transform: scale(0.55); }
+.dock--show-scale.dock--bottom { transform-origin: 50% 100%; }
+.dock--show-scale.dock--top { transform-origin: 50% 0%; }
+.dock--show-scale.dock--left { transform-origin: 0% 50%; }
+.dock--show-scale.dock--right { transform-origin: 100% 50%; }
 
-.dock__surface {
+/* ---- desk (the shelf the icons stand on) ---- */
+.dock__desk {
+  border-radius: var(--radius);
+  overflow: hidden;
+  pointer-events: none;
+  box-shadow: var(--shadow);
   background: var(--surface);
   border: 1px solid var(--surface-border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(var(--surface-blur)) saturate(1.4);
-  pointer-events: none;
+}
+.dock__desk-tint {
+  position: absolute;
+  inset: 0;
+  background: var(--desk-tint);
+  mix-blend-mode: color;
+  opacity: 0.85;
+}
+.dock__desk-sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 45%);
 }
 
-/* With acrylic/mica the system draws the material in a window behind this one. */
-.dock--flat .dock__surface {
+/* with acrylic/mica the system draws the material in a window behind this one */
+.dock--flat .dock__desk {
   border-radius: 8px;
   border-color: transparent;
   background: transparent;
   box-shadow: none;
-  backdrop-filter: none;
 }
+.dock--flat .dock__desk-sheen,
+.dock--flat .dock__desk-tint { display: none; }
 
+.dock--desk-glass3d .dock__desk {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.05) 70%), var(--surface);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 var(--desk-depth) calc(var(--desk-depth) * 1.4) rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.dock--desk-wood .dock__desk {
+  background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.14) 0 1px, transparent 1px 9px), repeating-linear-gradient(90deg, rgba(255, 220, 160, 0.08) 0 3px, transparent 3px 23px), linear-gradient(180deg, #b27a43, #7a4b24);
+  border-color: #4a2c13;
+  box-shadow: 0 calc(var(--desk-depth) * 0.5) 18px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 224, 170, 0.45), inset 0 -3px 6px rgba(0, 0, 0, 0.35);
+}
+.dock--desk-metal .dock__desk {
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0 1px, transparent 1px 3px), linear-gradient(180deg, #e3e7ee, #9aa1ad 55%, #6e7582);
+  border-color: #4d535d;
+  box-shadow: 0 calc(var(--desk-depth) * 0.5) 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 -3px 5px rgba(0, 0, 0, 0.3);
+}
+.dock--desk-marble .dock__desk {
+  background: linear-gradient(115deg, transparent 36%, rgba(70, 70, 85, 0.32) 38% 39%, transparent 42%), linear-gradient(62deg, transparent 56%, rgba(70, 70, 85, 0.22) 58% 59%, transparent 63%), linear-gradient(180deg, #f6f6f8, #c4c4cd);
+  border-color: #9a9aa6;
+  box-shadow: 0 calc(var(--desk-depth) * 0.5) 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 #fff, inset 0 -3px 5px rgba(0, 0, 0, 0.18);
+}
+.dock--desk-neon .dock__desk {
+  background: linear-gradient(180deg, #14172a, #080914);
+  border-color: var(--accent);
+  box-shadow: 0 0 18px var(--accent), inset 0 0 12px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+.dock--desk-crystal .dock__desk {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0 10%, rgba(255, 255, 255, 0) 11%), linear-gradient(60deg, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.25) 41% 55%, rgba(255, 255, 255, 0) 56%), linear-gradient(180deg, rgba(150, 215, 255, 0.6), rgba(60, 110, 190, 0.5));
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 calc(var(--desk-depth) * 0.4) 22px rgba(40, 90, 170, 0.45), inset 0 0 14px rgba(255, 255, 255, 0.45);
+}
+.dock--desk-matte .dock__desk {
+  background: linear-gradient(180deg, #1b1b1f, #09090b);
+  border-color: #2c2c33;
+  box-shadow: 0 calc(var(--desk-depth) * 0.5) 16px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.dock--desk-mirror .dock__desk {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0 22%, rgba(255, 255, 255, 0.1) 23%), linear-gradient(180deg, #2a3140, #0b0e15);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 calc(var(--desk-depth) * 0.5) 18px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.dock--desk-wall .dock__desk {
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.3) 0 2px, transparent 2px 10px), repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.2) 0 2px, transparent 2px 22px), linear-gradient(180deg, #bd5a3f, #8a3a28);
+  border-color: #5a2418;
+  box-shadow: 0 calc(var(--desk-depth) * 0.5) 16px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 190, 160, 0.4), inset 0 -3px 6px rgba(0, 0, 0, 0.35);
+}
+.dock--desk-wood .dock__desk-sheen,
+.dock--desk-metal .dock__desk-sheen,
+.dock--desk-marble .dock__desk-sheen,
+.dock--desk-wall .dock__desk-sheen { opacity: 0.6; }
+
+/* reflective floor: each icon mirrors itself towards the screen edge */
+.dock--reflect.dock--bottom .dock-icon__image { -webkit-box-reflect: below 1px linear-gradient(transparent 60%, rgba(255, 255, 255, 0.32)); }
+.dock--reflect.dock--top .dock-icon__image { -webkit-box-reflect: above 1px linear-gradient(transparent 60%, rgba(255, 255, 255, 0.32)); }
+.dock--reflect.dock--left .dock-icon__image { -webkit-box-reflect: left 1px linear-gradient(to left, transparent 60%, rgba(255, 255, 255, 0.32)); }
+.dock--reflect.dock--right .dock-icon__image { -webkit-box-reflect: right 1px linear-gradient(to right, transparent 60%, rgba(255, 255, 255, 0.32)); }
+
+/* ---- icons ---- */
 .dock-icon {
   display: flex;
   align-items: center;
@@ -53,40 +132,50 @@
   filter: none;
 }
 
-.dock-icon--dragging {
-  opacity: 0.35;
-}
+.dock-icon--dragging { opacity: 0.35; }
 
+/* running indicator: four looks, placed on the desk side of the icon */
 .dock-icon__indicator {
   position: absolute;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--indicator);
-  box-shadow: 0 0 6px var(--indicator);
   pointer-events: none;
+  background: var(--indicator);
+  --w: 5px;
+  --h: 5px;
+  width: var(--w);
+  height: var(--h);
+  border-radius: 50%;
 }
 .dock-icon__indicator--dim { opacity: 0.45; }
-.dock-icon[data-position='bottom'] .dock-icon__indicator { bottom: -7px; left: calc(50% - 2.5px); }
-.dock-icon[data-position='top'] .dock-icon__indicator { top: -7px; left: calc(50% - 2.5px); }
-.dock-icon[data-position='left'] .dock-icon__indicator { left: -7px; top: calc(50% - 2.5px); }
-.dock-icon[data-position='right'] .dock-icon__indicator { right: -7px; top: calc(50% - 2.5px); }
+.dock-icon__indicator--dot { box-shadow: 0 0 6px var(--indicator); }
+.dock-icon__indicator--bar { --w: 16px; --h: 3px; border-radius: 2px; }
+.dock-icon__indicator--glow { --w: 10px; --h: 10px; background: radial-gradient(circle, var(--indicator) 0 30%, transparent 72%); filter: blur(0.6px); }
+.dock-icon__indicator--ring { --w: 8px; --h: 8px; background: transparent; border: 2px solid var(--indicator); }
+.dock-icon[data-position='left'] .dock-icon__indicator--bar,
+.dock-icon[data-position='right'] .dock-icon__indicator--bar { --w: 3px; --h: 16px; }
+.dock-icon[data-position='bottom'] .dock-icon__indicator { bottom: -8px; left: calc(50% - var(--w) / 2); }
+.dock-icon[data-position='top'] .dock-icon__indicator { top: -8px; left: calc(50% - var(--w) / 2); }
+.dock-icon[data-position='left'] .dock-icon__indicator { left: -8px; top: calc(50% - var(--h) / 2); }
+.dock-icon[data-position='right'] .dock-icon__indicator { right: -8px; top: calc(50% - var(--h) / 2); }
 
-.dock-icon__tooltip {
+/* labels sit on the open side of the icon */
+.dock-icon__label {
   position: absolute;
   padding: 4px 10px;
   border-radius: 8px;
   background: var(--tooltip-bg);
   color: var(--tooltip-text);
-  font-size: 12px;
+  font-size: var(--label-size, 12px);
+  font-family: var(--label-font, inherit);
   white-space: nowrap;
   pointer-events: none;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  animation: label-in 120ms ease-out;
 }
-.dock-icon[data-position='bottom'] .dock-icon__tooltip { bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); }
-.dock-icon[data-position='top'] .dock-icon__tooltip { top: calc(100% + 8px); left: 50%; transform: translateX(-50%); }
-.dock-icon[data-position='left'] .dock-icon__tooltip { left: calc(100% + 8px); top: 50%; transform: translateY(-50%); }
-.dock-icon[data-position='right'] .dock-icon__tooltip { right: calc(100% + 8px); top: 50%; transform: translateY(-50%); }
+@keyframes label-in { from { opacity: 0; } to { opacity: 1; } }
+.dock-icon[data-position='bottom'] .dock-icon__label { bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); }
+.dock-icon[data-position='top'] .dock-icon__label { top: calc(100% + 8px); left: 50%; transform: translateX(-50%); }
+.dock-icon[data-position='left'] .dock-icon__label { left: calc(100% + 8px); top: 50%; transform: translateY(-50%); }
+.dock-icon[data-position='right'] .dock-icon__label { right: calc(100% + 8px); top: 50%; transform: translateY(-50%); }
 
 .dock__separator {
   display: flex;
@@ -108,12 +197,23 @@
   pointer-events: none;
 }
 
-@keyframes launch-bounce-up { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-22px); } 70% { transform: translateY(-8px); } }
-@keyframes launch-bounce-down { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(22px); } 70% { transform: translateY(8px); } }
-@keyframes launch-bounce-right { 0%, 100% { transform: translateX(0); } 40% { transform: translateX(22px); } 70% { transform: translateX(8px); } }
-@keyframes launch-bounce-left { 0%, 100% { transform: translateX(0); } 40% { transform: translateX(-22px); } 70% { transform: translateX(-8px); } }
+/* ---- launch animations ---- */
+@keyframes launch-bounce-bottom { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-22px); } 70% { transform: translateY(-8px); } }
+@keyframes launch-bounce-top { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(22px); } 70% { transform: translateY(8px); } }
+@keyframes launch-bounce-left { 0%, 100% { transform: translateX(0); } 40% { transform: translateX(22px); } 70% { transform: translateX(8px); } }
+@keyframes launch-bounce-right { 0%, 100% { transform: translateX(0); } 40% { transform: translateX(-22px); } 70% { transform: translateX(-8px); } }
+@keyframes launch-hop-bottom { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
+@keyframes launch-hop-top { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(30px); } }
+@keyframes launch-hop-left { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(30px); } }
+@keyframes launch-hop-right { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-30px); } }
+@keyframes launch-pulse { 0%, 100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.18); filter: brightness(1.35) drop-shadow(0 0 10px var(--accent)); } }
 
-.dock-icon--launching[data-position='bottom'] { animation: launch-bounce-up 0.7s ease-in-out 2; }
-.dock-icon--launching[data-position='top'] { animation: launch-bounce-down 0.7s ease-in-out 2; }
-.dock-icon--launching[data-position='left'] { animation: launch-bounce-right 0.7s ease-in-out 2; }
-.dock-icon--launching[data-position='right'] { animation: launch-bounce-left 0.7s ease-in-out 2; }
+.dock-icon--launch-bounce[data-position='bottom'] { animation: launch-bounce-bottom 0.7s ease-in-out 2; }
+.dock-icon--launch-bounce[data-position='top'] { animation: launch-bounce-top 0.7s ease-in-out 2; }
+.dock-icon--launch-bounce[data-position='left'] { animation: launch-bounce-left 0.7s ease-in-out 2; }
+.dock-icon--launch-bounce[data-position='right'] { animation: launch-bounce-right 0.7s ease-in-out 2; }
+.dock-icon--launch-hop[data-position='bottom'] { animation: launch-hop-bottom 0.55s cubic-bezier(0.3, 0, 0.3, 1) 1; }
+.dock-icon--launch-hop[data-position='top'] { animation: launch-hop-top 0.55s cubic-bezier(0.3, 0, 0.3, 1) 1; }
+.dock-icon--launch-hop[data-position='left'] { animation: launch-hop-left 0.55s cubic-bezier(0.3, 0, 0.3, 1) 1; }
+.dock-icon--launch-hop[data-position='right'] { animation: launch-hop-right 0.55s cubic-bezier(0.3, 0, 0.3, 1) 1; }
+.dock-icon--launch-pulse { animation: launch-pulse 0.6s ease-in-out 3; }

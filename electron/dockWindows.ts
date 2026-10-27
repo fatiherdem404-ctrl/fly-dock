@@ -4,7 +4,7 @@ import { BrowserWindow, Display, screen } from 'electron'
 import os from 'node:os'
 import { getSettings } from './store'
 import { getTheme } from './packs'
-import { overlayWindow, loadRoute } from './windows'
+import { overlayWindow, loadRoute, OFFSCREEN } from './windows'
 import { broadcast } from './ipc'
 import { helper } from './helper'
 import type { DockPosition } from '../src/shared/types'
@@ -13,7 +13,6 @@ import type { DockPosition } from '../src/shared/types'
 export const materialSupported = Number(os.release().split('.')[2]) >= 22621
 const activeMaterial = () => (materialSupported ? getSettings().material : 'none')
 
-const MARGIN = 6
 const EDGE_BAND = 4
 
 interface Layout {
@@ -47,28 +46,45 @@ function targetDisplays(): Display[] {
   return [screen.getPrimaryDisplay()]
 }
 
-function rect(display: Display, position: DockPosition, main: number, cross: number) {
+type Rect = { x: number; y: number; width: number; height: number }
+
+/** Dock window rectangle: sits `edgeOffset` px from its edge and `alignment` % of the way along it. */
+function rect(display: Display, position: DockPosition, main: number, cross: number): Rect {
   const wa = display.workArea
+  const { edgeOffset, alignment } = getSettings()
   const horizontal = position === 'bottom' || position === 'top'
   const width = horizontal ? Math.min(main, wa.width) : cross
   const height = horizontal ? cross : Math.min(main, wa.height)
-  const cx = Math.round(wa.x + (wa.width - width) / 2)
-  const cy = Math.round(wa.y + (wa.height - height) / 2)
+  const along = Math.min(Math.max(alignment, 0), 100) / 100
+  const ax = Math.round(wa.x + (wa.width - width) * along)
+  const ay = Math.round(wa.y + (wa.height - height) * along)
   switch (position) {
-    case 'top': return { x: cx, y: wa.y + MARGIN, width, height }
-    case 'left': return { x: wa.x + MARGIN, y: cy, width, height }
-    case 'right': return { x: wa.x + wa.width - width - MARGIN, y: cy, width, height }
-    default: return { x: cx, y: wa.y + wa.height - height - MARGIN, width, height }
+    case 'top': return { x: ax, y: wa.y + edgeOffset, width, height }
+    case 'left': return { x: wa.x + edgeOffset, y: ay, width, height }
+    case 'right': return { x: wa.x + wa.width - width - edgeOffset, y: ay, width, height }
+    default: return { x: ax, y: wa.y + wa.height - height - edgeOffset, width, height }
   }
+}
+
+/** The static system-drawn shelf: centred on the dock window along the edge, flush with the same edge. */
+function shelfRect(dockRect: Rect, position: DockPosition): Rect {
+  const horizontal = position === 'bottom' || position === 'top'
+  const main = Math.min(layout.shelfMain, horizontal ? dockRect.width : dockRect.height)
+  const cross = layout.shelfCross
+  const x = horizontal ? dockRect.x + (dockRect.width - main) / 2 : position === 'left' ? dockRect.x : dockRect.x + dockRect.width - cross
+  const y = horizontal ? (position === 'top' ? dockRect.y : dockRect.y + dockRect.height - cross) : dockRect.y + (dockRect.height - main) / 2
+  return { x: Math.round(x), y: Math.round(y), width: Math.round(horizontal ? main : cross), height: Math.round(horizontal ? cross : main) }
 }
 
 function applyBounds(dock: DockWin) {
   const display = screen.getAllDisplays().find((d) => d.id === dock.displayId)
   if (!display || dock.win.isDestroyed()) return
   const { position } = getSettings()
-  dock.win.setBounds(rect(display, position, layout.main, layout.cross))
+  const dockRect = rect(display, position, layout.main, layout.cross)
+  dockRect.x -= OFFSCREEN
+  dock.win.setBounds(dockRect)
   if (dock.shelf && !dock.shelf.isDestroyed()) {
-    dock.shelf.setBounds(rect(display, position, layout.shelfMain, layout.shelfCross))
+    dock.shelf.setBounds(shelfRect(dockRect, position))
     dock.win.moveTop()
   }
 }

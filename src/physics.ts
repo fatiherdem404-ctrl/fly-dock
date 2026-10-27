@@ -1,10 +1,35 @@
 // Pure dock maths, kept free of React and the DOM so it can be unit-tested (see tests/physics.test.mjs).
-import type { AnimationCurve } from './shared/types'
+import type { AnimationCurve, FalloffCurve, SpeedPreset } from './shared/types'
 
-/** Cosine falloff: 1 at distance 0, tapering smoothly to 0 at `radius`. */
-export function falloff(distance: number, radius: number): number {
+/** Influence of the pointer on a slot: 1 at distance 0, tapering to 0 at `radius`, in one of four shapes. */
+export function falloff(distance: number, radius: number, curve: FalloffCurve = 'cosine'): number {
   if (distance >= radius) return 0
-  return (Math.cos((distance / radius) * Math.PI) + 1) / 2
+  const t = distance / radius
+  switch (curve) {
+    case 'linear':
+      return 1 - t
+    case 'sharp':
+      return ((Math.cos(t * Math.PI) + 1) / 2) ** 2
+    case 'gaussian': {
+      const edge = Math.exp(-4.5)
+      return (Math.exp(-4.5 * t * t) - edge) / (1 - edge)
+    }
+    default:
+      return (Math.cos(t * Math.PI) + 1) / 2
+  }
+}
+
+const SPEED_MS: Record<Exclude<SpeedPreset, 'custom'>, number> = { fast: 220, medium: 350, slow: 600 }
+
+/** How long a spring should take to settle for the chosen speed setting. */
+export function speedToMs(speed: SpeedPreset, customMs: number): number {
+  return speed === 'custom' ? Math.min(Math.max(customMs, 80), 2000) : SPEED_MS[speed]
+}
+
+/** Spring parameters for a motion type, stiffened or relaxed so it settles in about `ms` (350 ms is the baseline). */
+export function springFor(curve: AnimationCurve, ms: number): SpringParams {
+  const base = SPRINGS[curve]
+  return { k: base.k * (350 / ms) ** 2, zeta: base.zeta }
 }
 
 export interface SpringParams {
@@ -51,13 +76,16 @@ export function targetSizes(opts: {
   magnifiedSize: number
   radiusIcons: number
   gap: number
+  curve?: FalloffCurve
+  /** Share of the size gain that is applied (the lift animations grow icons less). */
+  gain?: number
 }): number[] {
-  const { restLeft, restWidth, separator, pointer, iconSize, magnifiedSize, radiusIcons, gap } = opts
+  const { restLeft, restWidth, separator, pointer, iconSize, magnifiedSize, radiusIcons, gap, curve = 'cosine', gain = 1 } = opts
   const radius = (iconSize + gap) * radiusIcons * 1.15
   return restLeft.map((left, i) => {
     if (separator[i]) return restWidth[i]
     if (pointer === null) return iconSize
-    return iconSize + falloff(Math.abs(pointer - (left + restWidth[i] / 2)), radius) * (magnifiedSize - iconSize)
+    return iconSize + falloff(Math.abs(pointer - (left + restWidth[i] / 2)), radius, curve) * (magnifiedSize - iconSize) * gain
   })
 }
 
@@ -99,4 +127,24 @@ export function layoutRow(opts: {
   const frac = Math.min(Math.max((anchor - restLeft[index]) / restWidth[index], 0), 1)
   const mapped = positions[index] + frac * sizes[index]
   return { positions, length: cursor, start: restStart + anchor - mapped }
+}
+
+/** How far each slot rises off the desk (px) for the lift and wave animations. */
+export function targetLifts(opts: {
+  restLeft: number[]
+  restWidth: number[]
+  separator: boolean[]
+  pointer: number | null
+  iconSize: number
+  radiusIcons: number
+  gap: number
+  curve?: FalloffCurve
+  liftMax: number
+}): number[] {
+  const { restLeft, restWidth, separator, pointer, iconSize, radiusIcons, gap, curve = 'cosine', liftMax } = opts
+  const radius = (iconSize + gap) * radiusIcons * 1.15
+  return restLeft.map((left, i) => {
+    if (separator[i] || pointer === null) return 0
+    return falloff(Math.abs(pointer - (left + restWidth[i] / 2)), radius, curve) * liftMax
+  })
 }

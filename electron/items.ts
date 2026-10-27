@@ -186,7 +186,12 @@ export async function activateItem(id: string, onStack: (item: DockItem) => void
   }
 }
 
+/** Registers or removes the Windows start-up entry. Only meaningful for an installed build. */
 export function launchAtLogin(enabled: boolean) {
-  if (!app.isPackaged) return // dev builds would register electron.exe itself
-  app.setLoginItemSettings({ openAtLogin: enabled })
+  if (!app.isPackaged) return // a dev run would register electron.exe itself
+  app.setLoginItemSettings({ openAtLogin: enabled, args: ['--hidden'] })
+}
+
+export function loginEnabled(): boolean {
+  return app.isPackaged && app.getLoginItemSettings().openAtLogin
 }

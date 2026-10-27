@@ -27,6 +27,14 @@ function migrate() {
     const settings = store.get('settings')
     if (settings.material === 'acrylic') store.set('settings', { ...settings, material: 'none' })
   }
+  if (version < 5) {
+    // magnifiedSize (px) became maxScale (a ratio of the icon size).
+    const old = store.get('settings') as unknown as { magnifiedSize?: number; iconSize?: number }
+    if (old.magnifiedSize && old.iconSize) {
+      const { magnifiedSize: _gone, ...rest } = old
+      store.set('settings', { ...rest, maxScale: Math.round((old.magnifiedSize / old.iconSize) * 100) / 100 } as unknown as DockSettings)
+    }
+  }
   // Fill settings added since the file was written.
   store.set('settings', { ...DEFAULT_SETTINGS, ...store.get('settings') })
   store.set('schemaVersion', SCHEMA_VERSION)
