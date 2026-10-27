@@ -4,7 +4,6 @@ import type { DockItem, DockPosition } from '@/shared/types'
 interface DockIconProps {
   item: DockItem
   style: CSSProperties
-  size: number
   iconSrc?: string
   running?: { count: number; minimized: boolean }
   launching: boolean

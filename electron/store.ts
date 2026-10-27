@@ -4,14 +4,14 @@ import {
   DockItem, DockSettings, Persisted, WidgetInstance,
 } from '../src/shared/types'
 
-const defaults: Persisted = {
-  schemaVersion: SCHEMA_VERSION,
+// schemaVersion is deliberately absent: a missing value means an old file that still needs migrating.
+const defaults: Omit<Persisted, 'schemaVersion'> = {
   items: [{ id: 'trash', type: 'trash' }],
   settings: DEFAULT_SETTINGS,
   widgets: [],
 }
 
-export const store = new Store<Persisted>({ defaults })
+export const store = new Store<Persisted>({ defaults: defaults as Persisted })
 
 /** Upgrades whatever an older build wrote. Each step only knows about the version before it. */
 function migrate() {

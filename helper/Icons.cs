@@ -66,17 +66,26 @@ internal static class Icons
         catch (Exception e) { Console.Error.WriteLine(e); return null; }
     }
 
+    /// Reads the pixels top-down through GetDIBits: the raw bits of a shell bitmap may be stored bottom-up,
+    /// which would flip the icon vertically.
     static Bitmap? FromHBitmap(IntPtr hbmp)
     {
         Native.GetObject(hbmp, Marshal.SizeOf<Native.BITMAP>(), out var info);
-        if (info.bmBitsPixel != 32 || info.bmBits == IntPtr.Zero || info.bmHeight <= 0) return null;
-        using var raw = new Bitmap(info.bmWidth, info.bmHeight, info.bmWidthBytes, PixelFormat.Format32bppArgb, info.bmBits);
-        var copy = new Bitmap(info.bmWidth, info.bmHeight, PixelFormat.Format32bppArgb);
-        using (var g = Graphics.FromImage(copy))
-        {
-            g.CompositingMode = CompositingMode.SourceCopy;
-            g.DrawImage(raw, 0, 0, info.bmWidth, info.bmHeight);
-        }
-        return copy;
+        int w = info.bmWidth, h = info.bmHeight;
+        if (w <= 0 || h <= 0) return null;
+        var header = new Native.BITMAPINFOHEADER { biSize = Marshal.SizeOf<Native.BITMAPINFOHEADER>(), biWidth = w, biHeight = -h, biPlanes = 1, biBitCount = 32 };
+        var pixels = new byte[w * h * 4];
+        var dc = Native.GetDC(IntPtr.Zero);
+        int lines = Native.GetDIBits(dc, hbmp, 0, (uint)h, pixels, ref header, 0);
+        Native.ReleaseDC(IntPtr.Zero, dc);
+        if (lines == 0) return null;
+        bool hasAlpha = false;
+        for (int i = 3; i < pixels.Length; i += 4) if (pixels[i] != 0) { hasAlpha = true; break; }
+        if (!hasAlpha) for (int i = 3; i < pixels.Length; i += 4) pixels[i] = 255;
+        var bmp = new Bitmap(w, h, PixelFormat.Format32bppArgb);
+        var data = bmp.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+        Marshal.Copy(pixels, 0, data.Scan0, pixels.Length);
+        bmp.UnlockBits(data);
+        return bmp;
     }
 }

@@ -4,7 +4,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import crypto from 'node:crypto'
 import { spawn } from 'node:child_process'
-import { getItems, setItems } from './store'
+import { getItems, getSettings, setItems } from './store'
 import { helper, HelperWindow, WindowsSnapshot } from './helper'
 import { broadcast } from './ipc'
 import type { DockItem, RunningState } from '../src/shared/types'
@@ -12,8 +12,41 @@ import type { DockItem, RunningState } from '../src/shared/types'
 let snapshot: WindowsSnapshot = { windows: [], fullscreen: false, foreground: 0 }
 const linkTargets = new Map<string, string>()
 
+const RUNNING_PREFIX = 'run:'
+
+/** Pinned items plus, when enabled, one temporary icon per running program that is not pinned. */
+export function visibleItems(): DockItem[] {
+  const pinned = getItems()
+  if (!getSettings().showRunningApps) return pinned
+  const owned = new Set(pinned.map((i) => exeOf(i)).filter((e): e is string => !!e))
+  const seen = new Map<string, HelperWindow>()
+  for (const w of snapshot.windows) {
+    const key = w.exePath.toLowerCase()
+    if (!owned.has(key) && !seen.has(key)) seen.set(key, w)
+  }
+  if (seen.size === 0) return pinned
+  const temps: DockItem[] = [...seen.values()].map((w) => ({
+    id: RUNNING_PREFIX + w.exePath.toLowerCase(),
+    type: 'app',
+    targetPath: w.exePath,
+    label: path.win32.basename(w.exePath, '.exe'),
+  }))
+  const trashAt = pinned.findIndex((i) => i.type === 'trash')
+  const head = trashAt >= 0 ? pinned.slice(0, trashAt) : pinned
+  const tail = trashAt >= 0 ? pinned.slice(trashAt) : []
+  return [...head, { id: 'running-separator', type: 'separator' }, ...temps, ...tail]
+}
+
+export const isRunningItem = (id: string) => id.startsWith(RUNNING_PREFIX)
+
+let lastVisible = ''
 export function setSnapshot(next: WindowsSnapshot) {
   snapshot = next
+  const signature = visibleItems().map((i) => i.id).join('|')
+  if (signature !== lastVisible) {
+    lastVisible = signature
+    broadcast('items:changed', visibleItems())
+  }
   broadcast('windows:changed', runningState())
 }
 
@@ -47,7 +80,7 @@ export function windowsOf(item: DockItem): HelperWindow[] {
 
 export function runningState(): RunningState {
   const state: RunningState = {}
-  for (const item of getItems()) {
+  for (const item of visibleItems()) {
     const wins = windowsOf(item)
     if (wins.length) state[item.id] = { count: wins.length, minimized: wins.every((w) => w.minimized) }
   }
@@ -61,7 +94,7 @@ export function onItemsChanged(fn: () => void) {
 
 export function broadcastItems() {
   onChanged?.()
-  broadcast('items:changed', getItems())
+  broadcast('items:changed', visibleItems())
   broadcast('windows:changed', runningState())
 }
 
@@ -127,7 +160,7 @@ export function openRecycleBin() {
 }
 
 export async function activateItem(id: string, onStack: (item: DockItem) => void) {
-  const item = getItems().find((i) => i.id === id)
+  const item = visibleItems().find((i) => i.id === id)
   if (!item?.targetPath && item?.type !== 'trash') return
   switch (item!.type) {
     case 'trash':

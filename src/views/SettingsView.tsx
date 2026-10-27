@@ -71,6 +71,9 @@ function DockTab({ s, set }: { s: DockSettings; set: Update }) {
         <Select value={s.animationCurve} onChange={(animationCurve) => set({ animationCurve })} options={[['spring', 'Yay'], ['bounce', 'Zıplama'], ['ease', 'Yumuşak'], ['linear', 'Doğrusal']]} />
       </Field>
       <Field label="Çalışan uygulama göstergesi"><Toggle label="Gösterge" value={s.showRunningIndicators} onChange={(showRunningIndicators) => set({ showRunningIndicators })} /></Field>
+      <Field label="Çalışan programları da göster" hint="Dock'a sabitlenmemiş açık programlar ayraçtan sonra görünür">
+        <Toggle label="Çalışan programlar" value={s.showRunningApps} onChange={(showRunningApps) => set({ showRunningApps })} />
+      </Field>
       <Field label="Çöp kutusunu göster"><Toggle label="Çöp kutusu" value={s.showTrash} onChange={(showTrash) => set({ showTrash })} /></Field>
       <h3>Otomatik gizleme</h3>
       <Field label="Otomatik gizle" hint="İmleç ekran kenarına gidince dock belirir">

@@ -44,6 +44,11 @@ internal static class Native
     [DllImport("kernel32.dll")] public static extern bool CloseHandle(IntPtr h);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] public static extern bool QueryFullProcessImageName(IntPtr h, uint flags, StringBuilder sb, ref int size);
     [DllImport("gdi32.dll")] public static extern bool DeleteObject(IntPtr h);
+    [DllImport("gdi32.dll")] public static extern int GetDIBits(IntPtr hdc, IntPtr hbmp, uint start, uint lines, byte[] bits, ref BITMAPINFOHEADER bmi, uint usage);
+    [DllImport("user32.dll")] public static extern IntPtr GetDC(IntPtr hwnd);
+    [DllImport("user32.dll")] public static extern int ReleaseDC(IntPtr hwnd, IntPtr hdc);
+    [StructLayout(LayoutKind.Sequential)]
+    public struct BITMAPINFOHEADER { public int biSize, biWidth, biHeight; public short biPlanes, biBitCount; public int biCompression, biSizeImage, biXPels, biYPels, biClrUsed, biClrImportant; }
     [DllImport("gdi32.dll")] public static extern int GetObject(IntPtr h, int size, out BITMAP bmp);
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     public static extern int SHCreateItemFromParsingName(string path, IntPtr pbc, ref Guid riid, out IntPtr ppv);

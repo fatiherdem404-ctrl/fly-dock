@@ -66,3 +66,9 @@ Kritik yol: **0.2 (C# yardımcı)** — widget, çöp kutusu, ikon, duvar kağı
 v1 maddelerinin hepsi kodlandı. Çalıştırılıp doğrulananlar: C# yardımcı (pencere olayları, büyük ikonlar, çöp kutusu), büyütme, sağ tık menüsü, ayarlar penceresi, 5 widget (hava durumu canlı veriyle), akrilik arka plan, tam ekranda gizleme, paket doğrulama testleri (`npm test`).
 Elle denenmesi gerekenler (otomatik test edilemedi): dosya sürükle-bırak ile ekleme ve sıralama, simgeyi dışarı atarak kaldırma, yığın penceresi, otomatik gizleme kenar tetiği, çok monitör, global kısayollar.
 Bilinen sınırlar: medya widget'ı şarkı adını sadece Spotify/VLC gibi oynatıcıların pencere başlığından okur (Windows medya oturumu için WinRT paketi indirmek gerekir); UWP uygulamaları dock'a sabitlenemez; kurulum paketi .NET çalışma zamanı gerektirir (self-contained paket için NuGet indirmesi gerekecek).
+
+## v1 düzeltme turu (kullanıcı denemesi sonrası)
+Bulunan ve düzeltilenler: ikonlar dikey ters çiziliyordu (kabuk bitmap'i alttan üste okunuyordu, GetDIBits ile düzeltildi); yardımcı süreçteki WinForms zamanlayıcıları hiç çalışmıyordu, bu yüzden pencere olayları, çalışan uygulama göstergesi ve tam ekranda gizleme gerçekte çalışmıyordu (iş parçacığı zamanlayıcılarıyla değişti); zemin düz kutuydu ve ikonlarla uyumsuzdu (akrilik varsayılan, raf ikonlarla birlikte genişleyip kalınlaşıyor); animasyon kritik sönümlü yaya geçti; eski yapılandırma dosyalarının taşınması çalışmıyordu.
+Yeni: çalışan ama sabitlenmemiş programlar ayraçtan sonra geçici simge olarak görünür ("Dock'ta tut" ile sabitlenir).
+Otomatik kontroller: `npm test` (paket doğrulama, fizik), `npm run e2e` (14 uçtan uca senaryo), `npm run perf <konum>` (kare süresi, titreme, taşma; 4 konumda geçiyor).
+Hâlâ elle denenmesi gereken: gerçek fareyle dosya sürükle-bırak (Explorer'dan), kısayol tuşları, çok monitör.

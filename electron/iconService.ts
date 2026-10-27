@@ -16,7 +16,7 @@ function cacheFile(targetPath: string, size: number, variant: string): string {
   } catch {
     /* missing file: cache by path only */
   }
-  const hash = crypto.createHash('sha1').update(`${targetPath.toLowerCase()}|${size}|${stamp}|${variant}`).digest('hex')
+  const hash = crypto.createHash('sha1').update(`${targetPath.toLowerCase()}|${size}|${stamp}|${variant}|v2`).digest('hex')
   return path.join(CACHE_DIR, `${hash}.png`)
 }
 

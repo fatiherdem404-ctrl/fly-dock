@@ -8,7 +8,7 @@ internal static class Program
     static readonly object OutLock = new();
     static readonly BlockingCollection<JsonObject> Queue = new();
     static Native.WinEventProc? hookProc; // kept alive for the GC
-    static System.Windows.Forms.Timer? debounce;
+    static System.Threading.Timer? debounce, safetyNet;
     static string lastWindowsJson = "";
     static long lastTrash = -1;
     static uint ignorePid;
@@ -35,6 +35,12 @@ internal static class Program
         if (json == lastWindowsJson) return;
         lastWindowsJson = json;
         Emit("windows", snap);
+    }
+
+    static void Refresh()
+    {
+        try { PushSnapshot(); PushTrash(); }
+        catch (Exception e) { Console.Error.WriteLine(e); }
     }
 
     static void PushTrash()
@@ -115,23 +121,18 @@ internal static class Program
         worker.Start();
         new Thread(Reader) { IsBackground = true, Name = "reader" }.Start();
 
-        // WinEvent hooks need a message loop on the installing thread.
-        debounce = new System.Windows.Forms.Timer { Interval = 120 };
-        debounce.Tick += (_, _) => { debounce.Stop(); try { PushSnapshot(); } catch (Exception e) { Console.Error.WriteLine(e); } };
+        // Window events re-enumerate after a short quiet period; a slow timer is the safety net (hooks can miss
+        // virtual desktop switches, and the recycle bin has no event). Plain threading timers: the hooks are the
+        // only thing that needs this thread's message loop.
+        debounce = new System.Threading.Timer(_ => Refresh(), null, Timeout.Infinite, Timeout.Infinite);
         hookProc = (_, _, _, idObject, _, _, _) =>
         {
             if (idObject != 0) return; // window-level events only
-            debounce!.Stop();
-            debounce.Start();
+            debounce.Change(120, Timeout.Infinite);
         };
         Native.SetWinEventHook(Native.EVENT_SYSTEM_FOREGROUND, Native.EVENT_SYSTEM_MINIMIZEEND, IntPtr.Zero, hookProc, 0, 0, Native.WINEVENT_OUTOFCONTEXT);
         Native.SetWinEventHook(Native.EVENT_OBJECT_CREATE, Native.EVENT_OBJECT_NAMECHANGE, IntPtr.Zero, hookProc, 0, 0, Native.WINEVENT_OUTOFCONTEXT);
-
-        // Slow safety net: hooks can miss things (virtual desktop switches), and the recycle bin has no event.
-        var tick = new System.Windows.Forms.Timer { Interval = 3000 };
-        tick.Tick += (_, _) => { try { PushSnapshot(); PushTrash(); } catch (Exception e) { Console.Error.WriteLine(e); } };
-        tick.Start();
-        debounce.Start();
+        safetyNet = new System.Threading.Timer(_ => Refresh(), null, 150, 3000);
         Emit("ready", new JsonObject { ["version"] = 1 });
         System.Windows.Forms.Application.Run();
         Queue.CompleteAdding();

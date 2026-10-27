@@ -36,6 +36,8 @@ export interface DockSettings {
   animationCurve: AnimationCurve
   showRunningIndicators: boolean
   showTrash: boolean
+  /** Also show running programs that are not pinned, after a separator. */
+  showRunningApps: boolean
   launchAtLogin: boolean
   toggleHotkey: string
 }
@@ -119,6 +121,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   animationCurve: 'spring',
   showRunningIndicators: true,
   showTrash: true,
+  showRunningApps: true,
   launchAtLogin: false,
   toggleHotkey: 'Control+Alt+D',
 }
@@ -142,7 +145,7 @@ export interface InvokeMap {
   'trash:drop': { args: [paths: string[]]; result: void }
   'menu:show': { args: [payload: { kind: 'empty' | 'icon'; itemId?: string }]; result: void }
   'dock:layout': { args: [layout: { main: number; cross: number; shelfMain: number; shelfCross: number }]; result: void }
-  'dock:surface': { args: [surface: { start: number; length: number }]; result: void }
+  'dock:surface': { args: [surface: { start: number; length: number; thickness: number }]; result: void }
   'dock:state': { args: []; result: { hidden: boolean } }
   'stack:list': { args: [id: string]; result: StackEntry[] }
   'stack:open': { args: [path: string]; result: void }

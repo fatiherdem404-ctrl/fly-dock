@@ -1,0 +1,189 @@
+// End-to-end smoke test: runs the built app with a throw-away profile and drives it through the same IPC
+// the UI uses (over the DevTools protocol). Needs `npx vite build` and the helper built. Run: node scripts/e2e.mjs
+import { spawn } from 'node:child_process'
+import { mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import assert from 'node:assert/strict'
+import electronPath from 'electron'
+
+const profile = mkdtempSync(join(tmpdir(), 'dock-e2e-'))
+const win = (p) => p.replaceAll('/', String.fromCharCode(92))
+const windir = process.env.SystemRoot ?? 'C:/Windows'
+writeFileSync(
+  join(profile, 'config.json'),
+  JSON.stringify({
+    items: [
+      { id: 'explorer', type: 'app', targetPath: win(`${windir}/explorer.exe`), label: 'explorer', order: 0 },
+      { id: 'dl', type: 'folder', targetPath: win(`${windir}/System32`), label: 'System32', order: 1 },
+      { id: 'trash', type: 'trash', order: 999 },
+    ],
+    settings: { material: 'none' },
+  }),
+)
+
+const port = 9900 + Math.floor(Math.random() * 90)
+const child = spawn(electronPath, ['.', `--user-data-dir=${profile}`, `--remote-debugging-port=${port}`], { stdio: 'ignore' })
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+const stop = () => spawn('taskkill', ['/T', '/F', '/PID', String(child.pid)], { stdio: 'ignore' })
+const pages = async () => (await (await fetch(`http://127.0.0.1:${port}/json`)).json()).filter((p) => p.type === 'page')
+
+async function until(check, label, tries = 40) {
+  for (let i = 0; i < tries; i++) {
+    try { const v = await check(); if (v) return v } catch { /* retry */ }
+    await sleep(400)
+  }
+  throw new Error(`timed out: ${label}`)
+}
+
+async function connect(page) {
+  const ws = new WebSocket(page.webSocketDebuggerUrl)
+  await new Promise((r) => (ws.onopen = r))
+  let id = 0
+  const pending = new Map()
+  ws.onmessage = (e) => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) pending.get(m.id)(m) }
+  return {
+    ws,
+    call: async (expr) => {
+      const n = ++id
+      const reply = await new Promise((resolve) => { pending.set(n, resolve); ws.send(JSON.stringify({ id: n, method: 'Runtime.evaluate', params: { expression: expr, returnByValue: true, awaitPromise: true } })) })
+      if (reply.result.exceptionDetails) throw new Error(reply.result.exceptionDetails.exception?.description ?? 'evaluate failed')
+      return reply.result.result.value
+    },
+  }
+}
+
+const results = []
+const check = async (name, fn) => {
+  try { await fn(); results.push(['PASS', name]) } catch (e) { results.push(['FAIL', `${name}: ${e.message.split('\n')[0]}`]) }
+}
+
+try {
+  const dockPage = await until(async () => (await pages()).find((p) => p.url.includes('#/dock')), 'dock window')
+  const dock = await connect(dockPage)
+  const invoke = (channel, ...args) => dock.call(`window.api.invoke(${JSON.stringify(channel)}, ...${JSON.stringify(args)})`)
+  await sleep(1500)
+
+  await check('config from an older schema is migrated and loads', async () => {
+    const s = await invoke('settings:get')
+    assert.equal(s.showRunningApps, true)
+    const items = await invoke('items:get')
+    assert.ok(items.some((i) => i.id === 'explorer') && items.some((i) => i.type === 'trash'))
+    assert.ok(!items.some((i) => 'order' in i), 'legacy order field is gone')
+  })
+
+  await check('shell icons come back as PNG data URLs', async () => {
+    const icon = await invoke('items:icon', 'explorer')
+    assert.match(icon, /^data:image\/png;base64,/)
+    assert.ok(icon.length > 2000)
+  })
+
+  await check('running programs that are not pinned get temporary icons after a separator', async () => {
+    const items = await until(async () => { const v = await invoke('items:get'); return v.some((i) => i.id.startsWith('run:')) && v }, 'running items')
+    const sep = items.findIndex((i) => i.id === 'running-separator')
+    assert.ok(sep > 0 && items[sep + 1].id.startsWith('run:'))
+    assert.equal(items[items.length - 1].type, 'trash', 'trash stays last')
+  })
+
+  await check('adding files and folders by path (drop) pins them before the trash', async () => {
+    const before = (await invoke('items:get')).filter((i) => !i.id.startsWith('run:') && i.id !== 'running-separator').length
+    await invoke('items:add-paths', [win(`${windir}/System32/notepad.exe`), win(`${windir}/System32/drivers/etc/hosts`), win(`${windir}/Fonts`)], 1)
+    const after = (await invoke('items:get')).filter((i) => !i.id.startsWith('run:') && i.id !== 'running-separator')
+    assert.equal(after.length, before + 3)
+    assert.deepEqual(after.slice(1, 4).map((i) => i.type), ['app', 'file', 'folder'])
+    assert.equal(after[after.length - 1].type, 'trash')
+  })
+
+  await check('reordering keeps ids and drops unknown ones', async () => {
+    const items = (await invoke('items:get')).filter((i) => !i.id.startsWith('run:') && i.id !== 'running-separator')
+    const reversed = [items[1], items[0], ...items.slice(2), { id: 'ghost', type: 'app', targetPath: 'x' }]
+    const next = await invoke('items:set', reversed)
+    assert.equal(next[0].id, items[1].id)
+    assert.ok(!next.some((i) => i.id === 'ghost'))
+  })
+
+  await check('removing an item works and the trash cannot be removed', async () => {
+    const items = await invoke('items:get')
+    const removable = items.find((i) => i.type === 'file')
+    const after = await invoke('items:remove', removable.id)
+    assert.ok(!after.some((i) => i.id === removable.id))
+    const afterTrash = await invoke('items:remove', 'trash')
+    assert.ok(afterTrash.some((i) => i.type === 'trash'))
+  })
+
+  await check('a folder can be shown as a stack and its popup lists entries', async () => {
+    const entries = await invoke('stack:list', 'dl')
+    assert.ok(entries.length > 10 && entries[0].isDirectory, 'folders are listed first')
+    await invoke('stack:show', 'dl', { x: 800, y: 900 })
+    await until(async () => (await pages()).find((p) => p.url.includes('#/stack/dl')), 'stack window')
+  })
+
+  await check('stack icons render in the popup', async () => {
+    const stackPage = (await pages()).find((p) => p.url.includes('#/stack/dl'))
+    const stack = await connect(stackPage)
+    const loaded = await until(async () => stack.call(`document.querySelectorAll('.stack__entry img').length`), 'stack icons')
+    assert.ok(loaded > 5)
+    stack.ws.close()
+  })
+
+  await check('moving the dock to the left resizes its window to a tall, narrow shape', async () => {
+    await invoke('settings:update', { position: 'left' })
+    await sleep(800)
+    const size = await dock.call('({ w: innerWidth, h: innerHeight })')
+    assert.ok(size.h > size.w, `expected portrait window, got ${size.w}x${size.h}`)
+    await invoke('settings:update', { position: 'bottom' })
+  })
+
+  await check('widgets can be added, render and be removed', async () => {
+    const list = await invoke('widgets:add', 'clock')
+    const widget = list.find((w) => w.type === 'clock')
+    const page = await until(async () => (await pages()).find((p) => p.url.includes(`#/widget/${widget.id}`)), 'widget window')
+    const conn = await connect(page)
+    const text = await until(async () => conn.call(`document.querySelector('.widget__big')?.textContent`), 'clock text')
+    assert.match(text, /\d{2}:\d{2}/)
+    conn.ws.close()
+    const after = await invoke('widgets:remove', widget.id)
+    assert.ok(!after.some((w) => w.id === widget.id))
+  })
+
+  await check('system stats are real numbers', async () => {
+    const s = await invoke('widgets:system')
+    assert.ok(s.ram > 0 && s.ram <= 100 && s.disk > 0)
+  })
+
+  await check('themes: built-ins listed, switching theme is stored', async () => {
+    const themes = await invoke('themes:list')
+    assert.ok(['glass-dark', 'frost-light', 'neon-night'].every((id) => themes.some((t) => t.id === id)))
+    const next = await invoke('settings:update', { theme: 'frost-light' })
+    assert.equal(next.theme, 'frost-light')
+    await sleep(500)
+    const accent = await dock.call(`getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()`)
+    assert.equal(accent, '#1e6fe0')
+  })
+
+  await check('recycle bin state is reported by the helper', async () => {
+    const t = await invoke('trash:get')
+    assert.ok(Number.isInteger(t.items) && t.items >= 0)
+  })
+
+  await check('auto-hide hides the dock until the pointer reaches the edge', async () => {
+    await invoke('settings:update', { autoHide: true })
+    await sleep(900)
+    const hiddenClass = await dock.call(`document.querySelector('.dock').classList.contains('dock--hidden')`)
+    assert.equal(hiddenClass, true)
+    await invoke('settings:update', { autoHide: false })
+    await sleep(500)
+    assert.equal(await dock.call(`document.querySelector('.dock').classList.contains('dock--hidden')`), false)
+  })
+
+  dock.ws.close()
+} catch (e) {
+  results.push(['FAIL', `setup: ${e.message}`])
+} finally {
+  stop()
+}
+
+for (const [status, name] of results) console.log(`${status}  ${name}`)
+const failed = results.filter(([s]) => s === 'FAIL').length
+console.log(`\n${results.length - failed}/${results.length} passed`)
+process.exitCode = failed ? 1 : 0

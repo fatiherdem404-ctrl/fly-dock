@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { DockItem, DockSettings, RunningState } from '@/shared/types'
 import { invoke } from '@/api'
+import { SPRINGS, isSettled, layoutRow, stepSpring, targetSizes } from '@/physics'
 import DockIcon from './DockIcon'
 
 interface DockProps {
@@ -20,20 +21,14 @@ const PAD_CROSS = 8 // surface padding on the cross axis
 const SEPARATOR = 0.35 // separator width as a share of the icon size
 const TOOLTIP_ROOM = 34
 
-/** Cosine falloff: 1 at distance 0, tapering to 0 at `radius`. */
-function falloff(distance: number, radius: number): number {
-  if (distance >= radius) return 0
-  return (Math.cos((distance / radius) * Math.PI) + 1) / 2
-}
-
-const SPRINGS: Record<DockSettings['animationCurve'], { k: number; zeta: number }> = {
-  spring: { k: 320, zeta: 0.78 },
-  bounce: { k: 380, zeta: 0.5 },
-  ease: { k: 220, zeta: 1 },
-  linear: { k: 600, zeta: 1 },
-}
-
 const DRAG_TYPE = 'application/x-dock-item'
+
+declare global {
+  interface Window {
+    /** Frame times (ms) of the last animation frames; read by the perf check. */
+    __dockFrames?: number[]
+  }
+}
 
 export default function Dock({ items, settings, running, icons, launching, hidden, flat, onActivate }: DockProps) {
   const horizontal = settings.position === 'bottom' || settings.position === 'top'
@@ -50,23 +45,19 @@ export default function Dock({ items, settings, running, icons, launching, hidde
       width.push(w)
       cursor += w + (i < items.length - 1 ? GAP : 0)
     })
-    return { left, width, length: cursor }
+    return { left, width, length: cursor, separator: items.map((i) => i.type === 'separator') }
   }, [items, iconSize])
 
   const growth = (magnifiedSize - iconSize) * (settings.magnificationRadius + 1) * 0.5 + 12
-  const surfaceThickness = iconSize + PAD_CROSS * 2
+  const restThickness = iconSize + PAD_CROSS * 2
+  const maxThickness = magnifiedSize + PAD_CROSS * 2
   const windowMain = Math.ceil(rest.length + PAD * 2 + growth * 2)
-  const windowCross = Math.ceil(surfaceThickness + (magnifiedSize - iconSize) + TOOLTIP_ROOM + 6)
+  const windowCross = Math.ceil(maxThickness + TOOLTIP_ROOM + 6)
   const restStart = (windowMain - rest.length) / 2
 
   useEffect(() => {
-    invoke('dock:layout', {
-      main: windowMain,
-      cross: windowCross,
-      shelfMain: rest.length + PAD * 2,
-      shelfCross: surfaceThickness,
-    })
-  }, [windowMain, windowCross, rest.length, surfaceThickness])
+    invoke('dock:layout', { main: windowMain, cross: windowCross, shelfMain: rest.length + PAD * 2, shelfCross: restThickness })
+  }, [windowMain, windowCross, rest.length, restThickness])
 
   // ---- spring animation of icon sizes ----
   const sizes = useRef<number[]>([])
@@ -76,42 +67,45 @@ export default function Dock({ items, settings, running, icons, launching, hidde
   const raf = useRef(0)
   const [, repaint] = useState(0)
 
-  const targets = useCallback((): number[] => {
-    const radius = (iconSize + GAP) * settings.magnificationRadius * 1.15
-    return items.map((item, i) => {
-      if (item.type === 'separator') return rest.width[i]
-      const p = pointer.current
-      if (p === null || !settings.magnification) return iconSize
-      const center = rest.left[i] + rest.width[i] / 2
-      return iconSize + falloff(Math.abs(p - center), radius) * (magnifiedSize - iconSize)
-    })
-  }, [items, rest, iconSize, magnifiedSize, settings.magnification, settings.magnificationRadius])
+  const goal = useCallback(
+    () =>
+      targetSizes({
+        restLeft: rest.left,
+        restWidth: rest.width,
+        separator: rest.separator,
+        pointer: settings.magnification ? pointer.current : null,
+        iconSize,
+        magnifiedSize,
+        radiusIcons: settings.magnificationRadius,
+        gap: GAP,
+      }),
+    [rest, iconSize, magnifiedSize, settings.magnification, settings.magnificationRadius],
+  )
 
   const step = useCallback(
     (last: number) => (now: number) => {
-      const dt = Math.min((now - last) / 1000, 0.032)
+      const frameMs = now - last
+      const frames = (window.__dockFrames ??= [])
+      if (frames.length >= 300) frames.shift()
+      frames.push(frameMs)
+      const dt = Math.min(frameMs / 1000, 0.05)
       const spring = SPRINGS[settings.animationCurve]
-      const damping = 2 * Math.sqrt(spring.k) * spring.zeta
-      const goal = targets()
       let moving = false
-      goal.forEach((target, i) => {
-        const x = sizes.current[i] ?? target
-        const v = velocity.current[i] ?? 0
-        const accel = spring.k * (target - x) - damping * v
-        const nv = v + accel * dt
-        const nx = x + nv * dt
-        velocity.current[i] = nv
-        sizes.current[i] = nx
-        if (Math.abs(target - nx) > 0.05 || Math.abs(nv) > 0.05) moving = true
-        else {
+      goal().forEach((target, i) => {
+        const [x, v] = stepSpring(sizes.current[i] ?? target, velocity.current[i] ?? 0, target, dt, spring)
+        if (isSettled(x, v, target)) {
           sizes.current[i] = target
           velocity.current[i] = 0
+        } else {
+          sizes.current[i] = x
+          velocity.current[i] = v
+          moving = true
         }
       })
       repaint((n) => n + 1)
       raf.current = moving ? requestAnimationFrame(step(now)) : 0
     },
-    [settings.animationCurve, targets],
+    [settings.animationCurve, goal],
   )
 
   const kick = useCallback(() => {
@@ -138,7 +132,7 @@ export default function Dock({ items, settings, running, icons, launching, hidde
   }
 
   const track = (e: { clientX: number; clientY: number }) => {
-    if (crossDistanceFromEdge(e) > surfaceThickness + (magnifiedSize - iconSize) + 8) {
+    if (crossDistanceFromEdge(e) > maxThickness + 8) {
       pointer.current = null
     } else {
       pointer.current = mainCoord(e) - restStart
@@ -200,25 +194,25 @@ export default function Dock({ items, settings, running, icons, launching, hidde
 
   // ---- render ----
   const current = items.map((_, i) => sizes.current[i] ?? rest.width[i])
-  const positions: number[] = []
-  let cursor = 0
-  current.forEach((s, i) => {
-    positions.push(cursor)
-    cursor += s + (i < items.length - 1 ? GAP : 0)
-  })
-  const length = cursor
+  const row = layoutRow({ sizes: current, restLeft: rest.left, restWidth: rest.width, gap: GAP, restStart, anchor: lastPointer.current })
+  const { positions, length } = row
+  const rowStart = row.start
 
-  // Anchor: the point of the row under the pointer stays under the pointer while icons grow around it.
-  let anchorIndex = items.length - 1
-  for (let i = 0; i < items.length; i++) {
-    if (lastPointer.current <= rest.left[i] + rest.width[i] + GAP / 2) {
-      anchorIndex = i
-      break
-    }
-  }
-  const frac = items.length ? Math.min(Math.max((lastPointer.current - rest.left[anchorIndex]) / rest.width[anchorIndex], 0), 1) : 0
-  const mapped = items.length ? positions[anchorIndex] + frac * current[anchorIndex] : 0
-  const rowStart = restStart + lastPointer.current - mapped
+  // The surface is as thick as the biggest icon, so a magnified icon never pokes out of the glass.
+  const biggest = current.reduce((m, s, i) => (items[i]?.type === 'separator' ? m : Math.max(m, s)), iconSize)
+  const thickness = Math.max(restThickness, biggest + PAD_CROSS * 2)
+  const surfaceStart = rowStart - PAD
+  const surfaceLength = length + PAD * 2
+
+  // Keep the system-drawn shelf window glued to the (magnifying) surface.
+  const lastSurface = useRef('')
+  useEffect(() => {
+    if (!flat) return
+    const key = `${Math.round(surfaceStart)}:${Math.round(surfaceLength)}:${Math.round(thickness)}`
+    if (key === lastSurface.current) return
+    lastSurface.current = key
+    invoke('dock:surface', { start: surfaceStart, length: surfaceLength, thickness })
+  })
 
   const side = settings.position
   const edgeStyle = (main: number, cross: number, w: number, h: number): React.CSSProperties => {
@@ -227,18 +221,6 @@ export default function Dock({ items, settings, running, icons, launching, hidde
     const crossProp = { [side]: cross }
     return { position: 'absolute', ...box, ...mainProp, ...crossProp }
   }
-
-  // Keep the system-drawn shelf window glued to the (magnifying) surface.
-  const surfaceStart = rowStart - PAD
-  const surfaceLength = length + PAD * 2
-  const lastSurface = useRef('')
-  useEffect(() => {
-    if (!flat) return
-    const key = `${Math.round(surfaceStart)}:${Math.round(surfaceLength)}`
-    if (key === lastSurface.current) return
-    lastSurface.current = key
-    invoke('dock:surface', { start: surfaceStart, length: surfaceLength })
-  })
 
   return (
     <div
@@ -253,7 +235,7 @@ export default function Dock({ items, settings, running, icons, launching, hidde
         invoke('menu:show', { kind: 'empty' })
       }}
     >
-      <div className="dock__surface" style={edgeStyle(surfaceStart, 0, surfaceLength, surfaceThickness)} />
+      <div className="dock__surface" style={edgeStyle(surfaceStart, 0, surfaceLength, thickness)} />
       {items.map((item, i) => {
         const size = current[i]
         const base = edgeStyle(rowStart + positions[i], PAD_CROSS, size, size)
@@ -266,15 +248,13 @@ export default function Dock({ items, settings, running, icons, launching, hidde
             />
           )
         }
-        const state = running[item.id]
         return (
           <DockIcon
             key={item.id}
             item={item}
             style={base}
-            size={size}
             iconSrc={icons[item.id]}
-            running={settings.showRunningIndicators ? state : undefined}
+            running={settings.showRunningIndicators ? running[item.id] : undefined}
             launching={launching.has(item.id)}
             position={side}
             hovered={pointer.current !== null && Math.abs(pointer.current - (rest.left[i] + rest.width[i] / 2)) < rest.width[i] / 2 + GAP / 2}
@@ -301,12 +281,7 @@ export default function Dock({ items, settings, running, icons, launching, hidde
       {insertAt !== null && (
         <div
           className="dock__insert"
-          style={edgeStyle(
-            rowStart + (insertAt < items.length ? positions[insertAt] - GAP / 2 : length) - 1,
-            PAD_CROSS,
-            2,
-            iconSize,
-          )}
+          style={edgeStyle(rowStart + (insertAt < items.length ? positions[insertAt] - GAP / 2 : length) - 1, PAD_CROSS, 2, iconSize)}
         />
       )}
     </div>

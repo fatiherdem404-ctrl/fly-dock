@@ -155,14 +155,14 @@ export function setLayout(next: Layout) {
 }
 
 /** The renderer reports where the glass surface currently is (it widens while icons magnify); the shelf follows. */
-export function setSurface(webContentsId: number, surface: { start: number; length: number }) {
+export function setSurface(webContentsId: number, surface: { start: number; length: number; thickness: number }) {
   for (const dock of docks.values()) {
     if (dock.win.isDestroyed() || dock.win.webContents.id !== webContentsId || !dock.shelf || dock.shelf.isDestroyed()) continue
     const b = dock.win.getBounds()
     const { position } = getSettings()
     const start = Math.round(surface.start)
     const length = Math.max(1, Math.round(surface.length))
-    const thick = Math.round(layout.shelfCross)
+    const thick = Math.max(1, Math.round(surface.thickness))
     const shelf =
       position === 'bottom' ? { x: b.x + start, y: b.y + b.height - thick, width: length, height: thick }
       : position === 'top' ? { x: b.x + start, y: b.y, width: length, height: thick }

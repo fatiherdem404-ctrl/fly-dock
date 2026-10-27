@@ -13,7 +13,9 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p electron/tsconfig.json",
     "helper:build": "node scripts/build-helper.mjs",
-    "test": "node tests/packs.test.mjs",
+    "test": "node tests/packs.test.mjs && node tests/physics.test.mjs",
+    "e2e": "node scripts/e2e.mjs",
+    "perf": "node scripts/perf-dock.mjs",
     "brand:check": "node scripts/check-brand.mjs",
     "brand:render": "node scripts/render-docs.mjs",
     "icon:placeholder": "node scripts/make-placeholder-icon.mjs"

@@ -7,7 +7,7 @@ import { handle, broadcast } from './ipc'
 import { helper } from './helper'
 import {
   setSnapshot, runningState, addPaths, addSeparator, removeItem, updateItem, replaceItems,
-  activateItem, openRecycleBin, launchAtLogin, onItemsChanged,
+  activateItem, openRecycleBin, launchAtLogin, onItemsChanged, visibleItems, isRunningItem, broadcastItems,
 } from './items'
 import { iconForItem, setTrashState } from './icons'
 import { shellIcon } from './iconService'
@@ -145,15 +145,21 @@ function applySettings(partial: Partial<DockSettings>): DockSettings {
   const layoutChanged = (['position', 'monitor', 'material', 'autoHide'] as const).some((k) => k in partial && before[k] !== next[k])
   if (layoutChanged) syncDocks()
   if (partial.theme !== undefined) refreshShelfTint()
+  if (partial.showRunningApps !== undefined) broadcastItems()
   broadcast('settings:changed', next)
   return next
 }
 
 function showMenu(e: Electron.IpcMainInvokeEvent, payload: { kind: 'empty' | 'icon'; itemId?: string }) {
   const template: MenuItemConstructorOptions[] = []
-  const item = payload.itemId ? getItems().find((i) => i.id === payload.itemId) : undefined
+  const item = payload.itemId ? visibleItems().find((i) => i.id === payload.itemId) : undefined
 
-  if (payload.kind === 'icon' && item) {
+  if (payload.kind === 'icon' && item && isRunningItem(item.id)) {
+    template.push(
+      { label: "Dock'ta tut", click: () => addPaths([item.targetPath!], getItems().length) },
+      { label: 'Pencereyi kapat', click: () => closeWindowsOf(item) },
+    )
+  } else if (payload.kind === 'icon' && item) {
     if (item.type === 'trash') {
       template.push({ label: 'Aç', click: openRecycleBin }, { label: 'Çöp kutusunu boşalt', click: () => helper.emptyTrash().catch(() => {}) })
     } else if (item.type !== 'separator') {
@@ -205,14 +211,14 @@ async function pickIconFor(id: string) {
 // ---- IPC ----
 
 function registerIpc() {
-  handle('items:get', () => getItems())
+  handle('items:get', () => visibleItems())
   handle('items:set', (_e, items) => replaceItems(items))
   handle('items:add-paths', (_e, paths, index) => addPaths(paths, index))
   handle('items:remove', (_e, id) => removeItem(id))
   handle('items:update', (_e, id, patch) => updateItem(id, patch))
   handle('items:activate', (_e, id) => activateItem(id, showStackAtCursor))
   handle('items:icon', (_e, id) => {
-    const item = getItems().find((i) => i.id === id)
+    const item = visibleItems().find((i) => i.id === id)
     return item ? iconForItem(item) : null
   })
   handle('icon:path', (_e, target) => shellIcon(target, 96).catch(() => null))
