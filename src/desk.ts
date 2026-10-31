@@ -15,6 +15,7 @@ export function hoverProfile(s: Pick<DockSettings, 'hoverAnimation' | 'iconSize'
 }
 
 export const DESK_LABELS: Record<DeskStyle, string> = {
+  none: 'Rafsız (boş)',
   glass: 'Koyu cam',
   azure: 'Mavi çerçeve',
   glass3d: '3B cam raf',
@@ -31,6 +32,7 @@ export const DESK_LABELS: Record<DeskStyle, string> = {
 
 /** Depth and opacity each style looks best with; picking a style in settings applies these. */
 export const DESK_PRESETS: Record<DeskStyle, { depth: number; opacity: number; edge: number; scale: number }> = {
+  none: { depth: 0, opacity: 1, edge: 0, scale: 100 },
   glass: { depth: 0, opacity: 1, edge: 0, scale: 100 },
   azure: { depth: 0, opacity: 1, edge: 0, scale: 100 },
   glass3d: { depth: 34, opacity: 0.95, edge: 8, scale: 100 },
@@ -78,7 +80,7 @@ export function shelfRadii(s: Pick<DockSettings, 'deskRadTL' | 'deskRadTR' | 'de
 
 /** Looks of the desk by style: the radii that suit the material (pill glass, a squarer wooden shelf). */
 export const DESK_RADII: Record<DeskStyle, [number, number]> = {
-  glass: [60, 60], azure: [60, 60], neon: [60, 60],
+  none: [0, 0], glass: [60, 60], azure: [60, 60], neon: [60, 60],
   glass3d: [14, 5], wood: [10, 4], metal: [10, 4], marble: [10, 4], crystal: [14, 5], matte: [10, 4], mirror: [14, 5], wall: [8, 3], custom: [10, 4],
 }
 

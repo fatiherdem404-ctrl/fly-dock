@@ -228,3 +228,5 @@ html[data-view='settings'] ::-webkit-scrollbar-thumb:hover { background: color-m
 .st-subtabs button:hover { color: var(--panel-text); }
 .st-subtabs button[aria-selected='true'] { background: var(--accent); color: #fff; box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 45%, transparent); }
 .st-subpage { animation: st-in 240ms var(--ease) both; }
+.st-desk__row { position: absolute; left: 8%; right: 8%; display: flex; justify-content: center; gap: 10px; }
+.st-desk__icon { position: static !important; }

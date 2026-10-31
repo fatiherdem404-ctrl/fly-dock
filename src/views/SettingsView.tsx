@@ -326,14 +326,14 @@ function DeskCard({ style }: { style: DeskStyle }) {
   return (
     <div className={`st-desk dock dock--desk-${style} dock--bottom`} style={{ '--desk-depth': `${DESK_PRESETS[style].depth}px` } as React.CSSProperties}>
       <div style={{ position: 'absolute', left: '8%', right: '8%', bottom: 5, height: 34 }}>
-        {preset.depth > 0 ? (
+        {style === 'none' ? null : preset.depth > 0 ? (
           <Shelf length={116} thickness={34} edge={Math.round(preset.edge * 0.5)} depth={preset.depth * 0.5} side="bottom" radii={{ tl: DESK_RADII[style][0], tr: DESK_RADII[style][0], bl: DESK_RADII[style][1], br: DESK_RADII[style][1] }} opacity={1} />
         ) : (
           <div className="dock__desk" style={{ position: 'absolute', inset: '8px 0 0 0', borderRadius: 999 }}><span className="dock__desk-sheen" /></div>
         )}
       </div>
 
-      {[0, 1, 2].map((i) => <i key={i} className="st-desk__icon" style={{ left: `${26 + i * 18}%`, bottom: 14 + (i === 1 ? 4 : 0) }} />)}
+      <div className="st-desk__row" style={{ bottom: style === 'none' ? 18 : 14 }}>{[0, 1, 2].map((i) => <i key={i} className="st-desk__icon" style={{ transform: i === 1 ? 'translateY(-4px)' : undefined }} />)}</div>
     </div>
   )
 }

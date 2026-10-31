@@ -69,9 +69,9 @@ export type LabelMode = 'hover' | 'always' | 'never'
 export type StackSize = 'small' | 'medium' | 'full' | 'custom'
 /** Where the dock sits relative to other windows: always on top, as a normal window, or below all of them. */
 export type DockLayer = 'above' | 'normal' | 'below'
-export type DeskStyle = 'glass' | 'azure' | 'glass3d' | 'wood' | 'metal' | 'marble' | 'neon' | 'crystal' | 'matte' | 'mirror' | 'wall' | 'custom'
+export type DeskStyle = 'none' | 'glass' | 'azure' | 'glass3d' | 'wood' | 'metal' | 'marble' | 'neon' | 'crystal' | 'matte' | 'mirror' | 'wall' | 'custom'
 
-export const DESK_STYLES: DeskStyle[] = ['glass', 'azure', 'glass3d', 'wood', 'metal', 'neon', 'marble', 'crystal', 'matte', 'mirror', 'wall', 'custom']
+export const DESK_STYLES: DeskStyle[] = ['none', 'glass', 'azure', 'glass3d', 'wood', 'metal', 'neon', 'marble', 'crystal', 'matte', 'mirror', 'wall', 'custom']
 export type TextureMode = 'tile' | 'fit'
 
 export interface DockSettings {
