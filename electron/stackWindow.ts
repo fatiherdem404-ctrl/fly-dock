@@ -43,11 +43,23 @@ export function readEntries(item: DockItem): StackEntry[] {
   }
 }
 
+let lastDialogClose = 0
+
+/** A menu or question opened from the window just closed; the focus is on its way back. */
+export function noteDialogClosed() {
+  lastDialogClose = Date.now()
+}
+
+export function dialogJustClosed(): boolean {
+  return Date.now() - lastDialogClose < 700
+}
+
 export function stackIsFocused(): boolean {
   return !!stackWindow && !stackWindow.isDestroyed() && stackWindow.isFocused()
 }
 
 export function focusStack() {
+  noteDialogClosed()
   if (stackWindow && !stackWindow.isDestroyed()) stackWindow.focus()
 }
 
