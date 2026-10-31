@@ -3,7 +3,9 @@
 //   node scripts/shot-page.mjs <route> <out.png> [--tab=N] [--setting=key:value ...] [--size=WxH] [--wait=ms]
 // <route> is a substring of the page URL: "#/settings", "#/dock", "#/stack", "#/menu".
 import { spawn } from 'node:child_process'
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { deflateSync } from 'node:zlib'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import electronPath from 'electron'
@@ -15,6 +17,33 @@ const settings = Object.fromEntries(settingPairs.map(([k, v]) => [k, v === 'true
 const [width, height] = (arg('size') ?? '1100x760').split('x').map(Number)
 
 const profile = mkdtempSync(join(tmpdir(), 'dock-shot-'))
+
+// --texture=sample stores a generated 96x96 test image (diagonal stripes with a dot) as the custom desk texture
+function samplePng() {
+  const W = 96
+  const raw = Buffer.alloc(W * (W * 4 + 1))
+  for (let y = 0; y < W; y++) {
+    raw[y * (W * 4 + 1)] = 0
+    for (let x = 0; x < W; x++) {
+      const stripe = ((x + y) % 24) < 12
+      const dot = (x - 48) ** 2 + (y - 48) ** 2 < 100
+      const px = dot ? [255, 255, 255, 255] : stripe ? [210, 120, 60, 255] : [120, 60, 30, 255]
+      raw.set(px, y * (W * 4 + 1) + 1 + x * 4)
+    }
+  }
+  const table = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0 })
+  const crc = (b) => { let c = 0xffffffff; for (const v of b) c = table[(c ^ v) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0 }
+  const chunk = (type, data) => { const l = Buffer.alloc(4); l.writeUInt32BE(data.length); const td = Buffer.concat([Buffer.from(type), data]); const c = Buffer.alloc(4); c.writeUInt32BE(crc(td)); return Buffer.concat([l, td, c]) }
+  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(W, 0); ihdr.writeUInt32BE(W, 4); ihdr[8] = 8; ihdr[9] = 6
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0))])
+}
+if (arg('texture') === 'sample') {
+  const png = samplePng()
+  const file = createHash('sha1').update(png).digest('hex').slice(0, 16) + '.png'
+  mkdirSync(join(profile, 'textures'), { recursive: true })
+  writeFileSync(join(profile, 'textures', file), png)
+  settings.deskTexFile = file
+}
 const win = (p) => p.replaceAll('/', String.fromCharCode(92))
 const windir = process.env.SystemRoot ?? 'C:/Windows'
 const app = (name, p) => ({ id: name, type: 'app', targetPath: win(p), label: name })

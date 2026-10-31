@@ -1,7 +1,7 @@
 /* The shelf (3D desks): sloping glass top, lit rim, solid front face. Each material has its own edge colours. */
 .dock__shelf { position: absolute; transform-origin: center; filter: drop-shadow(0 7px 9px rgba(0, 0, 0, 0.42)); pointer-events: none; }
 .dock__shelf-surface { position: absolute; left: 0; top: 0; }
-.dock .dock__desk.dock__shelf-surface { border: 0; border-radius: 0; box-shadow: none; background-size: auto; }
+.dock .dock__desk.dock__shelf-surface { border: 0; border-radius: 0; box-shadow: none; }
 .dock__shelf-front {
   position: absolute; left: 0;
   background: linear-gradient(180deg, var(--edge-top, #4a5a86), var(--edge-bottom, #141c36));

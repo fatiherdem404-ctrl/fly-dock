@@ -68,9 +68,10 @@ export type LabelMode = 'hover' | 'always' | 'never'
 export type StackSize = 'small' | 'medium' | 'full' | 'custom'
 /** Where the dock sits relative to other windows: always on top, as a normal window, or below all of them. */
 export type DockLayer = 'above' | 'normal' | 'below'
-export type DeskStyle = 'glass' | 'azure' | 'glass3d' | 'wood' | 'metal' | 'marble' | 'neon' | 'crystal' | 'matte' | 'mirror' | 'wall'
+export type DeskStyle = 'glass' | 'azure' | 'glass3d' | 'wood' | 'metal' | 'marble' | 'neon' | 'crystal' | 'matte' | 'mirror' | 'wall' | 'custom'
 
-export const DESK_STYLES: DeskStyle[] = ['glass', 'azure', 'glass3d', 'wood', 'metal', 'neon', 'marble', 'crystal', 'matte', 'mirror', 'wall']
+export const DESK_STYLES: DeskStyle[] = ['glass', 'azure', 'glass3d', 'wood', 'metal', 'neon', 'marble', 'crystal', 'matte', 'mirror', 'wall', 'custom']
+export type TextureMode = 'tile' | 'fit'
 
 export interface DockSettings {
   // placement
@@ -108,6 +109,14 @@ export interface DockSettings {
   deskRadLinked: boolean
   /** Thickness of the desk's front face on the screen-edge side, the "lip" a 3D shelf stands on (px). */
   deskEdge: number
+  /** Size of the desk pattern as a percentage of its designed size (also the size of the custom texture's tile). */
+  deskTexScale: number
+  /** Stored name of the user's own texture image ('' = none), used by the 'custom' desk style. */
+  deskTexFile: string
+  deskTexMode: TextureMode
+  deskTexX: number
+  deskTexY: number
+  deskTexRotate: number
   /** Space between the icons and the desk edges, per screen side (px). */
   deskPadTop: number
   deskPadBottom: number
@@ -236,6 +245,12 @@ export const DEFAULT_SETTINGS: DockSettings = {
   deskRadBR: 60,
   deskRadLinked: false,
   deskEdge: 0,
+  deskTexScale: 100,
+  deskTexFile: '',
+  deskTexMode: 'tile',
+  deskTexX: 0,
+  deskTexY: 0,
+  deskTexRotate: 0,
   deskPadTop: 10,
   deskPadBottom: 10,
   deskPadLeft: 16,
@@ -301,6 +316,9 @@ export interface InvokeMap {
   'tweaks:revert-all': { args: []; result: number }
   'tweaks:log': { args: []; result: TweakLogEntry[] }
   'tweaks:restart-explorer': { args: []; result: void }
+  'texture:pick': { args: []; result: { ok: boolean; file?: string; message: string } }
+  'texture:get': { args: [file: string]; result: string | null }
+  'texture:remove': { args: [file: string]; result: void }
   'stack:close': { args: []; result: void }
   'group:add': { args: [id: string, paths: string[]]; result: DockItem[] }
   'menu:items': { args: []; result: MenuItemView[] }

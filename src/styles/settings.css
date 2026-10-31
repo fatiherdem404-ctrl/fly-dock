@@ -200,6 +200,7 @@ kbd { padding: 1px 6px; border: 1px solid var(--line-strong); border-bottom-widt
 .st-list { display: flex; flex-direction: column; gap: var(--s-2); margin-top: var(--s-2); }
 .st-list__row { display: grid; grid-template-columns: 36px 1fr 1fr auto; gap: var(--s-3); align-items: center; padding: var(--s-2) var(--s-3); border-radius: var(--r-md); background: var(--fill); transition: background 160ms; }
 .st-list__row:hover { background: var(--fill-hover); }
+.st-texthumb { height: 44px; width: 44px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line-strong); }
 .st-list__row--wheel { grid-template-columns: 36px 1fr auto auto; }
 .st-wheel-icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; color: #fff; background: linear-gradient(145deg, var(--accent), color-mix(in srgb, var(--accent) 50%, #000)); }
 .st-muted { color: var(--panel-muted); }

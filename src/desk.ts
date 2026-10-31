@@ -26,21 +26,23 @@ export const DESK_LABELS: Record<DeskStyle, string> = {
   matte: 'Mat siyah',
   mirror: 'Yansımalı zemin',
   wall: 'Tuğla',
+  custom: 'Özel doku',
 }
 
 /** Depth and opacity each style looks best with; picking a style in settings applies these. */
-export const DESK_PRESETS: Record<DeskStyle, { depth: number; opacity: number; edge: number }> = {
-  glass: { depth: 0, opacity: 1, edge: 0 },
-  azure: { depth: 0, opacity: 1, edge: 0 },
-  glass3d: { depth: 34, opacity: 0.95, edge: 8 },
-  wood: { depth: 26, opacity: 1, edge: 10 },
-  metal: { depth: 22, opacity: 1, edge: 8 },
-  marble: { depth: 24, opacity: 1, edge: 8 },
-  neon: { depth: 0, opacity: 1, edge: 0 },
-  crystal: { depth: 30, opacity: 0.92, edge: 8 },
-  matte: { depth: 18, opacity: 1, edge: 8 },
-  mirror: { depth: 28, opacity: 0.95, edge: 8 },
-  wall: { depth: 22, opacity: 1, edge: 10 },
+export const DESK_PRESETS: Record<DeskStyle, { depth: number; opacity: number; edge: number; scale: number }> = {
+  glass: { depth: 0, opacity: 1, edge: 0, scale: 100 },
+  azure: { depth: 0, opacity: 1, edge: 0, scale: 100 },
+  glass3d: { depth: 34, opacity: 0.95, edge: 8, scale: 100 },
+  wood: { depth: 26, opacity: 1, edge: 10, scale: 80 },
+  metal: { depth: 22, opacity: 1, edge: 8, scale: 100 },
+  marble: { depth: 24, opacity: 1, edge: 8, scale: 55 },
+  neon: { depth: 0, opacity: 1, edge: 0, scale: 100 },
+  crystal: { depth: 30, opacity: 0.92, edge: 8, scale: 70 },
+  matte: { depth: 18, opacity: 1, edge: 8, scale: 100 },
+  mirror: { depth: 28, opacity: 0.95, edge: 8, scale: 100 },
+  wall: { depth: 22, opacity: 1, edge: 10, scale: 80 },
+  custom: { depth: 28, opacity: 1, edge: 8, scale: 100 },
 }
 
 const ORIGIN: Record<DockPosition, string> = { bottom: '50% 100%', top: '50% 0%', left: '0% 50%', right: '100% 50%' }
@@ -77,12 +79,22 @@ export function shelfRadii(s: Pick<DockSettings, 'deskRadTL' | 'deskRadTR' | 'de
 /** Looks of the desk by style: the radii that suit the material (pill glass, a squarer wooden shelf). */
 export const DESK_RADII: Record<DeskStyle, [number, number]> = {
   glass: [60, 60], azure: [60, 60], neon: [60, 60],
-  glass3d: [14, 5], wood: [10, 4], metal: [10, 4], marble: [10, 4], crystal: [14, 5], matte: [10, 4], mirror: [14, 5], wall: [8, 3],
+  glass3d: [14, 5], wood: [10, 4], metal: [10, 4], marble: [10, 4], crystal: [14, 5], matte: [10, 4], mirror: [14, 5], wall: [8, 3], custom: [10, 4],
 }
 
-export function deskStyleVars(s: DockSettings, _thickness: number, _side: DockPosition): { rootVars: Record<string, string>; plate: CSSProperties } {
+export interface DeskTexture {
+  url: string
+  w: number
+  h: number
+}
+
+export function deskStyleVars(s: DockSettings, _thickness: number, _side: DockPosition, texture: DeskTexture | null = null): { rootVars: Record<string, string>; plate: CSSProperties } {
   return {
     rootVars: {
+      '--tex-scale': String(s.deskTexScale / 100),
+      ...(texture && s.deskStyle === 'custom'
+        ? { '--tex-url': `url("${texture.url}")`, '--tex-w': String(texture.w), '--tex-h': String(texture.h), '--tex-x': String(s.deskTexX), '--tex-y': String(s.deskTexY), '--tex-rot': String(s.deskTexRotate) }
+        : {}),
       '--desk-tint': s.deskColor || 'transparent',
       '--desk-opacity': String(s.deskOpacity),
       '--desk-depth': `${s.deskDepth}px`,

@@ -22,6 +22,7 @@ import { wheelEntries, runWheelEntry, setWheelState } from './wheel'
 import { showPowerMenu, closePowerMenu, runPowerAction } from './power'
 import { createTweakEngine, realRegistry, TWEAKS } from './tweaks'
 import { runElevated } from './elevated'
+import { pickTexture, readTexture, removeTexture, textureBytes, storeTexture } from './textures'
 import { store } from './store'
 import { popupMenu, menuItemsForRenderer, pickMenuItem, closeMenu, MenuSpec } from './contextMenu'
 import { initWidgets, addWidget, removeWidget, updateWidget, moveWidget, systemStats, weatherFor, nowPlaying, disposeWidgets } from './widgets'
@@ -239,6 +240,9 @@ function registerIpc() {
     closeStack()
     await shell.openPath(target)
   })
+  handle('texture:pick', () => pickTexture())
+  handle('texture:get', (_e, file) => readTexture(file))
+  handle('texture:remove', (_e, file) => removeTexture(file))
   handle('stack:close', () => closeStack())
   handle('stack:show', (_e, id, anchor) => {
     const item = visibleItems().find((i) => i.id === id)
@@ -320,7 +324,8 @@ function registerIpc() {
 async function exportBackup() {
   const result = await dialog.showSaveDialog({ defaultPath: `${brand.slug}-backup.json`, filters: [{ name: 'JSON', extensions: ['json'] }] })
   if (result.canceled || !result.filePath) return { ok: false, message: 'cancelled' }
-  const data = { app: brand.slug, version: 1, items: getItems(), settings: getSettings(), widgets: getWidgets() }
+  const texture = textureBytes(getSettings().deskTexFile)
+  const data = { app: brand.slug, version: 1, items: getItems(), settings: getSettings(), widgets: getWidgets(), texture: texture ? texture.toString('base64') : undefined }
   fs.writeFileSync(result.filePath, JSON.stringify(data, null, 2))
   return { ok: true, message: result.filePath }
 }
@@ -337,6 +342,11 @@ async function importBackup() {
       if (key in defaults && typeof value === typeof defaults[key]) settings[key] = value // unknown or mistyped keys are dropped
     }
     const items = (data.items as DockItem[]).filter((i) => i && typeof i.id === 'string' && typeof i.type === 'string')
+    // the custom texture travels inside the backup; it is stored again under a name made from its own content
+    if (typeof data.texture === 'string') {
+      const stored = storeTexture(Buffer.from(data.texture, 'base64'))
+      settings.deskTexFile = stored.ok ? stored.file : ''
+    } else settings.deskTexFile = ''
     updateSettings(settings as Partial<DockSettings>)
     setItems(items)
     if (Array.isArray(data.widgets)) setWidgets(data.widgets)

@@ -1,0 +1,58 @@
+/*
+ * Texture size. Every patterned material is one small tile that repeats, and --tex-scale (1 = the designed size)
+ * stretches the tile, so a marble or wood desk can have fine or coarse grain whatever the size of the shelf.
+ * This file comes after dock.css and desk-front.css and replaces their fixed-size patterns.
+ */
+.dock { --tex-scale: 1; }
+
+.dock--desk-wood .dock__desk,
+.dock--desk-wood .dock__shelf-front {
+  background-image: linear-gradient(90deg, rgba(0, 0, 0, 0.14) 0 1px, transparent 1px), linear-gradient(90deg, rgba(255, 220, 160, 0.08) 0 3px, transparent 3px), linear-gradient(180deg, #b27a43, #7a4b24);
+  background-size: calc(9px * var(--tex-scale)) 100%, calc(23px * var(--tex-scale)) 100%, 100% 100%;
+  background-repeat: repeat-x, repeat-x, no-repeat;
+}
+.dock--desk-wood .dock__shelf-front { background-image: linear-gradient(90deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px), linear-gradient(180deg, var(--edge-top), var(--edge-bottom)); background-size: calc(9px * var(--tex-scale)) 100%, 100% 100%; background-repeat: repeat-x, no-repeat; }
+
+.dock--desk-metal .dock__desk {
+  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0 1px, transparent 1px), linear-gradient(180deg, #e3e7ee, #9aa1ad 55%, #6e7582);
+  background-size: calc(3px * var(--tex-scale)) 100%, 100% 100%;
+  background-repeat: repeat-x, no-repeat;
+}
+
+.dock--desk-marble .dock__desk {
+  background-image: linear-gradient(115deg, transparent 36%, rgba(70, 70, 85, 0.32) 38% 39%, transparent 42%), linear-gradient(62deg, transparent 56%, rgba(70, 70, 85, 0.22) 58% 59%, transparent 63%), linear-gradient(180deg, #f6f6f8, #c4c4cd);
+  background-size: calc(300px * var(--tex-scale)) 100%, calc(420px * var(--tex-scale)) 100%, 100% 100%;
+  background-repeat: repeat-x, repeat-x, no-repeat;
+}
+
+.dock--desk-crystal .dock__desk {
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0 10%, rgba(255, 255, 255, 0) 11%), linear-gradient(60deg, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.25) 41% 55%, rgba(255, 255, 255, 0) 56%), linear-gradient(180deg, rgba(150, 215, 255, 0.6), rgba(60, 110, 190, 0.5));
+  background-size: calc(240px * var(--tex-scale)) 100%, calc(200px * var(--tex-scale)) 100%, 100% 100%;
+  background-repeat: repeat-x, repeat-x, no-repeat;
+}
+
+.dock--desk-wall .dock__desk {
+  background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.3) 0 2px, transparent 2px), linear-gradient(90deg, rgba(0, 0, 0, 0.2) 0 2px, transparent 2px), linear-gradient(180deg, #bd5a3f, #8a3a28);
+  background-size: 100% calc(10px * var(--tex-scale)), calc(22px * var(--tex-scale)) 100%, 100% 100%;
+  background-repeat: repeat-y, repeat-x, no-repeat;
+}
+
+/* ---- the user's own texture ---- */
+.dock__desk-texture {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: var(--tex-url, none);
+  background-repeat: repeat;
+  background-size: calc(var(--tex-w, 256) * 1px * var(--tex-scale)) calc(var(--tex-h, 256) * 1px * var(--tex-scale));
+  background-position: calc(var(--tex-x, 0) * 1px) calc(var(--tex-y, 0) * 1px);
+  transform: rotate(calc(var(--tex-rot, 0) * 1deg));
+}
+/* rotation and shifting need spare material around the visible part: a big square always covers a thin shelf */
+.dock__desk-texture--tile { inset: auto; left: 50%; top: 50%; width: 3600px; height: 3600px; margin: -1800px 0 0 -1800px; }
+.dock__desk-texture--fit { background-repeat: no-repeat; background-size: cover; background-position: center; }
+.dock--desk-custom .dock__desk { background: #3b3f4a; }
+.dock--desk-custom { --edge-top: #5a5f6e; --edge-bottom: #1b1d24; --edge-line: rgba(255, 255, 255, 0.45); }
+/* the front face shows the same texture, a little darker, like the side of a real board */
+.dock--desk-custom .dock__shelf-front { background: #2b2e37; overflow: hidden; }
+.dock--desk-custom .dock__shelf-front::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.55)); }

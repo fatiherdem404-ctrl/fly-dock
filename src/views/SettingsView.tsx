@@ -3,10 +3,11 @@ import { invoke, useActiveTheme, useEvent, useRemote } from '@/api'
 import Icon, { IconName } from '@/icons'
 import DockPreview from '@/components/DockPreview'
 import Shelf from '@/components/Shelf'
+import { useTexture, forgetTexture } from '@/useTexture'
 import { DESK_LABELS, DESK_PRESETS, DESK_RADII } from '@/desk'
 import {
   DESK_STYLES, DockItem, DockLayer, TweakInfo, DockSettings, PackInfo, ThemeDef, WidgetType,
-  AnimationCurve, DeskStyle, FalloffCurve, HoverAnimation, IndicatorStyle, LaunchAnimation, ShowAnimation, SpeedPreset, StackSize, WindowAnimation, LabelMode,
+  AnimationCurve, DeskStyle, TextureMode, FalloffCurve, HoverAnimation, IndicatorStyle, LaunchAnimation, ShowAnimation, SpeedPreset, StackSize, WindowAnimation, LabelMode,
 } from '@/shared/types'
 
 type Tab = 'dock' | 'desk' | 'motion' | 'windows' | 'theme' | 'icons' | 'items' | 'wheel' | 'tweaks' | 'widgets' | 'general'
@@ -190,6 +191,58 @@ function DockTab({ s, set }: { s: DockSettings; set: Update }) {
 
 // ---- Desk ----
 
+const PATTERNED: DeskStyle[] = ['wood', 'metal', 'marble', 'crystal', 'wall']
+
+function TextureCard({ s, set }: { s: DockSettings; set: Update }) {
+  const texture = useTexture(s.deskStyle === 'custom' ? s.deskTexFile : '')
+  const [message, setMessage] = useState<string | null>(null)
+  if (s.deskStyle !== 'custom' && !PATTERNED.includes(s.deskStyle)) return null
+
+  if (s.deskStyle !== 'custom') {
+    return (
+      <Card title="Doku boyutu" hint="Desenin raf üstündeki büyüklüğü. Küçültürsen damarlar, tuğlalar ve çizgiler sıklaşır.">
+        <Row label="Desen boyutu" hint="%100 = tasarlanan boyut"><Slider value={s.deskTexScale} min={20} max={300} unit="%" onChange={(deskTexScale) => set({ deskTexScale })} /></Row>
+        <Row label="Varsayılana dön"><button className="st-btn" onClick={() => set({ deskTexScale: DESK_PRESETS[s.deskStyle].scale })}><Icon name="refresh" size={15} />Sıfırla</button></Row>
+      </Card>
+    )
+  }
+
+  const pick = async () => {
+    const result = await invoke('texture:pick')
+    if (result.message === 'cancelled') return
+    if (!result.ok || !result.file) return setMessage(result.message)
+    if (s.deskTexFile && s.deskTexFile !== result.file) forgetTexture(s.deskTexFile)
+    setMessage(null)
+    set({ deskTexFile: result.file })
+  }
+  const remove = () => {
+    if (s.deskTexFile) invoke('texture:remove', s.deskTexFile)
+    forgetTexture(s.deskTexFile)
+    set({ deskTexFile: '' })
+  }
+  return (
+    <Card title="Özel doku" hint="Kendi resmini raf yüzeyi yap. PNG, JPEG ya da WebP, en çok 4 MB. Resim uygulamanın kendi klasörüne kopyalanır; yedeğe de girer.">
+      <div className="st-row-inline">
+        <button className="st-btn st-btn--accent" onClick={pick}><Icon name="image" size={15} />{s.deskTexFile ? 'Başka resim seç…' : 'Resim seç…'}</button>
+        {s.deskTexFile && <button className="st-btn st-btn--danger" onClick={remove}><Icon name="trash" size={15} />Kaldır</button>}
+        {texture && <img className="st-texthumb" src={texture.url} alt="" />}
+      </div>
+      {message && <Message text={message} error />}
+      {!s.deskTexFile && <p className="st-prose">Henüz resim seçilmedi; raf düz gri görünür.</p>}
+      <Row label="Yerleşim"><Segmented<TextureMode> value={s.deskTexMode} onChange={(deskTexMode) => set({ deskTexMode })} options={[['tile', 'Döşe (tekrarla)'], ['fit', 'Sığdır (tek parça)']]} /></Row>
+      <Row label="Boyut" hint={texture ? `Resim ${texture.w}×${texture.h} px; döşemede bu boyut kaydırıcıyla çarpılır` : 'Döşemede resmin kendi boyutu çarpanı'}><Slider value={s.deskTexScale} min={10} max={400} unit="%" onChange={(deskTexScale) => set({ deskTexScale })} /></Row>
+      {s.deskTexMode === 'tile' && (
+        <>
+          <Row label="Yatay kaydır"><Slider value={s.deskTexX} min={-300} max={300} unit=" px" onChange={(deskTexX) => set({ deskTexX })} /></Row>
+          <Row label="Dikey kaydır"><Slider value={s.deskTexY} min={-300} max={300} unit=" px" onChange={(deskTexY) => set({ deskTexY })} /></Row>
+        </>
+      )}
+      <Row label="Döndür"><Slider value={s.deskTexRotate} min={0} max={360} unit="°" onChange={(deskTexRotate) => set({ deskTexRotate })} /></Row>
+      <Row label="Sıfırla"><button className="st-btn" onClick={() => set({ deskTexScale: 100, deskTexX: 0, deskTexY: 0, deskTexRotate: 0, deskTexMode: 'tile' })}><Icon name="refresh" size={15} />Boyut ve konumu sıfırla</button></Row>
+    </Card>
+  )
+}
+
 const RADIUS_KEYS: ['deskRadTL' | 'deskRadTR' | 'deskRadBL' | 'deskRadBR', string][] = [['deskRadTL', 'Sol üst'], ['deskRadTR', 'Sağ üst'], ['deskRadBL', 'Sol alt'], ['deskRadBR', 'Sağ alt']]
 const allRadii = (v: number) => ({ deskRadTL: v, deskRadTR: v, deskRadBL: v, deskRadBR: v })
 
@@ -218,7 +271,7 @@ function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
       <Card title="Raf stili" hint="Simgelerin üzerinde durduğu zemin. Seçince o stilin en iyi derinliği ve saydamlığı uygulanır, sonra ayrıca değiştirebilirsin.">
         <Choice<DeskStyle>
           value={s.deskStyle}
-          onChange={(deskStyle) => set({ deskStyle, deskDepth: DESK_PRESETS[deskStyle].depth, deskOpacity: DESK_PRESETS[deskStyle].opacity, deskEdge: DESK_PRESETS[deskStyle].edge, deskRadTL: DESK_RADII[deskStyle][0], deskRadTR: DESK_RADII[deskStyle][0], deskRadBL: DESK_RADII[deskStyle][1], deskRadBR: DESK_RADII[deskStyle][1] })}
+          onChange={(deskStyle) => set({ deskStyle, deskDepth: DESK_PRESETS[deskStyle].depth, deskOpacity: DESK_PRESETS[deskStyle].opacity, deskEdge: DESK_PRESETS[deskStyle].edge, deskTexScale: DESK_PRESETS[deskStyle].scale, deskRadTL: DESK_RADII[deskStyle][0], deskRadTR: DESK_RADII[deskStyle][0], deskRadBL: DESK_RADII[deskStyle][1], deskRadBR: DESK_RADII[deskStyle][1] })}
           options={DESK_STYLES.map((d): [DeskStyle, string] => [d, DESK_LABELS[d]])}
         >
           {(id) => <DeskCard style={id} />}
@@ -236,6 +289,7 @@ function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
         <Row label="3B derinlik" hint="0 = düz; yükseldikçe raf perspektifle yatar"><Slider value={s.deskDepth} min={0} max={60} unit=" px" onChange={(deskDepth) => set({ deskDepth })} /></Row>
         <Row label="Raf simgelerle büyüsün" hint="Kapalıyken simgeler raftan taşar (macOS gibi)"><Switch label="Raf büyümesi" value={s.shelfGrows} onChange={(shelfGrows) => set({ shelfGrows })} /></Row>
       </Card>
+      <TextureCard s={s} set={set} />
       <Card title="Köşe yuvarlaklığı" hint="Rafın dört köşesi ayrı ayrı. Alt köşeler yuvarlanınca ön yüzün kalınlığı da o köşeyle birlikte yuvarlanır.">
         <Row label="Hazır şekiller">
           <div className="st-row-inline" style={{ margin: 0 }}>

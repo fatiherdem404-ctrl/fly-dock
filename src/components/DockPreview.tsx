@@ -3,6 +3,7 @@ import type { DockSettings } from '@/shared/types'
 import { isSettled, layoutRow, speedToMs, springFor, stepSpring, targetLifts, targetSizes } from '@/physics'
 import { deskStyleVars, hoverProfile, shelfRadii } from '@/desk'
 import Shelf from './Shelf'
+import { useTexture } from '@/useTexture'
 import { padsFor, DESK_INSET } from '@/layout'
 
 const COLORS = ['#ff7a59', '#4da3ff', '#8be28b', '#f5c542', '#b57bff', '#ff6fa8']
@@ -97,7 +98,8 @@ export default function DockPreview({ settings, launchTick = 0, height = 190 }: 
   const thickness = settings.shelfGrows ? Math.max(restThickness, biggest + biggestLift + pads.crossEdge + pads.crossFar + edge) : restThickness
   const reflect = settings.deskStyle === 'mirror' || settings.deskStyle === 'glass3d'
   const baseOffset = (reflect ? Math.round(iconSize * 0.4) : 0) + edge
-  const desk = deskStyleVars(settings, thickness, 'bottom')
+  const texture = useTexture(settings.deskStyle === 'custom' ? settings.deskTexFile : '')
+  const desk = deskStyleVars(settings, thickness, 'bottom', texture)
 
   return (
     <div ref={box} className="preview" style={{ height: Math.max(height, crossRoom + 40) }}>
@@ -107,10 +109,11 @@ export default function DockPreview({ settings, launchTick = 0, height = 190 }: 
       >
         {shelfMode ? (
           <div style={{ position: 'absolute', left: row.start - pads.mainStart, width: row.length + pads.mainStart + pads.mainEnd, height: thickness, bottom: DESK_INSET }}>
-            <Shelf length={row.length + pads.mainStart + pads.mainEnd} thickness={thickness} edge={edge} depth={settings.deskDepth} side="bottom" radii={shelfRadii(settings, 'bottom')} opacity={settings.deskOpacity} />
+            <Shelf length={row.length + pads.mainStart + pads.mainEnd} thickness={thickness} edge={edge} depth={settings.deskDepth} side="bottom" radii={shelfRadii(settings, 'bottom')} opacity={settings.deskOpacity} textured={settings.deskStyle === 'custom'} mode={settings.deskTexMode} />
           </div>
         ) : (
           <div className="dock__desk" style={{ position: 'absolute', left: row.start - pads.mainStart, width: row.length + pads.mainStart + pads.mainEnd, height: thickness, bottom: DESK_INSET, ...desk.plate }}>
+            {settings.deskStyle === 'custom' && <span className={`dock__desk-texture dock__desk-texture--${settings.deskTexMode}`} />}
             <span className="dock__desk-tint" />
             <span className="dock__desk-sheen" />
           </div>

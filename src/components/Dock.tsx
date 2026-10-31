@@ -6,6 +6,7 @@ import { deskStyleVars, hoverProfile, shelfRadii } from '@/desk'
 import { dockGeometry, fitToScreen, DESK_INSET } from '@/layout'
 import DockIcon from './DockIcon'
 import Shelf from './Shelf'
+import { useTexture } from '@/useTexture'
 
 interface DockProps {
   items: DockItem[]
@@ -221,7 +222,8 @@ export default function Dock({ items, settings: wanted, running, icons, launchin
     return { position: 'absolute', ...box, ...mainProp, ...crossProp }
   }
 
-  const desk = deskStyleVars(settings, thickness, side)
+  const texture = useTexture(settings.deskStyle === 'custom' ? settings.deskTexFile : '')
+  const desk = deskStyleVars(settings, thickness, side, texture)
   void maxThickness
 
   return (
@@ -240,10 +242,11 @@ export default function Dock({ items, settings: wanted, running, icons, launchin
     >
       {shelfMode ? (
         <div style={edgeStyle(surfaceStart, DESK_INSET, surfaceLength, thickness)}>
-          <Shelf length={surfaceLength} thickness={thickness} edge={edge} depth={settings.deskDepth} side={side} radii={shelfRadii(settings, side)} opacity={settings.deskOpacity} />
+          <Shelf length={surfaceLength} thickness={thickness} edge={edge} depth={settings.deskDepth} side={side} radii={shelfRadii(settings, side)} opacity={settings.deskOpacity} textured={settings.deskStyle === 'custom'} mode={settings.deskTexMode} />
         </div>
       ) : (
         <div className="dock__desk" style={{ ...edgeStyle(surfaceStart, DESK_INSET, surfaceLength, thickness), ...desk.plate }}>
+          {settings.deskStyle === 'custom' && <span className={`dock__desk-texture dock__desk-texture--${settings.deskTexMode}`} />}
           <span className="dock__desk-tint" />
           <span className="dock__desk-sheen" />
         </div>

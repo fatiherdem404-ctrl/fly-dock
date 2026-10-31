@@ -93,6 +93,9 @@ interface ShelfProps {
   /** Corner radii in the shelf's own frame (bottom = the screen-edge side). */
   radii: Radii
   opacity: number
+  /** Draw the user's own texture on the top and front (the 'custom' desk style). */
+  textured?: boolean
+  mode?: 'tile' | 'fit'
 }
 
 /**
@@ -100,7 +103,8 @@ interface ShelfProps {
  * directly under the front edge, the way the macOS Dock draws it. Drawn once "from the front" and turned to suit
  * whichever screen edge the dock is on. Colours come from the desk style classes of the parent dock.
  */
-export default function Shelf({ length, thickness, edge, depth, side, radii, opacity }: ShelfProps) {
+export default function Shelf({ length, thickness, edge, depth, side, radii, opacity, textured = false, mode = 'tile' }: ShelfProps) {
+  const layer = textured ? <span className={`dock__desk-texture dock__desk-texture--${mode}`} /> : null
   const top = Math.max(1, thickness - edge)
   const taper = shelfTaper(depth, top, length)
   const d = shelfPath(length, top, edge, taper, radii)
@@ -113,8 +117,9 @@ export default function Shelf({ length, thickness, edge, depth, side, radii, opa
   return (
     <div className="dock__shelf" style={{ ...turn, opacity }}>
       <div className="dock__shelf-clip" style={{ width: length, height: thickness, clipPath: `path('${d}')` }}>
-        <div className="dock__shelf-front" style={{ top, height: edge, width: length }} />
+        <div className="dock__shelf-front" style={{ top, height: edge, width: length }}>{layer}</div>
         <div className="dock__desk dock__shelf-surface" style={{ width: length, height: top }}>
+          {layer}
           <span className="dock__desk-tint" />
           <span className="dock__desk-sheen" />
         </div>
