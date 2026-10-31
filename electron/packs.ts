@@ -56,6 +56,46 @@ const BUILTIN_THEMES: ThemeDef[] = [
     },
   },
   {
+    id: 'dark',
+    name: 'Dark',
+    author: 'built-in',
+    vars: {
+      ...GLASS_DARK,
+      surface: '#1f2023',
+      surfaceBorder: 'rgba(255, 255, 255, 0.1)',
+      surfaceBlur: 0,
+      radius: 16,
+      shadow: '0 10px 28px rgba(0, 0, 0, 0.5)',
+      indicator: '#8ab4ff',
+      tooltipBg: '#2b2d31',
+      tooltipText: '#f2f3f5',
+      accent: '#4c8dff',
+      panelBg: '#16171a',
+      panelText: '#eceef2',
+      panelMuted: '#9aa0aa',
+    },
+  },
+  {
+    id: 'light',
+    name: 'Light',
+    author: 'built-in',
+    vars: {
+      ...GLASS_DARK,
+      surface: '#ffffff',
+      surfaceBorder: 'rgba(0, 0, 0, 0.1)',
+      surfaceBlur: 0,
+      radius: 16,
+      shadow: '0 10px 28px rgba(30, 40, 60, 0.28)',
+      indicator: '#2f6fed',
+      tooltipBg: '#ffffff',
+      tooltipText: '#1d2128',
+      accent: '#2f6fed',
+      panelBg: '#f3f4f6',
+      panelText: '#1d2128',
+      panelMuted: '#5f6877',
+    },
+  },
+  {
     id: 'neon-night',
     name: 'Neon Night',
     author: 'built-in',
@@ -325,5 +365,22 @@ export function packWheelIcon(packId: string, wheelId: string): string | null {
     return `data:image/${ext === 'svg' ? 'svg+xml' : ext === 'jpg' ? 'jpeg' : ext};base64,${fs.readFileSync(full).toString('base64')}`
   } catch {
     return null
+  }
+}
+
+/** Writes the theme made in the builder as a normal pack and installs it (same validation as an import). */
+export function createThemePack(name: string, author: string, vars: ThemeVars): { ok: boolean; message: string; pack?: PackInfo } {
+  const title = String(name).trim().slice(0, 60)
+  if (!title) return { ok: false, message: 'Temaya bir ad ver.' }
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'tema'
+  const id = `${slug}-${Date.now().toString(36).slice(-4)}`
+  try {
+    const entries: ZipEntry[] = [
+      { name: 'pack.json', data: Buffer.from(JSON.stringify({ type: 'theme', id, name: title, author: String(author).trim().slice(0, 60) || undefined, version: '1.0' }, null, 2)) },
+      { name: 'theme.json', data: Buffer.from(JSON.stringify({ vars }, null, 2)) },
+    ]
+    return { ok: true, message: title, pack: installPack(writeZip(entries)) }
+  } catch (err) {
+    return { ok: false, message: (err as Error).message }
   }
 }

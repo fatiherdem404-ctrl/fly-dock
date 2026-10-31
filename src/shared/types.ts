@@ -440,6 +440,7 @@ export interface InvokeMap {
   'iconpick:close': { args: []; result: void }
   'builder:create': { args: [name: string, author: string, map: Record<string, string>]; result: { ok: boolean; message: string; pack?: PackInfo } }
   'confirm:answer': { args: [id: string, answer: boolean]; result: void }
+  'themes:create': { args: [name: string, author: string, vars: ThemeVars]; result: { ok: boolean; message: string; pack?: PackInfo } }
   'themes:list': { args: []; result: PackInfo[] }
   'themes:get': { args: [id: string]; result: ThemeDef | null }
   'packs:list': { args: []; result: PackInfo[] }

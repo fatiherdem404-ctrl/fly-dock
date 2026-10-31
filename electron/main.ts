@@ -19,7 +19,7 @@ import { builderKeys, pickBuilderFolder, createBuilderPack } from './packBuilder
 import { initDockWindows, syncDocks, setLayout, applyLayer, dockIsOnTop, isDockHidden, setFullscreenHidden, toggleDockVisibility, disposeDockWindows } from './dockWindows'
 import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN } from './windows'
 import {
-  importPackDialog, exportPackDialog, listThemes, listInstalled, builtinThemeInfos, getTheme, removePack, clearPackCaches,
+  importPackDialog, exportPackDialog, listThemes, createThemePack, listInstalled, builtinThemeInfos, getTheme, removePack, clearPackCaches,
 } from './packs'
 import { showStack, showPanel, closeStack, readEntries } from './stackWindow'
 import { wheelEntries, runWheelEntry, setWheelState, addWheelEntry, removeWheelEntry, setWheelIcon } from './wheel'
@@ -288,6 +288,11 @@ function registerIpc() {
   handle('themes:list', () => listThemes())
   handle('themes:get', (_e, id) => getTheme(id))
   handle('confirm:answer', (_e, id, answer) => answerConfirm(id, answer))
+  handle('themes:create', (_e, name, author, vars) => {
+    const result = createThemePack(name, author, vars)
+    if (result.ok) broadcast('themes:changed', null)
+    return result
+  })
   handle('builder:keys', () => builderKeys())
   handle('library:list', () => listLibrary())
   handle('library:thumb', (_e, file) => libraryThumb(file))
