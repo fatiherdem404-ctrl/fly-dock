@@ -26,6 +26,8 @@ export function padsFor(s: Pick<DockSettings, 'position' | 'deskPadTop' | 'deskP
 }
 
 export const SEPARATOR_SHARE = 0.35
+/** The desk stands one pixel off the window edge so its border on the screen-edge side is never clipped. */
+export const DESK_INSET = 1
 
 export const LABEL_MAX_WIDTH = 200
 
@@ -50,6 +52,8 @@ export interface Geometry {
   liftMax: number
   /** Distance the icons stand off the screen edge (room for the reflection of a mirror desk). */
   baseOffset: number
+  /** Front face of the desk (part of baseOffset). */
+  edge: number
   /** Thickness of the desk at rest and when it is as thick as it can get. */
   restThickness: number
   maxThickness: number
@@ -115,7 +119,8 @@ export function dockGeometry(s: DockSettings, types: string[], flat: boolean, lo
   overshoot = Math.ceil(overshoot) + 4
 
   const reflect = s.deskStyle === 'mirror' && !flat
-  const baseOffset = reflect ? Math.round(iconSize * 0.4) : 0
+  const edge = flat ? 0 : Math.max(0, s.deskEdge)
+  const baseOffset = (reflect ? Math.round(iconSize * 0.4) : 0) + edge
   const restThickness = iconSize + pads.crossEdge + pads.crossFar + baseOffset
   const maxThickness = (s.shelfGrows ? maxIcon + liftMax : iconSize) + pads.crossEdge + pads.crossFar + baseOffset
   // The icons themselves stand on the edge-side padding; what pokes past the far side must fit too.
@@ -125,12 +130,12 @@ export function dockGeometry(s: DockSettings, types: string[], flat: boolean, lo
   const labelW = labelWidth(s, longestLabel)
   // a label sits above a horizontal dock (needs height) and beside a vertical one (needs its width)
   const labelCross = vertical ? (labelW ? labelW + 8 : 0) : labelRoom(s)
-  const cross = Math.ceil(Math.max(maxThickness, farExtent) + labelCross + deskReach + 6)
+  const cross = Math.ceil(Math.max(maxThickness, farExtent) + labelCross + deskReach + 6 + DESK_INSET * 2)
   const rowMain = restLength + 2 * (overshoot + Math.max(pads.mainStart, pads.mainEnd))
   // along a horizontal dock the widest label must also fit, even when the row itself is short
   const main = Math.ceil(vertical ? rowMain : Math.max(rowMain, labelW + 8))
   return {
-    restLeft, restWidth, separator, restLength, pads, maxIcon, liftMax, baseOffset,
+    restLeft, restWidth, separator, restLength, pads, maxIcon, liftMax, baseOffset, edge,
     restThickness, maxThickness, overshoot, main, cross,
     restStart: (main - restLength) / 2,
   }

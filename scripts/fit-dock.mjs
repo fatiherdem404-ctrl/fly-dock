@@ -26,13 +26,14 @@ const SCENARIOS = [
   { name: 'huge icons, 3x growth, wide radius', settings: { iconSize: 72, maxScale: 2.4, magnificationRadius: 4, labelMode: 'always', labelSize: 20 } },
   { name: '3D wood desk, deep, big paddings', settings: { deskStyle: 'wood', deskDepth: 60, deskPadTop: 40, deskPadBottom: 40, deskPadLeft: 48, deskPadRight: 48, labelMode: 'always' } },
   { name: 'wave + mirror + bouncy spring', settings: { hoverAnimation: 'wave', deskStyle: 'mirror', deskDepth: 40, animationCurve: 'bounce', maxScale: 2.4, labelMode: 'always', labelSize: 16 } },
+  { name: '3D glass with a thick front face and no bottom padding', settings: { deskStyle: 'glass3d', deskDepth: 50, deskEdge: 30, deskPadBottom: 0, deskPadTop: 0, labelMode: 'always' } },
   { name: 'lift, shelf fixed, no labels', settings: { hoverAnimation: 'lift', shelfGrows: false, labelMode: 'never', iconSpacing: 0, maxScale: 2.5 } },
 ]
 // every scenario starts from the same defaults so one scenario's settings never leak into the next
 const BASE = {
   material: 'none', theme: 'glass-dark', showRunningApps: false, showTrash: true,
   iconSize: 48, maxScale: 1.75, magnificationRadius: 2, magnification: true, falloff: 'cosine', iconSpacing: 8,
-  deskStyle: 'glass', deskDepth: 0, deskOpacity: 1, deskShape: 'pill', shelfGrows: true,
+  deskStyle: 'glass', deskDepth: 0, deskEdge: 0, deskOpacity: 1, deskShape: 'pill', shelfGrows: true,
   deskPadTop: 10, deskPadBottom: 10, deskPadLeft: 16, deskPadRight: 16, deskPadLinked: false,
   hoverAnimation: 'zoom', animationCurve: 'spring', labelMode: 'hover', labelSize: 12,
 }

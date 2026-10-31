@@ -13,6 +13,7 @@ import './styles/windows.css'
 import './styles/panels.css'
 import './styles/widgets.css'
 import './styles/settings.css'
+import './styles/desk-front.css'
 
 const route = window.location.hash.replace(/^#/, '') || '/dock'
 const [, rawView, rawParam] = route.split('/')

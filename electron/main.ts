@@ -12,7 +12,7 @@ import {
 } from './items'
 import { iconForItem, setTrashState } from './icons'
 import { shellIcon } from './iconService'
-import { initDockWindows, syncDocks, setLayout, materialSupported, refreshShelfTint, isDockHidden, setFullscreenHidden, toggleDockVisibility, disposeDockWindows } from './dockWindows'
+import { initDockWindows, syncDocks, setLayout, materialSupported, refreshShelfTint, applyLayer, dockIsOnTop, isDockHidden, setFullscreenHidden, toggleDockVisibility, disposeDockWindows } from './dockWindows'
 import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN } from './windows'
 import {
   importPackDialog, exportPackDialog, listThemes, listInstalled, builtinThemeInfos, getTheme, removePack, clearPackCaches,
@@ -130,6 +130,7 @@ function applySettings(partial: Partial<DockSettings>): DockSettings {
   if (partial.iconPack !== undefined) clearPackCaches()
   const layoutChanged = (['position', 'monitor', 'material', 'autoHide', 'edgeOffset', 'alignment'] as const).some((k) => k in partial && before[k] !== next[k])
   if (layoutChanged) syncDocks()
+  if (partial.layer !== undefined) applyLayer()
   if (partial.theme !== undefined) refreshShelfTint()
   if (partial.showRunningApps !== undefined) broadcastItems()
   broadcast('settings:changed', next)
@@ -229,7 +230,7 @@ function registerIpc() {
 
   handle('menu:show', showMenu)
   handle('dock:layout', (_e, layout) => setLayout(layout))
-  handle('dock:state', () => ({ hidden: isDockHidden() }))
+  handle('dock:state', () => ({ hidden: isDockHidden(), onTop: dockIsOnTop() }))
 
   handle('stack:list', (_e, id) => {
     const item = visibleItems().find((i) => i.id === id)
@@ -364,6 +365,7 @@ if (!app.requestSingleInstanceLock()) {
     helper.start()
     helper.on('windows', (snap) => {
       setSnapshot(snap)
+      if (getSettings().layer === 'below') applyLayer() // another window may have been raised past the dock
       setFullscreenHidden(getSettings().hideInFullscreen && snap.fullscreen)
     })
     helper.on('trash', (info: { items: number }) => {

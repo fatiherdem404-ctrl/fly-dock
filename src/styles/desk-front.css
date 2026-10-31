@@ -1,0 +1,20 @@
+/* Front face of the desk: the thickness a 3D shelf shows on the screen-edge side. Each material gets its own edge colours. */
+.dock .dock__desk.dock__desk-body {
+  background: linear-gradient(180deg, var(--edge-top, #4a5a86), var(--edge-bottom, #141c36));
+  border-color: var(--edge-line, rgba(160, 190, 255, 0.35));
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
+}
+.dock--desk-glass { --edge-top: rgba(70, 100, 170, 0.8); --edge-bottom: rgba(10, 18, 40, 0.95); --edge-line: rgba(120, 165, 255, 0.4); }
+.dock--desk-azure { --edge-top: rgba(70, 120, 220, 0.9); --edge-bottom: rgba(10, 20, 55, 0.95); --edge-line: rgba(140, 190, 255, 0.85); }
+.dock--desk-glass3d { --edge-top: rgba(190, 215, 255, 0.55); --edge-bottom: rgba(50, 80, 150, 0.7); --edge-line: rgba(255, 255, 255, 0.5); }
+.dock--desk-wood { --edge-top: #8b5a2b; --edge-bottom: #4a2c13; --edge-line: #33200e; }
+.dock--desk-wood .dock__desk.dock__desk-body { background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 9px), linear-gradient(180deg, var(--edge-top), var(--edge-bottom)); }
+.dock--desk-metal { --edge-top: #b4bac6; --edge-bottom: #5b616d; --edge-line: #3f444d; }
+.dock--desk-marble { --edge-top: #dcdce3; --edge-bottom: #9a9aa6; --edge-line: #7b7b87; }
+.dock--desk-neon { --edge-top: #0a1236; --edge-bottom: #04061a; --edge-line: var(--accent); }
+.dock--desk-neon .dock__desk.dock__desk-body { box-shadow: 0 0 18px var(--accent), inset 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent); }
+.dock--desk-crystal { --edge-top: rgba(150, 215, 255, 0.85); --edge-bottom: rgba(40, 90, 170, 0.85); --edge-line: rgba(255, 255, 255, 0.7); }
+.dock--desk-matte { --edge-top: #26262c; --edge-bottom: #050507; --edge-line: #33333b; }
+.dock--desk-mirror { --edge-top: #2d3548; --edge-bottom: #06080e; --edge-line: rgba(255, 255, 255, 0.35); }
+.dock--desk-wall { --edge-top: #a54b34; --edge-bottom: #5a2418; --edge-line: #3d170e; }
+.dock--flat .dock__desk-body { display: none; }

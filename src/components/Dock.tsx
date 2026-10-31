@@ -3,7 +3,7 @@ import type { DockItem, DockSettings, RunningState } from '@/shared/types'
 import { invoke } from '@/api'
 import { isSettled, layoutRow, springFor, speedToMs, stepSpring, targetLifts, targetSizes } from '@/physics'
 import { deskStyleVars, hoverProfile } from '@/desk'
-import { dockGeometry, fitToScreen } from '@/layout'
+import { dockGeometry, fitToScreen, DESK_INSET } from '@/layout'
 import DockIcon from './DockIcon'
 
 interface DockProps {
@@ -38,7 +38,7 @@ export default function Dock({ items, settings: wanted, running, icons, launchin
   const { iconSize, iconSpacing: GAP } = settings
   const hover = hoverProfile(settings)
   const geo = useMemo(() => dockGeometry(settings, types, flat, longestLabel), [settings, types, flat, longestLabel])
-  const { pads, baseOffset, liftMax, restThickness, maxThickness, restStart } = geo
+  const { pads, baseOffset, edge, liftMax, restThickness, maxThickness, restStart } = geo
   const reflect = settings.deskStyle === 'mirror' && !flat
   const rest = useMemo(
     () => ({ left: geo.restLeft, width: geo.restWidth, length: geo.restLength, separator: geo.separator }),
@@ -239,13 +239,15 @@ export default function Dock({ items, settings: wanted, running, icons, launchin
         invoke('menu:show', { kind: 'empty' })
       }}
     >
-      <div className="dock__desk" style={{ ...edgeStyle(surfaceStart, 0, surfaceLength, thickness), ...desk.plate }}>
+      {edge > 0 && <div className="dock__desk dock__desk-body" style={{ ...edgeStyle(surfaceStart, DESK_INSET, surfaceLength, thickness - edge), ...desk.plate }} />}
+      <div className="dock__desk" style={{ ...edgeStyle(surfaceStart, edge + DESK_INSET, surfaceLength, thickness - edge), ...desk.plate }}>
         <span className="dock__desk-tint" />
         <span className="dock__desk-sheen" />
       </div>
+
       {items.map((item, i) => {
         const size = current[i]
-        const base = edgeStyle(rowStart + positions[i], pads.crossEdge + baseOffset + (lifts.current[i] ?? 0), size, size)
+        const base = edgeStyle(rowStart + positions[i], pads.crossEdge + baseOffset + DESK_INSET + (lifts.current[i] ?? 0), size, size)
         if (item.type === 'separator') {
           return (
             <div key={item.id} className="dock__separator" data-horizontal={horizontal} style={{ ...base, [horizontal ? 'height' : 'width']: iconSize * 0.7 }}
@@ -291,7 +293,7 @@ export default function Dock({ items, settings: wanted, running, icons, launchin
       {insertAt !== null && (
         <div
           className="dock__insert"
-          style={edgeStyle(rowStart + (insertAt < items.length ? positions[insertAt] - GAP / 2 : length) - 1, pads.crossEdge + baseOffset, 2, iconSize)}
+          style={edgeStyle(rowStart + (insertAt < items.length ? positions[insertAt] - GAP / 2 : length) - 1, pads.crossEdge + baseOffset + DESK_INSET, 2, iconSize)}
         />
       )}
     </div>

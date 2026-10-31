@@ -82,6 +82,9 @@ internal static class Windows
     public static void Minimize(long hwnd) => Native.ShowWindow(new IntPtr(hwnd), Native.SW_MINIMIZE);
     public static void Close(long hwnd) => Native.PostMessage(new IntPtr(hwnd), Native.WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
 
+    /// Puts a window under every other window without activating it (HWND_BOTTOM, NOSIZE | NOMOVE | NOACTIVATE).
+    public static void ToBottom(long hwnd) => Native.SetWindowPos(new IntPtr(hwnd), new IntPtr(1), 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0010);
+
     /// Opens the Start menu the way the Windows key does.
     public static void StartMenu()
     {

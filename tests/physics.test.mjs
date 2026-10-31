@@ -121,6 +121,7 @@ for (let n = 0; n < 200; n++) {
     animationCurve: ['spring', 'bounce', 'ease'][n % 3],
     deskPadTop: Math.round(rand(0, 48)), deskPadBottom: Math.round(rand(0, 48)), deskPadLeft: Math.round(rand(0, 48)), deskPadRight: Math.round(rand(0, 48)),
     deskDepth: Math.round(rand(0, 60)),
+    deskEdge: Math.round(rand(0, 30)),
     labelMode: ['hover', 'always', 'never'][n % 3],
     labelSize: Math.round(rand(9, 20)),
   }

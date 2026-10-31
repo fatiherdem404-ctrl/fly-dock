@@ -4,7 +4,7 @@ import Icon, { IconName } from '@/icons'
 import DockPreview from '@/components/DockPreview'
 import { DESK_LABELS, DESK_PRESETS, deskTransform } from '@/desk'
 import {
-  DESK_STYLES, DockItem, TweakInfo, DockSettings, PackInfo, ThemeDef, WidgetType,
+  DESK_STYLES, DockItem, DockLayer, TweakInfo, DockSettings, PackInfo, ThemeDef, WidgetType,
   AnimationCurve, DeskShape, DeskStyle, FalloffCurve, HoverAnimation, IndicatorStyle, LaunchAnimation, ShowAnimation, SpeedPreset, StackSize, WindowAnimation, LabelMode,
 } from '@/shared/types'
 
@@ -172,6 +172,9 @@ function DockTab({ s, set }: { s: DockSettings; set: Update }) {
       </Card>
 
       <Card title="Davranış">
+        <Row label="Pencerelere göre konum" hint="Üstte: hep önde. Normal: diğer pencereler dock'u kapatabilir. Altta: masaüstü gibi, tüm pencerelerin arkasında">
+          <Segmented<DockLayer> value={s.layer} onChange={(layer) => set({ layer })} options={[['above', 'Üstte'], ['normal', 'Normal'], ['below', 'Altta']]} />
+        </Row>
         <Row label="Çalışan programlar" hint="Sabitlenmemiş açık programlar ayraçtan sonra görünür"><Switch label="Çalışan programlar" value={s.showRunningApps} onChange={(showRunningApps) => set({ showRunningApps })} /></Row>
         <Row label="Çalışma göstergesi" hint="Açık programın altında ışık"><Switch label="Gösterge" value={s.showRunningIndicators} onChange={(showRunningIndicators) => set({ showRunningIndicators })} /></Row>
         <Row label="Çöp kutusu"><Switch label="Çöp kutusu" value={s.showTrash} onChange={(showTrash) => set({ showTrash })} /></Row>
@@ -192,9 +195,11 @@ function DeskCard({ style }: { style: DeskStyle }) {
   const tilt = deskTransform(DESK_PRESETS[style].depth, 'bottom')
   return (
     <div className={`st-desk dock dock--desk-${style} dock--bottom`} style={{ '--desk-depth': `${DESK_PRESETS[style].depth}px` } as React.CSSProperties}>
-      <div className="dock__desk" style={{ position: 'absolute', left: '10%', right: '10%', bottom: 6, height: 26, ...tilt }}>
+      {DESK_PRESETS[style].edge > 0 && <div className="dock__desk dock__desk-body" style={{ position: 'absolute', left: '10%', right: '10%', bottom: 6, height: 26 - DESK_PRESETS[style].edge * 0.5, ...tilt }} />}
+      <div className="dock__desk" style={{ position: 'absolute', left: '10%', right: '10%', bottom: 6 + DESK_PRESETS[style].edge * 0.5, height: 26 - DESK_PRESETS[style].edge * 0.5, ...tilt }}>
         <span className="dock__desk-sheen" />
       </div>
+
       {[0, 1, 2].map((i) => <i key={i} className="st-desk__icon" style={{ left: `${26 + i * 18}%`, bottom: 14 + (i === 1 ? 4 : 0) }} />)}
     </div>
   )
@@ -207,7 +212,7 @@ function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
       <Card title="Raf stili" hint="Simgelerin üzerinde durduğu zemin. Seçince o stilin en iyi derinliği ve saydamlığı uygulanır, sonra ayrıca değiştirebilirsin.">
         <Choice<DeskStyle>
           value={s.deskStyle}
-          onChange={(deskStyle) => set({ deskStyle, deskDepth: DESK_PRESETS[deskStyle].depth, deskOpacity: DESK_PRESETS[deskStyle].opacity })}
+          onChange={(deskStyle) => set({ deskStyle, deskDepth: DESK_PRESETS[deskStyle].depth, deskOpacity: DESK_PRESETS[deskStyle].opacity, deskEdge: DESK_PRESETS[deskStyle].edge })}
           options={DESK_STYLES.map((d): [DeskStyle, string] => [d, DESK_LABELS[d]])}
         >
           {(id) => <DeskCard style={id} />}
@@ -221,6 +226,7 @@ function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
           </div>
         </Row>
         <Row label="Saydamlık"><Slider value={s.deskOpacity} min={0.2} max={1} step={0.05} format={(v) => `%${Math.round(v * 100)}`} onChange={(deskOpacity) => set({ deskOpacity })} /></Row>
+        <Row label="Alt kalınlığı" hint="Rafın ekran kenarına bakan ön yüzü; 3B rafların altındaki kalınlık"><Slider value={s.deskEdge} min={0} max={30} unit=" px" onChange={(deskEdge) => set({ deskEdge })} /></Row>
         <Row label="3B derinlik" hint="0 = düz; yükseldikçe raf perspektifle yatar"><Slider value={s.deskDepth} min={0} max={60} unit=" px" onChange={(deskDepth) => set({ deskDepth })} /></Row>
         <Row label="Raf şekli" hint="Hap, konsepttekiyle aynı: uçları tam yuvarlak"><Segmented<DeskShape> value={s.deskShape} onChange={(deskShape) => set({ deskShape })} options={[['pill', 'Hap'], ['rounded', 'Yuvarlak köşe'], ['square', 'Kare']]} /></Row>
         <Row label="Raf simgelerle büyüsün" hint="Kapalıyken simgeler raftan taşar (macOS gibi)"><Switch label="Raf büyümesi" value={s.shelfGrows} onChange={(shelfGrows) => set({ shelfGrows })} /></Row>

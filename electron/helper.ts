@@ -145,6 +145,9 @@ class Helper extends EventEmitter {
   emptyTrash() {
     return this.call<boolean>('emptyTrash', {}, 120_000)
   }
+  toBottom(hwnd: number) {
+    return this.call<boolean>('toBottom', { hwnd })
+  }
   lock() {
     return this.call<boolean>('lock')
   }

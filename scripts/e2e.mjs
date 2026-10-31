@@ -223,6 +223,17 @@ try {
     await at({ alignment: 50, edgeOffset: 6 })
   })
 
+  await check('the dock can sit above, among, or below other windows', async () => {
+    const state = async (layer) => {
+      await invoke('settings:update', { layer })
+      await sleep(400)
+      return (await invoke('dock:state')).onTop
+    }
+    assert.equal(await state('normal'), false, 'normal: other windows may cover the dock')
+    assert.equal(await state('below'), false, 'below: not on top either (and pushed under the rest)')
+    assert.equal(await state('above'), true, 'above: always on top')
+  })
+
   await check('widgets can be added, render and be removed', async () => {
     const list = await invoke('widgets:add', 'clock')
     const widget = list.find((w) => w.type === 'clock')

@@ -29,18 +29,18 @@ export const DESK_LABELS: Record<DeskStyle, string> = {
 }
 
 /** Depth and opacity each style looks best with; picking a style in settings applies these. */
-export const DESK_PRESETS: Record<DeskStyle, { depth: number; opacity: number }> = {
-  glass: { depth: 0, opacity: 1 },
-  azure: { depth: 0, opacity: 1 },
-  glass3d: { depth: 34, opacity: 0.95 },
-  wood: { depth: 26, opacity: 1 },
-  metal: { depth: 22, opacity: 1 },
-  marble: { depth: 24, opacity: 1 },
-  neon: { depth: 0, opacity: 1 },
-  crystal: { depth: 30, opacity: 0.92 },
-  matte: { depth: 18, opacity: 1 },
-  mirror: { depth: 28, opacity: 0.95 },
-  wall: { depth: 22, opacity: 1 },
+export const DESK_PRESETS: Record<DeskStyle, { depth: number; opacity: number; edge: number }> = {
+  glass: { depth: 0, opacity: 1, edge: 0 },
+  azure: { depth: 0, opacity: 1, edge: 0 },
+  glass3d: { depth: 34, opacity: 0.95, edge: 8 },
+  wood: { depth: 26, opacity: 1, edge: 10 },
+  metal: { depth: 22, opacity: 1, edge: 8 },
+  marble: { depth: 24, opacity: 1, edge: 8 },
+  neon: { depth: 0, opacity: 1, edge: 0 },
+  crystal: { depth: 30, opacity: 0.92, edge: 8 },
+  matte: { depth: 18, opacity: 1, edge: 8 },
+  mirror: { depth: 28, opacity: 0.95, edge: 8 },
+  wall: { depth: 22, opacity: 1, edge: 10 },
 }
 
 const ORIGIN: Record<DockPosition, string> = { bottom: '50% 100%', top: '50% 0%', left: '0% 50%', right: '100% 50%' }

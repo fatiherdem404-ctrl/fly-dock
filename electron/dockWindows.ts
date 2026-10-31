@@ -85,7 +85,7 @@ function applyBounds(dock: DockWin) {
   dock.win.setBounds(dockRect)
   if (dock.shelf && !dock.shelf.isDestroyed()) {
     dock.shelf.setBounds(shelfRect(dockRect, position))
-    dock.win.moveTop()
+    if (getSettings().layer === 'above') dock.win.moveTop()
   }
 }
 
@@ -136,7 +136,31 @@ function createDock(display: Display): DockWin {
 function showDock(dock: DockWin) {
   dock.shelf?.showInactive()
   dock.win.showInactive()
-  dock.win.moveTop()
+  applyLayer()
+  if (getSettings().layer === 'above') dock.win.moveTop()
+}
+
+const handleOf = (w: BrowserWindow) => Number(w.getNativeWindowHandle().readBigUInt64LE())
+
+/**
+ * Where the dock sits among other windows: 'above' is always-on-top, 'normal' behaves like any window
+ * (other windows can cover it) and 'below' keeps it under everything, like a desktop gadget.
+ */
+export function applyLayer() {
+  const { layer } = getSettings()
+  for (const dock of docks.values()) {
+    for (const w of [dock.win, dock.shelf]) {
+      if (!w || w.isDestroyed()) continue
+      if (layer === 'above') w.setAlwaysOnTop(true, 'screen-saver')
+      else w.setAlwaysOnTop(false)
+      if (layer === 'below') helper.toBottom(handleOf(w)).catch(() => {})
+    }
+  }
+}
+
+export function dockIsOnTop(): boolean {
+  const first = [...docks.values()][0]
+  return !!first && !first.win.isDestroyed() && first.win.isAlwaysOnTop()
 }
 
 function destroyDock(dock: DockWin) {

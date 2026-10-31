@@ -69,6 +69,7 @@ internal static class Program
             case "activate": Windows.Activate(p["hwnd"]!.GetValue<long>()); return true;
             case "minimize": Windows.Minimize(p["hwnd"]!.GetValue<long>()); return true;
             case "close": Windows.Close(p["hwnd"]!.GetValue<long>()); return true;
+            case "toBottom": Windows.ToBottom(p["hwnd"]!.GetValue<long>()); return true;
             case "lock": return Native.LockWorkStation();
             case "sleep": return Native.SetSuspendState(false, false, false);
             case "startMenu": Windows.StartMenu(); return true;

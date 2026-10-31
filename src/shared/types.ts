@@ -68,6 +68,8 @@ export type FalloffCurve = 'cosine' | 'gaussian' | 'linear' | 'sharp'
 export type LabelMode = 'hover' | 'always' | 'never'
 export type StackSize = 'small' | 'medium' | 'full' | 'custom'
 export type DeskShape = 'pill' | 'rounded' | 'square'
+/** Where the dock sits relative to other windows: always on top, as a normal window, or below all of them. */
+export type DockLayer = 'above' | 'normal' | 'below'
 export type DeskStyle = 'glass' | 'azure' | 'glass3d' | 'wood' | 'metal' | 'marble' | 'neon' | 'crystal' | 'matte' | 'mirror' | 'wall'
 
 export const DESK_STYLES: DeskStyle[] = ['glass', 'azure', 'glass3d', 'wood', 'metal', 'neon', 'marble', 'crystal', 'matte', 'mirror', 'wall']
@@ -100,6 +102,8 @@ export interface DockSettings {
   /** Whether the desk gets thicker with the magnified icons. */
   shelfGrows: boolean
   deskShape: DeskShape
+  /** Thickness of the desk's front face on the screen-edge side, the "lip" a 3D shelf stands on (px). */
+  deskEdge: number
   /** Space between the icons and the desk edges, per screen side (px). */
   deskPadTop: number
   deskPadBottom: number
@@ -126,6 +130,7 @@ export interface DockSettings {
   labelSize: number
   labelFont: string
   // behaviour
+  layer: DockLayer
   autoHide: boolean
   autoHideDelayMs: number
   hideInFullscreen: boolean
@@ -223,6 +228,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   deskDepth: 0,
   shelfGrows: true,
   deskShape: 'pill',
+  deskEdge: 0,
   deskPadTop: 10,
   deskPadBottom: 10,
   deskPadLeft: 16,
@@ -243,6 +249,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   labelMode: 'hover',
   labelSize: 12,
   labelFont: '',
+  layer: 'above',
   autoHide: false,
   autoHideDelayMs: 600,
   hideInFullscreen: true,
@@ -275,7 +282,7 @@ export interface InvokeMap {
   'trash:drop': { args: [paths: string[]]; result: void }
   'menu:show': { args: [payload: { kind: 'empty' | 'icon'; itemId?: string }]; result: void }
   'dock:layout': { args: [layout: { main: number; cross: number; shelfMain: number; shelfCross: number }]; result: void }
-  'dock:state': { args: []; result: { hidden: boolean } }
+  'dock:state': { args: []; result: { hidden: boolean; onTop: boolean } }
   'stack:list': { args: [id: string]; result: StackEntry[] }
   'wheel:list': { args: []; result: { entries: WheelEntry[]; hidden: string[] } }
   'wheel:run': { args: [id: string]; result: boolean }
