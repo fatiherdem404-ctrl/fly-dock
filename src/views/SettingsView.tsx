@@ -50,16 +50,13 @@ export default function SettingsView() {
   const [settings, setSettings] = useState<DockSettings | null>(null)
   const [info] = useRemote('app:info', [])
   const [launchTick, setLaunchTick] = useState(0)
-  const [maximized, setMaximized] = useState(false)
   const [showPreview, setShowPreview] = useState(() => remembered('settings.preview') !== 'off')
 
   useEffect(() => {
     initSound()
     invoke('settings:get').then(setSettings)
-    invoke('window:is-maximized').then(setMaximized)
   }, [])
   useEvent('settings:changed', setSettings)
-  useEvent('window:maximized', setMaximized)
   useActiveTheme(settings?.theme)
 
   const set: Update = (partial) => {
@@ -91,7 +88,6 @@ export default function SettingsView() {
         name={info?.name ?? 'Fly Dock'}
         pageLabel={page.label}
         pageIcon={page.icon}
-        maximized={maximized}
         onControl={(action) => invoke('window:control', action)}
         onJump={jump}
       />

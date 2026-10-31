@@ -6,7 +6,6 @@ interface Props {
   name: string
   pageLabel: string
   pageIcon: IconName
-  maximized: boolean
   onControl: (action: 'minimize' | 'maximize' | 'close') => void
   onJump: (entry: SearchEntry) => void
 }
@@ -14,7 +13,7 @@ interface Props {
 const fold = (s: string) => s.toLocaleLowerCase('tr').normalize('NFD').replace(/[̀-ͯ]/g, '')
 
 /** The app's own title bar: brand, current page, a settings search, and the window buttons. The empty parts drag the window. */
-export default function TitleBar({ name, pageLabel, pageIcon, maximized, onControl, onJump }: Props) {
+export default function TitleBar({ name, pageLabel, pageIcon, onControl, onJump }: Props) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
@@ -87,7 +86,6 @@ export default function TitleBar({ name, pageLabel, pageIcon, maximized, onContr
 
       <div className="st-title__buttons">
         <button aria-label="Küçült" title="Küçült" onClick={() => onControl('minimize')}><Icon name="minimize" size={16} /></button>
-        <button aria-label={maximized ? 'Eski boyuta getir' : 'Büyüt'} title={maximized ? 'Eski boyuta getir' : 'Büyüt'} onClick={() => onControl('maximize')}><Icon name={maximized ? 'restore' : 'maximize'} size={15} /></button>
         <button className="st-title__close" aria-label="Kapat" title="Kapat" onClick={() => onControl('close')}><Icon name="cross" size={16} /></button>
       </div>
     </header>

@@ -45,6 +45,8 @@ let settingsWindow: BrowserWindow | null = null
 // ---- windows: settings and stack popup ----
 
 const SETTINGS_SIZE = { width: 1100, height: 760 }
+/** The settings window can be dragged from its edges between these sizes; it is never maximised. */
+const SETTINGS_LIMITS = { minWidth: 760, minHeight: 540, maxWidth: 1320, maxHeight: 920 }
 
 /** The remembered window rectangle, but only if enough of it is still on a screen (monitors come and go). */
 function savedSettingsBounds(): { x: number; y: number; width: number; height: number; maximized: boolean } | null {
@@ -69,8 +71,9 @@ function openSettings() {
   const saved = savedSettingsBounds()
   const win = new BrowserWindow({
     ...SETTINGS_SIZE,
-    minWidth: 760,
-    minHeight: 540,
+    ...SETTINGS_LIMITS,
+    maximizable: false,
+    fullscreenable: false,
     title: `${brand.name} — Ayarlar`,
     // our own title bar is drawn by the page
     frame: false,
@@ -84,15 +87,21 @@ function openSettings() {
   settingsWindow = win
   win.setMenuBarVisibility(false)
   // set after creation: the constructor sizes frameless windows slightly differently from getBounds()
-  if (saved) win.setBounds({ x: saved.x, y: saved.y, width: saved.width, height: saved.height })
-  if (saved?.maximized) win.maximize()
+  if (saved) {
+    win.setBounds({
+      x: saved.x,
+      y: saved.y,
+      width: Math.min(Math.max(saved.width, SETTINGS_LIMITS.minWidth), SETTINGS_LIMITS.maxWidth),
+      height: Math.min(Math.max(saved.height, SETTINGS_LIMITS.minHeight), SETTINGS_LIMITS.maxHeight),
+    })
+  }
   loadRoute(win, '/settings')
 
   let timer: NodeJS.Timeout | null = null
   const remember = () => {
     if (win.isDestroyed() || HEADLESS) return
-    const bounds = win.isMaximized() ? (store.get('settingsWindow') ?? win.getNormalBounds()) : win.getBounds()
-    store.set('settingsWindow', { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, maximized: win.isMaximized() })
+    const bounds = win.getBounds()
+    store.set('settingsWindow', { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, maximized: false })
   }
   const later = () => {
     if (timer) clearTimeout(timer)
@@ -100,14 +109,6 @@ function openSettings() {
   }
   win.on('resize', later)
   win.on('move', later)
-  win.on('maximize', () => {
-    win.webContents.send('window:maximized', true)
-    remember()
-  })
-  win.on('unmaximize', () => {
-    win.webContents.send('window:maximized', false)
-    later()
-  })
   win.on('close', remember)
   win.on('closed', () => {
     settingsWindow = null
@@ -361,7 +362,7 @@ function registerIpc() {
     const win = BrowserWindow.fromWebContents(e.sender)
     if (!win) return
     if (action === 'minimize') win.minimize()
-    else if (action === 'maximize') (win.isMaximized() ? win.unmaximize() : win.maximize())
+    else if (action === 'maximize') (win.isMaximizable() ? (win.isMaximized() ? win.unmaximize() : win.maximize()) : void 0)
     else win.close()
   })
   handle('window:is-maximized', (e) => BrowserWindow.fromWebContents(e.sender)?.isMaximized() ?? false)
