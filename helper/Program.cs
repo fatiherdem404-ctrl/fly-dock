@@ -89,7 +89,7 @@ internal static class Program
                 Native.SHQueryRecycleBin(null, ref info);
                 return new JsonObject { ["items"] = info.i64NumItems, ["bytes"] = info.i64Size };
             }
-            case "emptyTrash": return Native.SHEmptyRecycleBin(IntPtr.Zero, null, 0) == 0;
+            case "emptyTrash": return Native.SHEmptyRecycleBin(IntPtr.Zero, null, 0x1 | 0x4) == 0; // SHERB_NOCONFIRMATION | SHERB_NOSOUND: the dock asks itself and plays its own sound
             case "shutdown": System.Windows.Forms.Application.Exit(); return true;
             default: throw new InvalidOperationException("unknown method " + method);
         }
