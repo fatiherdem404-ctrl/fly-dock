@@ -12,6 +12,7 @@ import {
 } from './items'
 import { iconForItem, setTrashState } from './icons'
 import { shellIcon, thumbnail } from './iconService'
+import { builderKeys, pickBuilderImage, pickBuilderFolder, createBuilderPack } from './packBuilder'
 import { initDockWindows, syncDocks, setLayout, applyLayer, dockIsOnTop, isDockHidden, setFullscreenHidden, toggleDockVisibility, disposeDockWindows } from './dockWindows'
 import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN } from './windows'
 import {
@@ -280,6 +281,17 @@ function registerIpc() {
 
   handle('themes:list', () => listThemes())
   handle('themes:get', (_e, id) => getTheme(id))
+  handle('builder:keys', () => builderKeys())
+  handle('builder:pick', () => pickBuilderImage())
+  handle('builder:folder', (_e, keys) => pickBuilderFolder(keys))
+  handle('builder:create', (_e, name, author, map) => {
+    const result = createBuilderPack(name, author, map)
+    if (result.ok) {
+      clearPackCaches()
+      broadcast('themes:changed', null)
+    }
+    return result
+  })
   handle('packs:list', () => [...builtinThemeInfos(), ...listInstalled()])
   handle('packs:import', async () => {
     const result = await importPackDialog()

@@ -218,6 +218,13 @@ export interface ThemeDef {
   vars: ThemeVars
 }
 
+/** One thing an icon pack can replace; `path` is the program it belongs to. */
+export interface PackBuilderKey {
+  key: string
+  label: string
+  path?: string
+}
+
 export interface PackInfo {
   id: string
   type: 'theme' | 'icons'
@@ -369,6 +376,10 @@ export interface InvokeMap {
   'menu:close': { args: []; result: void }
   'stack:open': { args: [path: string]; result: void }
   'stack:show': { args: [id: string, anchor: { x: number; y: number }]; result: void }
+  'builder:keys': { args: []; result: PackBuilderKey[] }
+  'builder:pick': { args: []; result: { path: string; preview: string } | null }
+  'builder:folder': { args: [keys: string[]]; result: Record<string, { path: string; preview: string }> }
+  'builder:create': { args: [name: string, author: string, map: Record<string, string>]; result: { ok: boolean; message: string; pack?: PackInfo } }
   'themes:list': { args: []; result: PackInfo[] }
   'themes:get': { args: [id: string]; result: ThemeDef | null }
   'packs:list': { args: []; result: PackInfo[] }

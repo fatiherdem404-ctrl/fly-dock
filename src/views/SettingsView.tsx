@@ -484,6 +484,58 @@ function PackCards({ packs, activeId, onUse, type, onChanged }: { packs: PackInf
   )
 }
 
+type Picked = { path: string; preview: string }
+
+/** Build an icon pack: a picture for each program in the dock (by hand or from a folder), then save it as a pack. */
+function PackBuilder({ onMade }: { tab?: string; onMade: (id: string) => void }) {
+  const [keys] = useRemote('builder:keys', [])
+  const [chosen, setChosen] = useState<Record<string, Picked>>({})
+  const [name, setName] = useState('')
+  const [author, setAuthor] = useState('')
+  const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
+  const count = Object.keys(chosen).length
+  const pick = async (key: string) => {
+    const got = await invoke('builder:pick')
+    if (got) setChosen((cur) => ({ ...cur, [key]: got }))
+  }
+  const fromFolder = async () => {
+    const got = await invoke('builder:folder', (keys ?? []).map((k) => k.key))
+    const n = Object.keys(got).length
+    setChosen((cur) => ({ ...cur, ...got }))
+    setMessage({ text: n ? `${n} simge eşleşti.` : 'Bu klasörde öğelerle aynı adlı resim bulunamadı (ör. chrome.png, folder.png).', error: n === 0 })
+  }
+  const create = async () => {
+    const map = Object.fromEntries(Object.entries(chosen).map(([k, v]) => [k, v.path]))
+    const r = await invoke('builder:create', name, author, map)
+    setMessage({ text: r.ok ? `"${r.message}" oluşturuldu ve kullanılıyor. Dışa aktarmak için Simge paketleri sekmesindeki listeyi kullan.` : r.message, error: !r.ok })
+    if (r.ok && r.pack) onMade(r.pack.id)
+  }
+  return (
+    <Card title="Paket oluştur" hint="Dock'taki her program için bir resim seç ya da adları programlarla aynı olan resimlerin durduğu bir klasör ver (chrome.png, folder.png, trash.png…). PNG, ICO, SVG, JPEG ya da WebP, en çok 2 MB.">
+      <div className="st-row-inline">
+        <button className="st-btn st-btn--accent" onClick={fromFolder}><Icon name="folder" size={15} />Klasörden dağıt…</button>
+        {count > 0 && <button className="st-btn" onClick={() => setChosen({})}><Icon name="refresh" size={15} />Seçimleri temizle</button>}
+      </div>
+      <div className="st-list">
+        {(keys ?? []).map((k) => (
+          <div className="st-list__row st-list__row--builder" key={k.key}>
+            <span className="st-builder-thumb">{chosen[k.key] ? <img src={chosen[k.key].preview} alt="" /> : <Icon name="image" size={16} />}</span>
+            <span>{k.label}<small className="st-muted"> · {k.key}</small></span>
+            <div className="st-row-inline" style={{ margin: 0 }}>
+              <button className="st-btn" onClick={() => pick(k.key)}><Icon name="image" size={14} />{chosen[k.key] ? 'Değiştir' : 'Resim seç…'}</button>
+              {chosen[k.key] && <button className="st-btn" aria-label="Kaldır" onClick={() => setChosen((cur) => { const { [k.key]: _gone, ...rest } = cur; return rest })}><Icon name="trash" size={14} /></button>}
+            </div>
+          </div>
+        ))}
+      </div>
+      <Row label="Paket adı"><input className="st-input" type="text" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Benim simgelerim" /></Row>
+      <Row label="Yapımcı" hint="İstersen boş bırak"><input className="st-input" type="text" value={author} maxLength={60} onChange={(e) => setAuthor(e.target.value)} /></Row>
+      <div className="st-row-inline"><button className="st-btn st-btn--accent" disabled={count === 0 || !name.trim()} onClick={create}><Icon name="download" size={15} />Paketi oluştur ve kullan ({count})</button></div>
+      {message && <Message text={message.text} error={message.error} />}
+    </Card>
+  )
+}
+
 function ThemeTab({ s, set, kind }: { s: DockSettings; set: Update; kind: 'theme' | 'icons' }) {
   const [packs, setPacks] = useRemote('packs:list', [], 'themes:changed')
   const refresh = () => invoke('packs:list').then(setPacks)
@@ -498,9 +550,12 @@ function ThemeTab({ s, set, kind }: { s: DockSettings; set: Update; kind: 'theme
       {vars && <div className="st-swatches">{[vars.surface, vars.accent, vars.indicator, vars.panelBg].map((c, i) => <i key={i} style={{ background: c }} />)}</div>}
     </Card>
   ) : (
-    <Card title="Simge paketleri" hint="Programlar için toplu simge değişimi">
-      <PackCards packs={packs ?? []} activeId={s.iconPack} onUse={(iconPack) => set({ iconPack })} type="icons" onChanged={refresh} />
-    </Card>
+    <Pages id="icons">
+      <Card title="Simge paketleri" hint="Programlar için toplu simge değişimi">
+        <PackCards packs={packs ?? []} activeId={s.iconPack} onUse={(iconPack) => set({ iconPack })} type="icons" onChanged={refresh} />
+      </Card>
+      <PackBuilder tab="Paket oluştur" onMade={(iconPack) => { refresh(); set({ iconPack }) }} />
+    </Pages>
   )
 }
 
