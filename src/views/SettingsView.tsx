@@ -270,7 +270,7 @@ function DockTab({ s, set }: { s: DockSettings; set: Update }) {
 
 // ---- Desk ----
 
-const PATTERNED: DeskStyle[] = ['wood', 'metal', 'marble', 'crystal', 'wall']
+const PATTERNED: DeskStyle[] = ['wood', 'birch', 'walnut', 'metal', 'marble', 'blackmarble', 'concrete', 'crystal', 'wall']
 
 function TextureCard({ s, set }: { s: DockSettings; set: Update; tab?: string }) {
   const texture = useTexture(s.deskStyle === 'custom' ? s.deskTexFile : '')

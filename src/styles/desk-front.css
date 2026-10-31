@@ -16,7 +16,6 @@
 .dock--desk-glass3d { --edge-top: rgba(205, 225, 255, 0.78); --edge-bottom: rgba(120, 150, 205, 0.55); --edge-line: rgba(255, 255, 255, 0.75); }
 .dock--desk-glass3d .dock__desk.dock__shelf-surface { background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(205, 220, 245, 0.34) 45%, rgba(150, 175, 220, 0.5) 100%); }
 .dock--desk-wood { --edge-top: #8b5a2b; --edge-bottom: #4a2c13; --edge-line: rgba(255, 224, 170, 0.45); }
-.dock--desk-wood .dock__shelf-front { background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 9px), linear-gradient(180deg, var(--edge-top), var(--edge-bottom)); }
 .dock--desk-metal { --edge-top: #c4c9d3; --edge-bottom: #626874; --edge-line: rgba(255, 255, 255, 0.7); }
 .dock--desk-marble { --edge-top: #e4e4ea; --edge-bottom: #a2a2ae; --edge-line: rgba(255, 255, 255, 0.8); }
 .dock--desk-neon { --edge-top: #0a1236; --edge-bottom: #04061a; --edge-line: var(--accent); }

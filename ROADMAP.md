@@ -117,3 +117,7 @@ Sınırlar: akrilik/Mica ayrı bir sistem penceresi olduğu için sabit durur (t
 - Pencere içindeki öğelere sağ tık menüsü (Windows gibi): Aç, Konumunu aç, Dock'a ekle, Yolu kopyala, Yeniden adlandır, Gruptan çıkar, Sil (geri dönüşüm kutusuna). Çark girdilerinde: Aç, Simge değiştir, Yeniden adlandır, Gizle/Kaldır.
 - Kendi metin girişi penceresi (yeniden adlandırma) ve onay penceresi; menü ya da soru açılınca dock penceresi kapanmaz.
 - Test: `node scripts/check-entry-menu.mjs` (adlandırma, çakışan ad, silme, listede olmayan yol).
+
+## Gerçek dokulu raflar (2026-10-31)
+- Ahşap, açık ahşap, ceviz, mermer, siyah mermer, fırçalı metal, beton ve tuğla rafları gerçek CC0 fotoğraf dokularıyla (ambientCG, `docs/textures.md`); üstüne yalnızca ışık/gölge katmanı çizilir, ön yüz aynı malzemenin gölgedeki hâli.
+- Temalar raf taşıyabilir (`desk` bloğu + `desk-texture.*`); hazır temaların kendi rafı var.

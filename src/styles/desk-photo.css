@@ -1,0 +1,58 @@
+/*
+ * Photographic shelves. Wood, marble, metal, concrete and brick use real, seamlessly tiling photographs (CC0, from
+ * ambientCG, see docs/textures.md) instead of drawn gradients. On top of the picture only light is painted: the
+ * top surface gets a soft gradient from the back edge to the front, the front face is the same material in shade.
+ * --photo-w is the width of one tile in px at 100% size; the "Doku boyutu" setting scales it through --tex-scale.
+ */
+.dock--desk-wood { --photo: url(../assets/desk/wood.jpg); --photo-w: 420px; }
+.dock--desk-birch { --photo: url(../assets/desk/birch.jpg); --photo-w: 420px; }
+.dock--desk-walnut { --photo: url(../assets/desk/walnut.jpg); --photo-w: 420px; }
+.dock--desk-metal { --photo: url(../assets/desk/metal.jpg); --photo-w: 360px; }
+.dock--desk-marble { --photo: url(../assets/desk/marble.jpg); --photo-w: 480px; }
+.dock--desk-blackmarble { --photo: url(../assets/desk/blackmarble.jpg); --photo-w: 480px; }
+.dock--desk-concrete { --photo: url(../assets/desk/concrete.jpg); --photo-w: 520px; }
+.dock--desk-wall { --photo: url(../assets/desk/brick.jpg); --photo-w: 460px; }
+
+/* how much light falls on the top surface of each material (0..1 white at the back edge, black towards the front) */
+.dock--desk-wood { --lit: 0.14; --shade: 0.22; }
+.dock--desk-birch { --lit: 0.16; --shade: 0.2; }
+.dock--desk-walnut { --lit: 0.2; --shade: 0.28; }
+.dock--desk-metal { --lit: 0.3; --shade: 0.24; }
+.dock--desk-marble { --lit: 0.22; --shade: 0.16; }
+.dock--desk-blackmarble { --lit: 0.2; --shade: 0.3; }
+.dock--desk-concrete { --lit: 0.18; --shade: 0.2; }
+.dock--desk-wall { --lit: 0.1; --shade: 0.3; }
+
+.dock--desk-wood .dock__desk, .dock--desk-birch .dock__desk, .dock--desk-walnut .dock__desk, .dock--desk-metal .dock__desk,
+.dock--desk-marble .dock__desk, .dock--desk-blackmarble .dock__desk, .dock--desk-concrete .dock__desk, .dock--desk-wall .dock__desk {
+  background-color: #777;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, var(--lit)), rgba(255, 255, 255, 0) 38%, rgba(0, 0, 0, var(--shade))), var(--photo);
+  background-size: 100% 100%, calc(var(--photo-w) * var(--tex-scale)) auto;
+  background-repeat: no-repeat, repeat;
+  background-position: 0 0, 0 0;
+}
+
+.dock--desk-wood .dock__shelf-front, .dock--desk-birch .dock__shelf-front, .dock--desk-walnut .dock__shelf-front, .dock--desk-metal .dock__shelf-front,
+.dock--desk-marble .dock__shelf-front, .dock--desk-blackmarble .dock__shelf-front, .dock--desk-concrete .dock__shelf-front, .dock--desk-wall .dock__shelf-front {
+  background-color: #555;
+  background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.5)), var(--photo);
+  background-size: 100% 100%, calc(var(--photo-w) * var(--tex-scale)) auto;
+  background-repeat: no-repeat, repeat;
+  background-position: 0 0, 0 40%;
+}
+
+/* edge colours (the outline and the rim of the shelf) that suit each material */
+.dock--desk-wood { --edge-top: #8a5d3a; --edge-bottom: #4a301c; --edge-line: rgba(255, 224, 180, 0.5); }
+.dock--desk-birch { --edge-top: #d4a574; --edge-bottom: #8f6740; --edge-line: rgba(255, 240, 215, 0.6); }
+.dock--desk-walnut { --edge-top: #5a4034; --edge-bottom: #1f130e; --edge-line: rgba(255, 210, 180, 0.4); }
+.dock--desk-metal { --edge-top: #b9bec7; --edge-bottom: #5d636e; --edge-line: rgba(255, 255, 255, 0.8); }
+.dock--desk-marble { --edge-top: #cfd2da; --edge-bottom: #8f94a0; --edge-line: rgba(255, 255, 255, 0.85); }
+.dock--desk-blackmarble { --edge-top: #3a4044; --edge-bottom: #0b0d0e; --edge-line: rgba(200, 240, 230, 0.45); }
+.dock--desk-concrete { --edge-top: #b3b6b9; --edge-bottom: #6a6d70; --edge-line: rgba(255, 255, 255, 0.55); }
+.dock--desk-wall { --edge-top: #a54b34; --edge-bottom: #5a2418; --edge-line: rgba(255, 200, 170, 0.5); }
+
+/* the flat (no depth) plate keeps a rim and a soft drop shadow in each material */
+.dock--desk-birch .dock__desk { border-color: #8f6740; box-shadow: 0 calc(var(--desk-depth) * 0.5) 18px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 240, 215, 0.55), inset 0 -3px 6px rgba(0, 0, 0, 0.3); }
+.dock--desk-walnut .dock__desk { border-color: #1f130e; box-shadow: 0 calc(var(--desk-depth) * 0.5) 18px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 210, 180, 0.35), inset 0 -3px 6px rgba(0, 0, 0, 0.4); }
+.dock--desk-blackmarble .dock__desk { border-color: #0b0d0e; box-shadow: 0 calc(var(--desk-depth) * 0.5) 18px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(200, 240, 230, 0.35), inset 0 -3px 6px rgba(0, 0, 0, 0.4); }
+.dock--desk-concrete .dock__desk { border-color: #6a6d70; box-shadow: 0 calc(var(--desk-depth) * 0.5) 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -3px 6px rgba(0, 0, 0, 0.25); }

@@ -17,6 +17,7 @@ import './styles/widgets.css'
 import './styles/settings.css'
 import './styles/desk-front.css'
 import './styles/desk-scale.css'
+import './styles/desk-photo.css'
 import './styles/separator.css'
 
 const route = window.location.hash.replace(/^#/, '') || '/dock'
