@@ -15,8 +15,8 @@ let win: BrowserWindow | null = null
 export function showIconPicker(target: string) {
   win?.destroy()
   const { x, y, width, height } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea
-  const w = Math.min(760, width - 40)
-  const h = Math.min(620, height - 40)
+  const w = Math.min(808, width - 40)
+  const h = Math.min(668, height - 40)
   const next = new BrowserWindow({
     x: Math.round(x + (width - w) / 2) - OFFSCREEN, y: Math.round(y + (height - h) / 2), width: w, height: h,
     frame: false, transparent: true, hasShadow: false, resizable: false, minimizable: false, maximizable: false, skipTaskbar: true,

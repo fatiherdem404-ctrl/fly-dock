@@ -17,8 +17,8 @@ export default function Panel({ children, onSettings }: { children: ReactNode; o
   const [settings, setSettings] = useState<DockSettings | null>(null)
   const [closing, setClosing] = useState(false)
   const query = new URLSearchParams(window.location.hash.split('?')[1] ?? '')
-  // the panel sits 10 px inside the window, so shift the window-relative anchor into the panel's own space
-  const origin = `${Number(query.get('ox') ?? 0) - 10}px ${Number(query.get('oy') ?? 0) - 10}px`
+  // the panel sits 36 px inside the window (10 + room for its shadow), so shift the window-relative anchor into the panel's own space
+  const origin = `${Number(query.get('ox') ?? 0) - 36}px ${Number(query.get('oy') ?? 0) - 36}px`
 
   useEffect(() => {
     initSound()

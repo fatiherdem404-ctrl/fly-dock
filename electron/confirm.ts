@@ -14,8 +14,8 @@ interface Answer {
 
 let current: { id: string; win: BrowserWindow; settle: (answer: Answer) => void } | null = null
 
-const WIDTH = 460
-const HEIGHT = 250
+const WIDTH = 508 // 460 plus room around the card for its shadow
+const HEIGHT = 298
 
 export function confirmIsOpen(): boolean {
   return !!current
