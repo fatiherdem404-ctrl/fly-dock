@@ -78,6 +78,22 @@ const underPointer = grown.start + grown.positions[slot] + 0.5 * t[slot]
 assert.ok(Math.abs(underPointer - (100 + centre)) < 1e-6, 'icon under the pointer stays under the pointer')
 assert.ok(grown.length > restRow.length, 'row widens when magnified')
 
+// the row must glide while the pointer crosses icons AND the gaps between them (it used to jump by a gap width)
+{
+  const widths = [48, 48, 17, 48, 48]
+  const lefts = widths.map((_, i) => widths.slice(0, i).reduce((a, b) => a + b + 8, 0))
+  const length = lefts[4] + 48
+  let previous = null
+  let worst = 0
+  for (let a = 0; a <= length; a += 0.25) {
+    const sizes = targetSizes({ restLeft: lefts, restWidth: widths, separator: [false, false, true, false, false], pointer: a, iconSize: 48, magnifiedSize: 84, radiusIcons: 2, gap: 8 })
+    const { start } = layoutRow({ sizes, restLeft: lefts, restWidth: widths, gap: 8, restStart: 0, anchor: a })
+    if (previous !== null) worst = Math.max(worst, Math.abs(start - previous))
+    previous = start
+  }
+  assert.ok(worst < 1.5, `row start moves at most 1.5 px per 0.25 px of pointer travel (worst jump ${worst.toFixed(2)} px)`)
+}
+
 // ---- window geometry: nothing may stick out of the window, for any settings and any pointer position ----
 const layoutOut = join(dir, 'layout.mjs')
 await build({ entryPoints: ['src/layout.ts'], bundle: true, platform: 'node', format: 'esm', outfile: layoutOut, logLevel: 'silent' })

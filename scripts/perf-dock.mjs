@@ -71,12 +71,16 @@ try {
 
   // frame recorder: icon sizes and containment violations on every animation frame
   await evaluate(`(() => {
-    window.__rec = { t: [], sizes: [], insets: [] }
     const horizontal = ${horizontal}
+    window.__rec = { t: [], sizes: [], insets: [], origin: [], ptr: [] }
+    window.__ptr = 0
+    window.addEventListener('mousemove', (e) => { window.__ptr = horizontal ? e.clientX : e.clientY }, true)
     const tick = (now) => {
       const icons = [...document.querySelectorAll('.dock-icon')]
       const surface = document.querySelector('.dock__desk').getBoundingClientRect()
       window.__rec.t.push(now)
+      window.__rec.ptr.push(window.__ptr)
+      { const r0 = icons[0].getBoundingClientRect(); window.__rec.origin.push(horizontal ? r0.left : r0.top) }
       window.__rec.sizes.push(icons.map(e => horizontal ? e.getBoundingClientRect().width : e.getBoundingClientRect().height))
       // how far the glass reaches past the union of all icons, per side
       const rects = icons.map(e => e.getBoundingClientRect())
@@ -110,12 +114,13 @@ $sheet.Save('${film}')`
   const first = centres[0]
   const last = centres[centres.length - 1]
   // sweep across the dock at a human speed, then rest on the last icon, then leave
-  const SWEEP_MS = 1200
-  const start = Date.now()
-  while (Date.now() - start < SWEEP_MS) {
-    const f = (Date.now() - start) / SWEEP_MS
-    await move(first + (last - first) * f, crossAt)
-    await sleep(8)
+  // one pixel per step, so any jump in the layout is the layout's own doing and not the pointer's
+  await move(first, crossAt)
+  await sleep(500)
+  const sweepStart = (await evaluate('window.__rec.t.length'))
+  for (let x = first; x <= last; x += 1) {
+    await move(x, crossAt)
+    await sleep(3)
   }
   const restFrom = (await evaluate('window.__rec.t.length'))
   await move(last, crossAt)
@@ -136,7 +141,7 @@ $bmp.Save('${shot}')`
   }
   await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: -50, y: -50 })
   await sleep(900)
-  const rec = await evaluate('JSON.stringify({ t: window.__rec.t, sizes: window.__rec.sizes, insets: window.__rec.insets })')
+  const rec = await evaluate('JSON.stringify({ t: window.__rec.t, sizes: window.__rec.sizes, insets: window.__rec.insets, origin: window.__rec.origin, ptr: window.__rec.ptr })')
   const data = JSON.parse(rec)
 
   const dts = data.t.slice(1).map((t, i) => t - data.t[i]).filter((d) => d < 200)
@@ -166,6 +171,9 @@ $bmp.Save('${shot}')`
     resting: +worst(restFrom, restTo).toFixed(2),
     pointerOut: +worst(restTo, data.insets.length).toFixed(2),
   }
+  // Smoothness while the pointer glides across icons and the gaps between them: the row may never jump.
+  let rowJump = 0
+  for (let f = sweepStart + 1; f < restFrom; f++) rowJump = Math.max(rowJump, Math.abs(data.origin[f] - data.origin[f - 1]))
   const report = {
     position,
     frames: data.t.length,
@@ -173,10 +181,12 @@ $bmp.Save('${shot}')`
     peakIconPx: +peak.toFixed(1),
     jitterReversalsWhileResting: reversals,
     glassAlignmentMaxErrorPx: alignment,
+    maxRowJumpPxPerFrame: +rowJump.toFixed(2),
   }
   console.log(JSON.stringify(report))
   const failures = []
   if (report.frameMs.p95 > 25) failures.push('p95 frame time above 25 ms')
+  if (rowJump > 3.5) failures.push(`the row jumps ${rowJump.toFixed(1)} px in one frame while the pointer glides`)
   if (reversals > 0) failures.push('icons jitter while the pointer rests')
   if (report.peakIconPx > 84.5) failures.push('icons overshoot the configured magnified size')
   for (const [phase, err] of Object.entries(alignment)) if (err >= 1) failures.push(`glass drifts from the icons while ${phase} (${err}px)`)

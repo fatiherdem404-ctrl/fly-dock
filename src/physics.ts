@@ -117,15 +117,23 @@ export function layoutRow(opts: {
     cursor += s + (i < sizes.length - 1 ? gap : 0)
   })
   if (sizes.length === 0) return { positions, length: 0, start: restStart }
-  let index = sizes.length - 1
-  for (let i = 0; i < sizes.length; i++) {
-    if (anchor <= restLeft[i] + restWidth[i] + gap / 2) {
-      index = i
-      break
-    }
+  // Piecewise-linear map from the rest row to the magnified row: inside a slot it scales with that slot, inside a
+  // gap it moves one-to-one. The row therefore never jumps while the pointer crosses from one icon to the next.
+  const last = sizes.length - 1
+  const right = (i: number) => restLeft[i] + restWidth[i]
+  let mapped: number
+  if (anchor <= restLeft[0]) {
+    mapped = positions[0] + (anchor - restLeft[0])
+  } else if (anchor >= right(last)) {
+    mapped = positions[last] + sizes[last] + (anchor - right(last))
+  } else {
+    let i = 0
+    while (i < last && anchor > right(i)) i++
+    mapped =
+      anchor >= restLeft[i]
+        ? positions[i] + ((anchor - restLeft[i]) / restWidth[i]) * sizes[i]
+        : positions[i - 1] + sizes[i - 1] + (anchor - right(i - 1))
   }
-  const frac = Math.min(Math.max((anchor - restLeft[index]) / restWidth[index], 0), 1)
-  const mapped = positions[index] + frac * sizes[index]
   return { positions, length: cursor, start: restStart + anchor - mapped }
 }
 
