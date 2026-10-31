@@ -9,6 +9,7 @@ import WheelView from './views/WheelView'
 import PowerView from './views/PowerView'
 import ConfirmView from './views/ConfirmView'
 import IconPickView from './views/IconPickView'
+import WallpaperView from './views/WallpaperView'
 import './styles/base.css'
 import './styles/dock.css'
 import './styles/windows.css'
@@ -34,6 +35,8 @@ function Root() {
       return <StackView itemId={param} />
     case 'wheel':
       return <WheelView />
+    case 'wallpaper':
+      return <WallpaperView />
     case 'iconpick':
       return <IconPickView />
     case 'confirm':

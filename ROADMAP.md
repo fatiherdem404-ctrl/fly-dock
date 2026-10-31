@@ -121,3 +121,10 @@ Sınırlar: akrilik/Mica ayrı bir sistem penceresi olduğu için sabit durur (t
 ## Gerçek dokulu raflar (2026-10-31)
 - Ahşap, açık ahşap, ceviz, mermer, siyah mermer, fırçalı metal, beton ve tuğla rafları gerçek CC0 fotoğraf dokularıyla (ambientCG, `docs/textures.md`); üstüne yalnızca ışık/gölge katmanı çizilir, ön yüz aynı malzemenin gölgedeki hâli.
 - Temalar raf taşıyabilir (`desk` bloğu + `desk-texture.*`); hazır temaların kendi rafı var.
+
+## Duvar kâğıtları (2026-10-31)
+- Masaüstü simgelerinin arkasında (Windows'a hiçbir şey yazmadan) çalışan duvar kâğıdı katmanı: her monitörde bir pencere, helper'daki `desktopAttach` ile masaüstü katmanına bağlanır. Windows 11 24H2+ düzeni için pencere katmanlı (WS_EX_LAYERED) alt pencere olarak Progman içinde, simge listesinin altında, WorkerW'nin üstünde durur. Uygulama kapanınca kullanıcının kendi duvar kâğıdı geri görünür.
+- Kaynaklar: temadan gelen, kullanıcının seçtiği (canlı sahne / resim / video), klasörden zamanlayıcıyla değişen slayt (çapraz geçişli, karışık ya da sıralı).
+- Canlı sahneler (dosyasız): aurora, akış, yıldızlı gece, dalgalar, baloncuklar; temanın vurgu rengine göre boyanır, 30 fps, tam ekran uygulama / pil / ekran kilidinde durur.
+- Temalar duvar kâğıdı taşıyabilir (`wallpaper` + `wallpaper.mp4/png/jpg/webp`); hazır temaların kendi canlı sahnesi var; tema oluşturucuda "Duvar kâğıdını da ekle".
+- Test: `FLY_DOCK_HELPER_DIR=<yeni derlenmiş helper klasörü> node scripts/check-wallpaper.mjs` (gerçek masaüstünde birkaç saniye; `WP_DESKTOP=1 WP_SHOT=x.png` ile masaüstünü gösterip resmini alır).

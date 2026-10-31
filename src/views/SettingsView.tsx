@@ -12,16 +12,18 @@ import {
   DESK_STYLES, DockItem, DockLayer, TweakInfo, DockSettings, PackInfo, ThemeDef, WidgetType,
   SOUND_GROUP_OF, SoundEvent, SoundGroup, SoundTheme,
   ThemeVars,
+  LIVE_WALLPAPERS, WallpaperMode, WallpaperFit,
   AnimationCurve, DeskStyle, TextureMode, SeparatorStyle, FalloffCurve, HoverAnimation, IndicatorStyle, LaunchAnimation, ShowAnimation, SpeedPreset, StackSize, StackPlacement, WindowAnimation, LabelMode,
 } from '@/shared/types'
 
-type Tab = 'dock' | 'desk' | 'motion' | 'windows' | 'theme' | 'icons' | 'items' | 'wheel' | 'sound' | 'tweaks' | 'widgets' | 'general'
+type Tab = 'dock' | 'desk' | 'motion' | 'windows' | 'theme' | 'wallpaper' | 'icons' | 'items' | 'wheel' | 'sound' | 'tweaks' | 'widgets' | 'general'
 const TABS: [Tab, string, IconName][] = [
   ['dock', 'Dock', 'dock'],
   ['desk', 'Zemin ve raf', 'desk'],
   ['motion', 'Animasyonlar', 'motion'],
   ['windows', 'Dock pencereleri', 'window'],
   ['theme', 'Temalar', 'theme'],
+  ['wallpaper', 'Duvar kâğıdı', 'image'],
   ['icons', 'Simge paketleri', 'pack'],
   ['items', 'Öğeler', 'items'],
   ['wheel', 'Çark menüsü', 'settings'],
@@ -648,6 +650,7 @@ function ThemeBuilder({ packs, onMade }: { tab?: string; packs: PackInfo[]; onMa
   const [name, setName] = useState('')
   const [author, setAuthor] = useState('')
   const [withDesk, setWithDesk] = useState(true)
+  const [withWallpaper, setWithWallpaper] = useState(true)
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
   useEffect(() => {
     invoke('themes:get', base).then((t) => t && setVars(t.vars))
@@ -659,7 +662,7 @@ function ThemeBuilder({ packs, onMade }: { tab?: string; packs: PackInfo[]; onMa
     put({ shadow: shadowCss(kind, accent) })
   }
   const create = async () => {
-    const r = await invoke('themes:create', name, author, vars, withDesk)
+    const r = await invoke('themes:create', name, author, vars, withDesk, withWallpaper)
     setMessage({ text: r.ok ? `"${r.message}" oluşturuldu ve kullanılıyor. Dışa aktarmak için Temalar sekmesindeki listeyi kullan.` : r.message, error: !r.ok })
     if (r.ok && r.pack) onMade(r.pack.id)
   }
@@ -705,6 +708,7 @@ function ThemeBuilder({ packs, onMade }: { tab?: string; packs: PackInfo[]; onMa
         </div>
       </div>
       <Row label="Şu anki rafı da ekle" hint="Rafın stili, derinliği, köşeleri ve özel dokusu temayla birlikte kaydedilir; tema seçilince raf da değişir"><Switch label="Rafı da ekle" value={withDesk} onChange={setWithDesk} /></Row>
+      <Row label="Duvar kâğıdını da ekle" hint="Seçili canlı arka plan, resim ya da video (8 MB a kadar) temayla birlikte kaydedilir"><Switch label="Duvar kâğıdını da ekle" value={withWallpaper} onChange={setWithWallpaper} /></Row>
       <Row label="Tema adı"><input className="st-input" type="text" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Benim temam" /></Row>
       <Row label="Yapımcı" hint="İstersen boş bırak"><input className="st-input" type="text" value={author} maxLength={60} onChange={(e) => setAuthor(e.target.value)} /></Row>
       <div className="st-row-inline"><button className="st-btn st-btn--accent" disabled={!name.trim()} onClick={create}><Icon name="download" size={15} />Temayı oluştur ve kullan</button></div>
@@ -736,6 +740,87 @@ function ThemeTab({ s, set, kind }: { s: DockSettings; set: Update; kind: 'theme
         <PackCards packs={packs ?? []} activeId={s.iconPack} onUse={(iconPack) => set({ iconPack })} type="icons" onChanged={refresh} />
       </Card>
       <PackBuilder tab="Paket oluştur" onMade={(iconPack) => { refresh(); set({ iconPack }) }} />
+    </Pages>
+  )
+}
+
+// ---- Wallpaper ----
+
+const WALLPAPER_MODES: [WallpaperMode, string, string][] = [
+  ['off', 'Kapalı', 'Windows’un kendi duvar kâğıdı kalır'],
+  ['theme', 'Temadan gelsin', 'Seçili temanın arka planı; tema değişince arka plan da değişir'],
+  ['single', 'Ben seçeyim', 'Canlı arka plan, resim ya da video'],
+  ['folder', 'Klasörden slayt', 'Klasördeki resim ve videolar belli aralıkla değişir'],
+]
+const FITS: [WallpaperFit, string][] = [['fill', 'Doldur'], ['fit', 'Sığdır'], ['stretch', 'Uzat'], ['center', 'Ortala'], ['tile', 'Döşe']]
+const INTERVALS: [number, string][] = [[1, '1 dakika'], [5, '5 dakika'], [10, '10 dakika'], [15, '15 dakika'], [30, '30 dakika'], [60, '1 saat'], [180, '3 saat'], [1440, 'Günde bir']]
+const LIVE_SWATCH: Record<string, string> = {
+  aurora: 'linear-gradient(135deg, #0b3a66, #1fb0ff 45%, #4a2aa0)',
+  flow: 'linear-gradient(135deg, #2a1c70, #7a30c8 55%, #b02a7c)',
+  stars: 'radial-gradient(circle at 30% 40%, #fff 0 1px, transparent 2px), radial-gradient(circle at 70% 25%, #fff 0 1px, transparent 2px), linear-gradient(180deg, #05060f, #151a3a)',
+  waves: 'linear-gradient(180deg, #7d6bd8 0 45%, #20367e 45% 70%, #3a28c0 70%)',
+  bubbles: 'radial-gradient(circle at 30% 35%, rgba(140,170,240,.7) 0 14%, transparent 15%), radial-gradient(circle at 68% 60%, rgba(150,160,240,.6) 0 18%, transparent 19%), linear-gradient(135deg, #15204a, #2f1c6a)',
+}
+
+function WallpaperTab({ s, set }: { s: DockSettings; set: Update }) {
+  const [info] = useRemote('wallpaper:info', [], 'wallpaper:changed', (p) => p)
+  const [theme] = useRemote('themes:get', [s.theme])
+  const fileName = (p: string) => p.split(/[\\/]/).filter(Boolean).pop() ?? p
+  const pickFile = async () => {
+    const file = await invoke('wallpaper:pick-file')
+    if (file) set({ wallpaperMode: 'single', wallpaperSingle: file })
+  }
+  const pickFolder = async () => {
+    const folder = await invoke('wallpaper:pick-folder')
+    if (folder) set({ wallpaperMode: 'folder', wallpaperFolder: folder })
+  }
+  return (
+    <Pages id="wallpaper">
+      <Card title="Duvar kâğıdı" hint="Duvar kâğıdı masaüstü simgelerinin arkasında, Windows’a hiçbir şey yazmadan gösterilir. Uygulamayı kapatınca kendi duvar kâğıdın geri gelir.">
+        <Choice<WallpaperMode> value={s.wallpaperMode} onChange={(wallpaperMode) => set({ wallpaperMode })} options={WALLPAPER_MODES} />
+        {s.wallpaperMode === 'theme' && (
+          <p className="st-prose">
+            {theme?.wallpaper?.live
+              ? `"${theme.name}" teması canlı arka plan getiriyor: ${LIVE_WALLPAPERS.find(([id]) => id === theme.wallpaper?.live)?.[1] ?? ''}.`
+              : theme ? `"${theme.name}" teması bir arka plan getirmiyor ya da resim/video olarak getiriyor; yoksa masaüstün olduğu gibi kalır.` : ''}
+          </p>
+        )}
+        {info?.message && <Message text={info.message} error />}
+      </Card>
+      {s.wallpaperMode === 'single' && (
+        <Card tab="Seçim" title="Canlı arka plan ya da dosya" hint="Hazır canlı sahnelerden birini seç ya da kendi resmini ya da videonu (mp4, webm) ver.">
+          <div className="st-cards">
+            {LIVE_WALLPAPERS.map(([id, name, hint]) => (
+              <button key={id} className="st-pack st-live" aria-pressed={s.wallpaperSingle === `live:${id}`} data-active={s.wallpaperSingle === `live:${id}`} onClick={() => set({ wallpaperSingle: `live:${id}` })}>
+                <span className="st-live__swatch" style={{ background: LIVE_SWATCH[id] }} />
+                <b>{name}</b>
+                <small>{hint}</small>
+              </button>
+            ))}
+          </div>
+          <div className="st-row-inline">
+            <button className="st-btn st-btn--accent" onClick={pickFile}><Icon name="image" size={15} />Resim ya da video seç…</button>
+            {s.wallpaperSingle && !s.wallpaperSingle.startsWith('live:') && <span className="st-muted" title={s.wallpaperSingle}>{fileName(s.wallpaperSingle)}</span>}
+          </div>
+        </Card>
+      )}
+      {s.wallpaperMode === 'folder' && (
+        <Card tab="Klasör" title="Klasörden slayt" hint="Klasördeki (ve bir alt klasördeki) resim ve videolar belli aralıkla birbirine karışarak değişir.">
+          <div className="st-row-inline">
+            <button className="st-btn st-btn--accent" onClick={pickFolder}><Icon name="folder" size={15} />{s.wallpaperFolder ? 'Başka klasör seç…' : 'Klasör seç…'}</button>
+            {s.wallpaperFolder && <span className="st-muted" title={s.wallpaperFolder}>{fileName(s.wallpaperFolder)}{info ? ` · ${info.folderCount} dosya` : ''}</span>}
+          </div>
+          <Row label="Değişme aralığı"><Select<number> value={s.wallpaperMinutes} onChange={(wallpaperMinutes) => set({ wallpaperMinutes })} options={INTERVALS} /></Row>
+          <Row label="Karışık sırayla" hint="Kapalıyken dosya adı sırasıyla"><Switch label="Karışık sırayla" value={s.wallpaperShuffle} onChange={(wallpaperShuffle) => set({ wallpaperShuffle })} /></Row>
+          <Row label="Şimdi değiştir"><button className="st-btn" onClick={() => invoke('wallpaper:next')} disabled={!s.wallpaperFolder}><Icon name="arrowRight" size={15} />Sonrakine geç</button></Row>
+        </Card>
+      )}
+      <Card tab="Davranış" title="Yerleşim ve tasarruf">
+        <Row label="Resim yerleşimi"><Select<WallpaperFit> value={s.wallpaperFit} onChange={(wallpaperFit) => set({ wallpaperFit })} options={FITS} /></Row>
+        <Row label="Tam ekran uygulamada dur" hint="Oyun ya da video tam ekranken arka plan çalışmaz, işlemciyi yormaz"><Switch label="Tam ekranda dur" value={s.wallpaperPauseFullscreen} onChange={(wallpaperPauseFullscreen) => set({ wallpaperPauseFullscreen })} /></Row>
+        <Row label="Pilde dur" hint="Dizüstü pille çalışırken hareketli arka plan durur"><Switch label="Pilde dur" value={s.wallpaperPauseBattery} onChange={(wallpaperPauseBattery) => set({ wallpaperPauseBattery })} /></Row>
+        {info && <p className="st-prose">{info.paused ? 'Şu an duraklatılmış.' : info.source ? 'Çalışıyor.' : 'Arka plan yok.'}</p>}
+      </Card>
     </Pages>
   )
 }
@@ -1045,6 +1130,7 @@ export default function SettingsView() {
           {tab === 'items' && <ItemsTab />}
           {tab === 'wheel' && <WheelTab />}
           {tab === 'tweaks' && <TweaksTab />}
+          {tab === 'wallpaper' && <WallpaperTab s={settings} set={set} />}
           {tab === 'sound' && <SoundTab s={settings} set={set} />}
           {tab === 'widgets' && <WidgetsTab />}
           {tab === 'general' && <GeneralTab s={settings} set={set} />}

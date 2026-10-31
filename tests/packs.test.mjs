@@ -67,4 +67,16 @@ throws(withDesk({ deskDepth: 99999 }), /out of range/)
 throws(withDesk({ deskColor: 'url(http://evil)' }), /colour/)
 throws(withDesk({}, [file('desk-texture.png', 'MZ this is not a picture')]), /not a valid picture/)
 
+// a theme can carry a live wallpaper or a picture / video file; anything else is refused
+const withWall = (wallpaper, extra = []) => writeZip([file('pack.json', { type: 'theme', id: 'wall-theme', name: 'Wall' }), file('theme.json', { vars: {}, wallpaper }), ...extra])
+installPack(withWall({ live: 'stars' }))
+assert.equal(getTheme('wall-theme').wallpaper.live, 'stars')
+assert.equal(listInstalled('theme').find((p) => p.id === 'wall-theme').hasWallpaper, true)
+throws(withWall({ live: 'not-a-scene' }), /unknown live wallpaper/)
+throws(withWall({}, [file('wallpaper.mp4', 'this is not a video at all')]), /not a valid picture or video/)
+throws(withWall({}, [file('wallpaper.webm', 'nope')]), /not a valid picture or video/)
+const fakeMp4 = Buffer.concat([Buffer.from([0, 0, 0, 24]), Buffer.from('ftypisom'), Buffer.alloc(16)])
+installPack(withWall({}, [{ name: 'wallpaper.mp4', data: fakeMp4 }]))
+assert.ok(listInstalled('theme').find((p) => p.id === 'wall-theme').hasWallpaper, 'a theme with a video file counts as having a wallpaper')
+
 console.log('packs: all checks passed')

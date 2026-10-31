@@ -69,6 +69,8 @@ internal static class Program
             case "activate": Windows.Activate(p["hwnd"]!.GetValue<long>()); return true;
             case "minimize": Windows.Minimize(p["hwnd"]!.GetValue<long>()); return true;
             case "close": Windows.Close(p["hwnd"]!.GetValue<long>()); return true;
+            case "desktopAttach": return Desktop.Attach(p["hwnd"]!.GetValue<long>(), p["x"]!.GetValue<int>(), p["y"]!.GetValue<int>(), p["width"]!.GetValue<int>(), p["height"]!.GetValue<int>());
+            case "desktopDetach": return Desktop.Detach(p["hwnd"]!.GetValue<long>());
             case "toBottom": Windows.ToBottom(p["hwnd"]!.GetValue<long>()); return true;
             case "lock": return Native.LockWorkStation();
             case "sleep": return Native.SetSuspendState(false, false, false);

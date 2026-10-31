@@ -225,6 +225,16 @@ export interface DockSettings {
   iconPack: string
   /** Choosing a theme also applies the shelf that comes with it. */
   themeDesk: boolean
+  // wallpapers
+  wallpaperMode: WallpaperMode
+  /** 'live:<id>' for a built-in scene, otherwise the path of a picture or video. */
+  wallpaperSingle: string
+  wallpaperFolder: string
+  wallpaperMinutes: number
+  wallpaperShuffle: boolean
+  wallpaperFit: WallpaperFit
+  wallpaperPauseFullscreen: boolean
+  wallpaperPauseBattery: boolean
   /** Folders whose pictures show up in the icon picker. */
   iconFolders: string[]
 }
@@ -267,6 +277,36 @@ export const DESK_KEYS = [
 export type DeskKey = (typeof DESK_KEYS)[number]
 export type ThemeDesk = Partial<Pick<DockSettings, DeskKey>>
 
+export type LiveWallpaperId = 'aurora' | 'flow' | 'stars' | 'waves' | 'bubbles'
+/** The scenes the app draws itself; no file needed. [id, name, one line about it] */
+export const LIVE_WALLPAPERS: [LiveWallpaperId, string, string][] = [
+  ['aurora', 'Aurora', 'Yavaşça süzülen renkli ışık bulutları'],
+  ['flow', 'Akış', 'Yumuşak, sürekli değişen renk geçişi'],
+  ['stars', 'Yıldızlı gece', 'Parlayan yıldızlar ve ara sıra kayan bir yıldız'],
+  ['waves', 'Dalgalar', 'Katman katman, usulca sallanan dalgalar'],
+  ['bubbles', 'Baloncuklar', 'Yukarı süzülen saydam baloncuklar'],
+]
+
+export type WallpaperMode = 'off' | 'theme' | 'single' | 'folder'
+export type WallpaperFit = 'fill' | 'fit' | 'stretch' | 'center' | 'tile'
+
+/** What the wallpaper windows show. Pictures and videos come through the private flymedia: protocol. */
+export interface WallpaperSource {
+  kind: 'image' | 'video' | 'live'
+  url?: string
+  live?: string
+}
+
+export interface WallpaperInfo {
+  source: WallpaperSource | null
+  fit: WallpaperFit
+  paused: boolean
+  /** The windows really sit on the desktop layer. */
+  attached: boolean
+  message: string
+  folderCount: number
+}
+
 export interface ThemeDef {
   id: string
   name: string
@@ -275,6 +315,8 @@ export interface ThemeDef {
   vars: ThemeVars
   /** Shelf that comes with the theme (optional). */
   desk?: ThemeDesk
+  /** Live scene that comes with the theme (a picture or video travels as a file inside the pack). */
+  wallpaper?: { live?: LiveWallpaperId }
 }
 
 /** One thing an icon pack can replace; `path` is the program it belongs to. */
@@ -302,6 +344,7 @@ export interface PackInfo {
   builtin?: boolean
   /** The theme also carries a shelf. */
   hasDesk?: boolean
+  hasWallpaper?: boolean
 }
 
 /** Open windows per dock item id (matched by executable). */
@@ -404,6 +447,14 @@ export const DEFAULT_SETTINGS: DockSettings = {
   theme: 'glass-dark',
   iconPack: '',
   themeDesk: true,
+  wallpaperMode: 'off',
+  wallpaperSingle: '',
+  wallpaperFolder: '',
+  wallpaperMinutes: 10,
+  wallpaperShuffle: true,
+  wallpaperFit: 'fill',
+  wallpaperPauseFullscreen: true,
+  wallpaperPauseBattery: true,
   iconFolders: [],
 }
 
@@ -467,9 +518,13 @@ export interface InvokeMap {
   'builder:create': { args: [name: string, author: string, map: Record<string, string>]; result: { ok: boolean; message: string; pack?: PackInfo } }
   'confirm:answer': { args: [id: string, answer: boolean, text?: string]; result: void }
   'entry:menu': { args: [request: EntryMenuRequest]; result: void }
+  'wallpaper:info': { args: []; result: WallpaperInfo }
+  'wallpaper:next': { args: []; result: void }
+  'wallpaper:pick-file': { args: []; result: string | null }
+  'wallpaper:pick-folder': { args: []; result: string | null }
   'panel:capture': { args: [on: boolean]; result: void }
   'panel:blurred': { args: []; result: boolean }
-  'themes:create': { args: [name: string, author: string, vars: ThemeVars, withDesk: boolean]; result: { ok: boolean; message: string; pack?: PackInfo } }
+  'themes:create': { args: [name: string, author: string, vars: ThemeVars, withDesk: boolean, withWallpaper: boolean]; result: { ok: boolean; message: string; pack?: PackInfo } }
   'themes:list': { args: []; result: PackInfo[] }
   'themes:get': { args: [id: string]; result: ThemeDef | null }
   'packs:list': { args: []; result: PackInfo[] }
@@ -504,6 +559,7 @@ export interface EventMap {
   'ui:open-settings': null
   'icons:changed': null
   'stack:changed': null
+  'wallpaper:changed': WallpaperInfo
   'sound:play': SoundEvent
 }
 

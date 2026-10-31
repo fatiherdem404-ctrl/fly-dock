@@ -264,3 +264,8 @@ html[data-view='settings'] ::-webkit-scrollbar-thumb:hover { background: color-m
 .st-tb__alpha { width: 90px; }
 @media (max-width: 900px) { .st-tb { grid-template-columns: 1fr; } .st-tb__preview { position: static; } }
 .st-custom-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; padding: 12px; border-radius: var(--r-md); background: var(--fill); }
+
+/* wallpaper picker */
+.st-live { text-align: left; cursor: pointer; font: inherit; color: inherit; }
+.st-live[aria-pressed='true'] { border-color: var(--accent); }
+.st-live__swatch { display: block; height: 54px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--line); }

@@ -12,7 +12,7 @@ import electronPath from 'electron'
 
 const [route, out] = process.argv.slice(2)
 const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3)
-const settingPairs = process.argv.filter((a) => a.startsWith('--setting=')).map((a) => a.slice(10).split(':'))
+const settingPairs = process.argv.filter((a) => a.startsWith('--setting=')).map((a) => { const s = a.slice(10); const i = s.indexOf(':'); return [s.slice(0, i), s.slice(i + 1)] })
 const settings = Object.fromEntries(settingPairs.map(([k, v]) => [k, v === 'true' ? true : v === 'false' ? false : Number.isNaN(Number(v)) ? v : Number(v)]))
 const [width, height] = (arg('size') ?? '1100x760').split('x').map(Number)
 
@@ -90,6 +90,7 @@ try {
   if (!page) throw new Error('app did not start')
   const dock = await connect(page)
   if (arg('pre')) await dock.evaluate(arg('pre'))
+  if (route.includes('wallpaper')) await new Promise((r) => setTimeout(r, 1500))
   if (route.includes('settings')) await dock.evaluate("window.api.invoke('app:open-settings')")
   if (route.includes('wheel')) await dock.evaluate("window.api.invoke('items:activate', 'wheel1')")
   if (route.includes('power')) await dock.evaluate("window.api.invoke('items:activate', 'power1')")

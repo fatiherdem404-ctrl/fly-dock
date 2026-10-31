@@ -13,6 +13,7 @@ import {
 import { iconForItem, setTrashState } from './icons'
 import { shellIcon, thumbnail } from './iconService'
 import { askConfirm, askInput, answerConfirm, confirmIsOpen } from './confirm'
+import { registerWallpaperScheme, initWallpaper, disposeWallpaper, sync as syncWallpaper, advance as nextWallpaper, restartSlideshow, setFullscreenPaused, wallpaperInfo, pickWallpaperFile, pickWallpaperFolder } from './wallpaper'
 import { showEntryMenu } from './entryMenu'
 import { menuIsOpen } from './contextMenu'
 import { listLibrary, libraryThumb, pickImage, addLibraryFolder, removeLibraryFolder } from './iconLibrary'
@@ -21,7 +22,7 @@ import { builderKeys, pickBuilderFolder, createBuilderPack } from './packBuilder
 import { initDockWindows, syncDocks, setLayout, applyLayer, dockIsOnTop, isDockHidden, setFullscreenHidden, toggleDockVisibility, disposeDockWindows } from './dockWindows'
 import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN } from './windows'
 import {
-  importPackDialog, exportPackDialog, themeDeskSettings, listThemes, createThemePack, listInstalled, builtinThemeInfos, getTheme, removePack, clearPackCaches,
+  importPackDialog, exportPackDialog, themeDeskSettings, themeWallpaperFile, listThemes, createThemePack, listInstalled, builtinThemeInfos, getTheme, removePack, clearPackCaches,
 } from './packs'
 import { showStack, showPanel, closeStack, readEntries, stackIsFocused, dialogJustClosed, setStackCapture } from './stackWindow'
 import { wheelEntries, runWheelEntry, setWheelState, addWheelEntry, removeWheelEntry, setWheelIcon } from './wheel'
@@ -129,6 +130,19 @@ function restartExplorer() {
   })
 }
 
+/** What a new theme should carry as its wallpaper: the live scene or the picture/video currently chosen. */
+function currentWallpaperForTheme(): { live?: string; file?: string } | null {
+  const s = getSettings()
+  if (s.wallpaperMode === 'single') return s.wallpaperSingle.startsWith('live:') ? { live: s.wallpaperSingle.slice(5) } : s.wallpaperSingle ? { file: s.wallpaperSingle } : null
+  if (s.wallpaperMode === 'theme') {
+    const theme = getTheme(s.theme)
+    if (theme?.wallpaper?.live) return { live: theme.wallpaper.live }
+    const file = themeWallpaperFile(s.theme)
+    return file ? { file } : null
+  }
+  return null
+}
+
 function applySettings(request: Partial<DockSettings>): DockSettings {
   const before = getSettings()
   let partial = request
@@ -141,6 +155,10 @@ function applySettings(request: Partial<DockSettings>): DockSettings {
   if (partial.launchAtLogin !== undefined) launchAtLogin(next.launchAtLogin)
   if (partial.toggleHotkey !== undefined) registerHotkeys()
   if (partial.iconPack !== undefined) clearPackCaches()
+  if (Object.keys(partial).some((k) => k.startsWith('wallpaper') || k === 'theme')) {
+    if (['wallpaperMode', 'wallpaperSingle', 'wallpaperFolder', 'wallpaperShuffle'].some((k) => k in partial)) restartSlideshow()
+    syncWallpaper()
+  }
   const layoutChanged = (['position', 'monitor', 'autoHide', 'edgeOffset', 'alignment'] as const).some((k) => k in partial && before[k] !== next[k])
   if (layoutChanged) syncDocks()
   if (partial.layer !== undefined) applyLayer()
@@ -295,6 +313,10 @@ function registerIpc() {
 
   handle('themes:list', () => listThemes())
   handle('themes:get', (_e, id) => getTheme(id))
+  handle('wallpaper:info', () => wallpaperInfo())
+  handle('wallpaper:next', () => nextWallpaper())
+  handle('wallpaper:pick-file', () => pickWallpaperFile())
+  handle('wallpaper:pick-folder', () => pickWallpaperFolder())
   handle('confirm:answer', (_e, id, answer, text) => answerConfirm(id, answer, text))
   handle('entry:menu', (_e, request) => showEntryMenu(request))
   handle('panel:capture', (_e, on) => setStackCapture(on === true))
@@ -303,8 +325,8 @@ function registerIpc() {
     await new Promise((r) => setTimeout(r, 200))
     return !menuIsOpen() && !confirmIsOpen() && !stackIsFocused() && !dialogJustClosed()
   })
-  handle('themes:create', (_e, name, author, vars, withDesk) => {
-    const result = createThemePack(name, author, vars, withDesk === true ? getSettings() : null)
+  handle('themes:create', (_e, name, author, vars, withDesk, withWallpaper) => {
+    const result = createThemePack(name, author, vars, withDesk === true ? getSettings() : null, withWallpaper === true ? currentWallpaperForTheme() : null)
     if (result.ok) broadcast('themes:changed', null)
     return result
   })
@@ -427,6 +449,7 @@ if (!app.requestSingleInstanceLock()) {
   app.on('second-instance', openSettings)
   app.setAppUserModelId(brand.appId)
 
+  registerWallpaperScheme() // has to happen before the app is ready
   app.whenReady().then(() => {
     registerIpc()
     helper.start()
@@ -434,6 +457,7 @@ if (!app.requestSingleInstanceLock()) {
       setSnapshot(snap)
       if (getSettings().layer === 'below') applyLayer() // another window may have been raised past the dock
       setFullscreenHidden(getSettings().hideInFullscreen && snap.fullscreen)
+      setFullscreenPaused(snap.fullscreen)
     })
     helper.on('trash', (info: { items: number }) => {
       setTrashState(info.items)
@@ -442,6 +466,7 @@ if (!app.requestSingleInstanceLock()) {
     helper.call<{ items: number }>('trash').then((t) => setTrashState(t.items)).catch(() => {})
 
     initDockWindows()
+    initWallpaper()
     // screenshot runs ask for the confirmation window so it can be looked at
     if (HEADLESS && process.env.FLY_DOCK_TEST_CONFIRM === 'input') setTimeout(() => void askInput({ title: 'Yeniden adlandır', message: 'Yeni adı yaz.', confirmLabel: 'Adlandır', value: 'rapor-2026.docx' }), 1500)
     else if (HEADLESS && process.env.FLY_DOCK_TEST_CONFIRM) setTimeout(() => void askConfirm({ title: 'Çöp kutusu boşaltılsın mı?', message: 'İçindeki her şey kalıcı olarak silinir. Bu geri alınamaz.', confirmLabel: 'Boşalt', danger: true }), 1500)
@@ -459,6 +484,7 @@ if (!app.requestSingleInstanceLock()) {
   app.on('will-quit', () => {
     globalShortcut.unregisterAll()
     disposeDockWindows()
+    disposeWallpaper()
     disposeWidgets()
     helper.stop()
   })

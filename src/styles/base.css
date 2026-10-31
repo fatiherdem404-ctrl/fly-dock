@@ -39,6 +39,8 @@ html[data-view='iconpick'] {
   overflow: hidden;
 }
 
+html[data-view='wallpaper'], html[data-view='wallpaper'] body { background: #000; overflow: hidden; cursor: none; }
+
 html[data-view='settings'] body {
   background: var(--panel-bg);
   color: var(--panel-text);

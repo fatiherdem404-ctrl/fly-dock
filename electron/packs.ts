@@ -4,15 +4,15 @@ import { app, dialog } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import { readZip, writeZip, ZipEntry, ZipLimits } from './zip'
-import { DEFAULT_SETTINGS, DESK_KEYS, DESK_STYLES } from '../src/shared/types'
-import type { PackInfo, ThemeDef, ThemeVars, ThemeDesk, DockItem, DockSettings } from '../src/shared/types'
+import { DEFAULT_SETTINGS, DESK_KEYS, DESK_STYLES, LIVE_WALLPAPERS } from '../src/shared/types'
+import type { PackInfo, ThemeDef, ThemeVars, ThemeDesk, DockItem, DockSettings, LiveWallpaperId } from '../src/shared/types'
 import { sniff, MAX_TEXTURE_BYTES, storeTexture, textureBytes } from './textures'
 
 export const PACK_EXTENSION = 'flypack'
 
 const LIMITS: ZipLimits = { maxEntries: 1000, maxEntryBytes: 8 * 1024 * 1024, maxTotalBytes: 100 * 1024 * 1024 }
 const MAX_ARCHIVE_BYTES = 50 * 1024 * 1024
-const ALLOWED_EXT = new Set(['.json', '.png', '.ico', '.svg', '.jpg', '.jpeg', '.webp'])
+const ALLOWED_EXT = new Set(['.json', '.png', '.ico', '.svg', '.jpg', '.jpeg', '.webp', '.mp4', '.webm'])
 const IMAGE_EXT = new Set(['.png', '.ico', '.svg', '.jpg', '.jpeg', '.webp'])
 const ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,40}$/
 
@@ -38,11 +38,12 @@ const GLASS_DARK: ThemeVars = {
 }
 
 const BUILTIN_THEMES: ThemeDef[] = [
-  { id: 'glass-dark', name: 'Glass Dark', author: 'built-in', vars: GLASS_DARK, desk: { deskStyle: 'glass', deskDepth: 0, deskEdge: 0, deskOpacity: 1, deskRadTL: 60, deskRadTR: 60, deskRadBL: 60, deskRadBR: 60 } },
+  { id: 'glass-dark', name: 'Glass Dark', author: 'built-in', vars: GLASS_DARK, desk: { deskStyle: 'glass', deskDepth: 0, deskEdge: 0, deskOpacity: 1, deskRadTL: 60, deskRadTR: 60, deskRadBL: 60, deskRadBR: 60 }, wallpaper: { live: 'aurora' } },
   {
     id: 'frost-light',
     name: 'Frost Light',
     author: 'built-in',
+    wallpaper: { live: 'flow' },
     desk: { deskStyle: 'glass3d', deskDepth: 34, deskEdge: 8, deskOpacity: 0.95, deskRadTL: 14, deskRadTR: 14, deskRadBL: 5, deskRadBR: 5 },
     vars: {
       ...GLASS_DARK,
@@ -62,6 +63,7 @@ const BUILTIN_THEMES: ThemeDef[] = [
     id: 'dark',
     name: 'Dark',
     author: 'built-in',
+    wallpaper: { live: 'stars' },
     desk: { deskStyle: 'matte', deskDepth: 18, deskEdge: 8, deskOpacity: 1, deskRadTL: 10, deskRadTR: 10, deskRadBL: 4, deskRadBR: 4 },
     vars: {
       ...GLASS_DARK,
@@ -83,6 +85,7 @@ const BUILTIN_THEMES: ThemeDef[] = [
     id: 'light',
     name: 'Light',
     author: 'built-in',
+    wallpaper: { live: 'waves' },
     desk: { deskStyle: 'metal', deskDepth: 22, deskEdge: 8, deskOpacity: 1, deskRadTL: 10, deskRadTR: 10, deskRadBL: 4, deskRadBR: 4 },
     vars: {
       ...GLASS_DARK,
@@ -104,6 +107,7 @@ const BUILTIN_THEMES: ThemeDef[] = [
     id: 'neon-night',
     name: 'Neon Night',
     author: 'built-in',
+    wallpaper: { live: 'bubbles' },
     desk: { deskStyle: 'neon', deskDepth: 0, deskEdge: 0, deskOpacity: 1, deskRadTL: 60, deskRadTR: 60, deskRadBL: 60, deskRadBR: 60 },
     vars: {
       ...GLASS_DARK,
@@ -123,7 +127,7 @@ const BUILTIN_THEMES: ThemeDef[] = [
 ]
 
 export function builtinThemeInfos(): PackInfo[] {
-  return BUILTIN_THEMES.map((t) => ({ id: t.id, type: 'theme', name: t.name, author: t.author, builtin: true, hasDesk: !!t.desk }))
+  return BUILTIN_THEMES.map((t) => ({ id: t.id, type: 'theme', name: t.name, author: t.author, builtin: true, hasDesk: !!t.desk, hasWallpaper: !!t.wallpaper?.live }))
 }
 
 // ---- validation ----
@@ -188,6 +192,23 @@ function validateDesk(raw: any): ThemeDesk | undefined {
 }
 
 const TEXTURE_ENTRY = /^desk-texture\.(png|jpg|webp)$/
+const WALLPAPER_ENTRY = /^wallpaper\.(png|jpg|webp|mp4|webm)$/
+
+function validateWallpaper(raw: any): { live?: LiveWallpaperId } | undefined {
+  if (raw === undefined) return undefined
+  if (typeof raw !== 'object' || raw === null) throw new Error('theme.json "wallpaper" must be an object')
+  if (raw.live === undefined) return {}
+  if (!LIVE_WALLPAPERS.some(([id]) => id === raw.live)) throw new Error('unknown live wallpaper')
+  return { live: raw.live }
+}
+
+/** Pictures and videos are checked by their first bytes, not by their name. */
+function looksLikeMedia(name: string, data: Buffer): boolean {
+  const ext = path.extname(name).toLowerCase()
+  if (ext === '.mp4') return data.length > 12 && data.toString('ascii', 4, 8) === 'ftyp'
+  if (ext === '.webm') return data.length > 4 && data[0] === 0x1a && data[1] === 0x45 && data[2] === 0xdf && data[3] === 0xa3
+  return sniff(data) !== null
+}
 
 interface Manifest {
   type: PackInfo['type']
@@ -223,7 +244,13 @@ export function validatePackArchive(buf: Buffer): { manifest: Manifest; files: Z
     const themeJson = parseJson(byName.get('theme.json'), 'theme.json')
     const vars = validateTheme(themeJson, GLASS_DARK)
     const desk = validateDesk(themeJson.desk)
-    files.push({ name: 'theme.json', data: Buffer.from(JSON.stringify({ vars, ...(desk ? { desk } : {}) }, null, 2)) })
+    const wallpaper = validateWallpaper(themeJson.wallpaper)
+    files.push({ name: 'theme.json', data: Buffer.from(JSON.stringify({ vars, ...(desk ? { desk } : {}), ...(wallpaper ? { wallpaper } : {}) }, null, 2)) })
+    const movie = [...byName.values()].find((e) => WALLPAPER_ENTRY.test(e.name))
+    if (movie) {
+      if (!looksLikeMedia(movie.name, movie.data)) throw new Error('the wallpaper in the theme is not a valid picture or video')
+      files.push(movie)
+    }
     const texture = [...byName.values()].find((e) => TEXTURE_ENTRY.test(e.name))
     if (texture) {
       if (texture.data.length > MAX_TEXTURE_BYTES || !sniff(texture.data)) throw new Error('the shelf texture in the theme is not a valid picture')
@@ -263,7 +290,7 @@ export function listInstalled(type?: PackInfo['type']): PackInfo[] {
     if (!fs.existsSync(root)) continue
     for (const id of fs.readdirSync(root)) {
       const manifest = readManifest(path.join(root, id))
-      if (manifest && manifest.type === t && manifest.id === id) result.push({ ...manifest, ...(t === 'theme' ? { hasDesk: !!getTheme(id)?.desk } : {}) })
+      if (manifest && manifest.type === t && manifest.id === id) result.push({ ...manifest, ...(t === 'theme' ? { hasDesk: !!getTheme(id)?.desk, hasWallpaper: !!getTheme(id)?.wallpaper?.live || !!themeWallpaperFile(id) } : {}) })
     }
   }
   return result
@@ -282,7 +309,7 @@ export function getTheme(id: string): ThemeDef | null {
   try {
     const raw = JSON.parse(fs.readFileSync(path.join(dir, 'theme.json'), 'utf8'))
     const vars = validateTheme(raw, GLASS_DARK)
-    return { id, name: manifest.name, author: manifest.author, version: manifest.version, vars, desk: validateDesk(raw.desk) }
+    return { id, name: manifest.name, author: manifest.author, version: manifest.version, vars, desk: validateDesk(raw.desk), wallpaper: validateWallpaper(raw.wallpaper) }
   } catch {
     return null
   }
@@ -403,6 +430,17 @@ export function packWheelIcon(packId: string, wheelId: string): string | null {
   }
 }
 
+/** The picture or video file a theme carries as its wallpaper, if any. */
+export function themeWallpaperFile(id: string): string | null {
+  const dir = packDir('theme', id)
+  try {
+    const entry = fs.readdirSync(dir).find((f) => WALLPAPER_ENTRY.test(f))
+    return entry ? path.join(dir, entry) : null
+  } catch {
+    return null
+  }
+}
+
 /** The shelf settings a theme brings (its texture stored as the custom desk picture), or null when it has none. */
 export function themeDeskSettings(id: string): Partial<DockSettings> | null {
   const theme = getTheme(id)
@@ -418,7 +456,7 @@ export function themeDeskSettings(id: string): Partial<DockSettings> | null {
 }
 
 /** Writes the theme made in the builder as a normal pack and installs it (same validation as an import). */
-export function createThemePack(name: string, author: string, vars: ThemeVars, shelf: DockSettings | null = null): { ok: boolean; message: string; pack?: PackInfo } {
+export function createThemePack(name: string, author: string, vars: ThemeVars, shelf: DockSettings | null = null, wallpaper: { live?: string; file?: string } | null = null): { ok: boolean; message: string; pack?: PackInfo } {
   const title = String(name).trim().slice(0, 60)
   if (!title) return { ok: false, message: 'Temaya bir ad ver.' }
   const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'tema'
@@ -429,8 +467,13 @@ export function createThemePack(name: string, author: string, vars: ThemeVars, s
     if (shelf) for (const key of DESK_KEYS) desk[key] = shelf[key]
     const entries: ZipEntry[] = [
       { name: 'pack.json', data: Buffer.from(JSON.stringify({ type: 'theme', id, name: title, author: String(author).trim().slice(0, 60) || undefined, version: '1.0' }, null, 2)) },
-      { name: 'theme.json', data: Buffer.from(JSON.stringify({ vars, ...(withDesk ? { desk } : {}) }, null, 2)) },
+      { name: 'theme.json', data: Buffer.from(JSON.stringify({ vars, ...(withDesk ? { desk } : {}), ...(wallpaper?.live ? { wallpaper: { live: wallpaper.live } } : {}) }, null, 2)) },
     ]
+    if (wallpaper?.file) {
+      const data = fs.readFileSync(wallpaper.file)
+      const ext = path.extname(wallpaper.file).toLowerCase().replace('.jpeg', '.jpg')
+      if (data.length <= 8 * 1024 * 1024 && WALLPAPER_ENTRY.test(`wallpaper${ext}`) && looksLikeMedia(`wallpaper${ext}`, data)) entries.push({ name: `wallpaper${ext}`, data })
+    }
     // a custom shelf picture travels inside the theme
     const bytes = shelf && shelf.deskStyle === 'custom' ? textureBytes(shelf.deskTexFile) : null
     const kind = bytes ? sniff(bytes) : null
