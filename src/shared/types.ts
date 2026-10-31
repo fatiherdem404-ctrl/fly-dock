@@ -108,6 +108,8 @@ export type LabelMode = 'hover' | 'always' | 'never'
 /** How a folder or group window lists its content, like the view menu of a Windows folder. */
 export type StackView = 'xl' | 'large' | 'medium' | 'small' | 'list' | 'details'
 export type StackSort = 'name' | 'date' | 'size' | 'type'
+/** Where a dock window opens: above its icon, centred on the dock, in the middle of the screen, or at the pointer. */
+export type StackPlacement = 'icon' | 'dock' | 'center' | 'cursor'
 export type StackSize = 'small' | 'medium' | 'full' | 'custom'
 /** Where the dock sits relative to other windows: always on top, as a normal window, or below all of them. */
 export type DockLayer = 'above' | 'normal' | 'below'
@@ -180,6 +182,7 @@ export interface DockSettings {
   stackSize: StackSize
   stackWidth: number
   stackHeight: number
+  stackPlacement: StackPlacement
   stackView: StackView
   stackSort: StackSort
   stackDesc: boolean
@@ -352,6 +355,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   stackSize: 'medium',
   stackWidth: 520,
   stackHeight: 420,
+  stackPlacement: 'icon',
   stackView: 'medium',
   stackSort: 'name',
   stackDesc: false,

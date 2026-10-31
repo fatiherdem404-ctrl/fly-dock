@@ -4,6 +4,7 @@ import { BrowserWindow, screen } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import { getSettings } from './store'
+import { dockWindowList } from './dockWindows'
 import { baseWebPreferences, loadRoute, OFFSCREEN } from './windows'
 import type { DockItem, StackEntry } from '../src/shared/types'
 
@@ -96,11 +97,23 @@ export function showPanel(route: string, anchor: { x: number; y: number }, title
     const [w, h] = s.stackSize === 'custom' ? [s.stackWidth, s.stackHeight] : SIZES[s.stackSize]
     width = Math.min(w, wa.width - margin * 2)
     height = Math.min(h, wa.height - margin * 2)
-    x = anchor.x - width / 2
-    y = anchor.y - height - 10
-    if (s.position === 'top') y = anchor.y + 10
-    if (s.position === 'left') { x = anchor.x + 10; y = anchor.y - height / 2 }
-    if (s.position === 'right') { x = anchor.x - width - 10; y = anchor.y - height / 2 }
+    // the point the window sits against: its icon, the pointer, or the middle of the dock
+    let at = anchor
+    if (s.stackPlacement === 'cursor') at = screen.getCursorScreenPoint()
+    if (s.stackPlacement === 'dock') {
+      const bounds = dockWindowList().map((w) => w.getBounds())
+      const dock = bounds.find((b) => anchor.x >= b.x && anchor.x <= b.x + b.width && anchor.y >= b.y && anchor.y <= b.y + b.height) ?? bounds[0]
+      if (dock) at = s.position === 'left' || s.position === 'right' ? { x: anchor.x, y: dock.y + dock.height / 2 } : { x: dock.x + dock.width / 2, y: anchor.y }
+    }
+    x = at.x - width / 2
+    y = at.y - height - 10
+    if (s.position === 'top') y = at.y + 10
+    if (s.position === 'left') { x = at.x + 10; y = at.y - height / 2 }
+    if (s.position === 'right') { x = at.x - width - 10; y = at.y - height / 2 }
+    if (s.stackPlacement === 'center') {
+      x = wa.x + (wa.width - width) / 2
+      y = wa.y + (wa.height - height) / 2
+    }
     x = Math.min(Math.max(x, wa.x + margin), wa.x + wa.width - width - margin)
     y = Math.min(Math.max(y, wa.y + margin), wa.y + wa.height - height - margin)
   }

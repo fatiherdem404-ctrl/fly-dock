@@ -12,7 +12,7 @@ import {
   DESK_STYLES, DockItem, DockLayer, TweakInfo, DockSettings, PackInfo, ThemeDef, WidgetType,
   SOUND_GROUP_OF, SoundEvent, SoundGroup, SoundTheme,
   ThemeVars,
-  AnimationCurve, DeskStyle, TextureMode, SeparatorStyle, FalloffCurve, HoverAnimation, IndicatorStyle, LaunchAnimation, ShowAnimation, SpeedPreset, StackSize, WindowAnimation, LabelMode,
+  AnimationCurve, DeskStyle, TextureMode, SeparatorStyle, FalloffCurve, HoverAnimation, IndicatorStyle, LaunchAnimation, ShowAnimation, SpeedPreset, StackSize, StackPlacement, WindowAnimation, LabelMode,
 } from '@/shared/types'
 
 type Tab = 'dock' | 'desk' | 'motion' | 'windows' | 'theme' | 'icons' | 'items' | 'wheel' | 'sound' | 'tweaks' | 'widgets' | 'general'
@@ -442,6 +442,9 @@ function WindowsTab({ s, set }: { s: DockSettings; set: Update }) {
             <Row label="Yükseklik"><Slider value={s.stackHeight} min={200} max={1000} step={10} unit=" px" onChange={(stackHeight) => set({ stackHeight })} /></Row>
           </>
         )}
+      </Card>
+      <Card tab="Açılış konumu" title="Açılış konumu" hint="Klasör, grup ve çark penceresi ekranın neresinde açılsın. Açılış efekti her durumda simgenin olduğu yerden başlar.">
+        <Choice<StackPlacement> value={s.stackPlacement} onChange={(stackPlacement) => set({ stackPlacement })} options={[['icon', 'Simgenin üstünde', 'Tıkladığın simgeye yaslı'], ['dock', 'Dock ortasında', 'Dockun kenarına yaslı, ortalı'], ['center', 'Ekranın ortasında', 'Çalışma alanının ortası'], ['cursor', 'Fare imlecinde', 'İmlecin olduğu yer']]} />
       </Card>
       <Card title="Nasıl çalışır">
         <p className="st-prose">Dock'taki bir klasöre sağ tıklayıp <b>Yığın olarak göster</b> de, ya da <b>Yeni grup</b> ile bir uygulama grubu oluştur. Tıklayınca pencere simgeden büyüyerek açılır; <kbd>Esc</kbd> ya da dışarı tıklama kapatır. Açılış efektini Animasyonlar sekmesinden seçebilirsin.</p>
