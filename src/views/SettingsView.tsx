@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react'
+import { Children, isValidElement, ReactElement, ReactNode, useEffect, useState } from 'react'
 import { invoke, useActiveTheme, useEvent, useRemote } from '@/api'
 import Icon, { IconName } from '@/icons'
 import DockPreview from '@/components/DockPreview'
@@ -29,7 +29,7 @@ type Update = (partial: Partial<DockSettings>) => void
 
 // ---- building blocks ----
 
-function Card({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+function Card({ title, hint, children }: { title: string; hint?: string; tab?: string; children: ReactNode }) {
   return (
     <section className="st-card">
       <header>
@@ -38,6 +38,42 @@ function Card({ title, hint, children }: { title: string; hint?: string; childre
       </header>
       <div className="st-card__body">{children}</div>
     </section>
+  )
+}
+
+/** Groups of a page as sub-tabs: each child's `tab` (or `title`) names its tab, only the chosen one is shown. */
+function Pages({ id, children }: { id: string; children: ReactNode }) {
+  const pages = Children.toArray(children).filter(isValidElement) as ReactElement<{ title?: string; tab?: string }>[]
+  const label = (p: ReactElement<{ title?: string; tab?: string }>) => p.props.tab ?? p.props.title ?? ''
+  const key = 'settings.sub.' + id
+  const [chosen, setChosen] = useState(() => {
+    try {
+      return localStorage.getItem(key) ?? ''
+    } catch {
+      return ''
+    }
+  })
+  const pick = (name: string) => {
+    setChosen(name)
+    try {
+      localStorage.setItem(key, name)
+    } catch {
+      /* private window: the choice just is not remembered */
+    }
+  }
+  const current = pages.find((p) => label(p) === chosen) ?? pages[0]
+  if (!current) return null
+  return (
+    <>
+      {pages.length > 1 && (
+        <div className="st-subtabs" role="tablist">
+          {pages.map((p) => (
+            <button key={label(p)} role="tab" aria-selected={p === current} onClick={() => pick(label(p))}>{label(p)}</button>
+          ))}
+        </div>
+      )}
+      <div key={label(current)} className="st-subpage">{current}</div>
+    </>
   )
 }
 
@@ -133,7 +169,7 @@ function DockTab({ s, set }: { s: DockSettings; set: Update }) {
   const current = typeof s.monitor === 'number' ? String(s.monitor) : s.monitor
   const horizontal = s.position === 'bottom' || s.position === 'top'
   return (
-    <>
+    <Pages id="dock">
       <Card title="Konum" hint="Dock'u ekranın hangi kenarına koyacağını, kenara uzaklığını ve kenar boyunca yerini seç. Değişiklikler anında dock'a uygulanır.">
         <PositionPicker value={s.position} onChange={(position) => set({ position })} />
         <Row label="Kenardan uzaklık" hint="Dock ile ekran kenarı arasındaki boşluk">
@@ -173,7 +209,7 @@ function DockTab({ s, set }: { s: DockSettings; set: Update }) {
         </Choice>
       </Card>
 
-      <Card title="Ayraç ayrıntıları" hint="Seçtiğin görünümün üstüne uygulanır. Boş bıraktığın ayar rafa ve temaya göre otomatik kalır.">
+      <Card tab="Ayraç ayrıntı" title="Ayraç ayrıntıları" hint="Seçtiğin görünümün üstüne uygulanır. Boş bıraktığın ayar rafa ve temaya göre otomatik kalır.">
         <Row label="Kalınlık" hint="0 = görünümün kendi kalınlığı"><Slider value={s.sepThickness} min={0} max={16} format={(v) => (v === 0 ? 'otomatik' : `${v} px`)} onChange={(sepThickness) => set({ sepThickness })} /></Row>
         <Row label="Yükseklik" hint="Simge boyutunun yüzdesi"><Slider value={s.sepHeight} min={20} max={100} unit="%" onChange={(sepHeight) => set({ sepHeight })} /></Row>
         <Row label="Köşe yuvarlaklığı"><Slider value={s.sepRadius} min={0} max={8} unit=" px" onChange={(sepRadius) => set({ sepRadius })} /></Row>
@@ -222,7 +258,7 @@ function DockTab({ s, set }: { s: DockSettings; set: Update }) {
         {s.autoHide && <Row label="Gizlenme gecikmesi"><Slider value={s.autoHideDelayMs} min={0} max={3000} step={100} unit=" ms" onChange={(autoHideDelayMs) => set({ autoHideDelayMs })} /></Row>}
         <Row label="Tam ekranda gizle" hint="Oyun ve video tam ekranken dock görünmez"><Switch label="Tam ekranda gizle" value={s.hideInFullscreen} onChange={(hideInFullscreen) => set({ hideInFullscreen })} /></Row>
       </Card>
-    </>
+    </Pages>
   )
 }
 
@@ -230,7 +266,7 @@ function DockTab({ s, set }: { s: DockSettings; set: Update }) {
 
 const PATTERNED: DeskStyle[] = ['wood', 'metal', 'marble', 'crystal', 'wall']
 
-function TextureCard({ s, set }: { s: DockSettings; set: Update }) {
+function TextureCard({ s, set }: { s: DockSettings; set: Update; tab?: string }) {
   const texture = useTexture(s.deskStyle === 'custom' ? s.deskTexFile : '')
   const [message, setMessage] = useState<string | null>(null)
   if (s.deskStyle !== 'custom' && !PATTERNED.includes(s.deskStyle)) return null
@@ -304,7 +340,7 @@ function DeskCard({ style }: { style: DeskStyle }) {
 
 function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
   return (
-    <>
+    <Pages id="desk">
       <Card title="Raf stili" hint="Simgelerin üzerinde durduğu zemin. Seçince o stilin en iyi derinliği ve saydamlığı uygulanır, sonra ayrıca değiştirebilirsin.">
         <Choice<DeskStyle>
           value={s.deskStyle}
@@ -326,7 +362,7 @@ function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
         <Row label="3B derinlik" hint="0 = düz; yükseldikçe raf perspektifle yatar"><Slider value={s.deskDepth} min={0} max={60} unit=" px" onChange={(deskDepth) => set({ deskDepth })} /></Row>
         <Row label="Raf simgelerle büyüsün" hint="Kapalıyken simgeler raftan taşar (macOS gibi)"><Switch label="Raf büyümesi" value={s.shelfGrows} onChange={(shelfGrows) => set({ shelfGrows })} /></Row>
       </Card>
-      <TextureCard s={s} set={set} />
+      {(s.deskStyle === 'custom' || PATTERNED.includes(s.deskStyle)) && <TextureCard tab="Doku" s={s} set={set} />}
       <Card title="Köşe yuvarlaklığı" hint="Rafın dört köşesi ayrı ayrı. Alt köşeler yuvarlanınca ön yüzün kalınlığı da o köşeyle birlikte yuvarlanır.">
         <Row label="Hazır şekiller">
           <div className="st-row-inline" style={{ margin: 0 }}>
@@ -351,7 +387,7 @@ function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
         ))}
         <Row label="Varsayılana dön"><button className="st-btn" onClick={() => set({ deskPadTop: 10, deskPadBottom: 10, deskPadLeft: 16, deskPadRight: 16, deskPadLinked: false })}><Icon name="refresh" size={15} />Sıfırla</button></Row>
       </Card>
-    </>
+    </Pages>
   )
 }
 
@@ -359,7 +395,7 @@ function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
 
 function MotionTab({ s, set, preview }: { s: DockSettings; set: Update; preview: () => void }) {
   return (
-    <>
+    <Pages id="motion">
       <Card title="Hız" hint="Tüm dock animasyonlarının süresi">
         <Row label="Hız"><Segmented<SpeedPreset> value={s.speed} onChange={(speed) => set({ speed })} options={[['fast', 'Hızlı'], ['medium', 'Orta'], ['slow', 'Yavaş'], ['custom', 'Özel']]} /></Row>
         {s.speed === 'custom' && <Row label="Süre"><Slider value={s.speedMs} min={100} max={1500} step={10} unit=" ms" onChange={(speedMs) => set({ speedMs })} /></Row>}
@@ -383,7 +419,7 @@ function MotionTab({ s, set, preview }: { s: DockSettings; set: Update; preview:
       <Card title="Dock pencereleri" hint="Klasör ve grup pencerelerinin açılış/kapanış efekti">
         <Choice<WindowAnimation> value={s.windowAnimation} onChange={(windowAnimation) => set({ windowAnimation })} options={[['genie', 'Cin (genie)', 'Simgeden akarak açılır'], ['scale', 'Büyüme'], ['fade', 'Solma'], ['slide', 'Kayma']]} />
       </Card>
-    </>
+    </Pages>
   )
 }
 
@@ -391,7 +427,7 @@ function MotionTab({ s, set, preview }: { s: DockSettings; set: Update; preview:
 
 function WindowsTab({ s, set }: { s: DockSettings; set: Update }) {
   return (
-    <>
+    <Pages id="windows">
       <Card title="Pencere boyutu" hint="Bir klasöre ya da gruba tıklayınca açılan dock penceresinin boyutu. İçerik uzunsa kaydırılır.">
         <Choice<StackSize> value={s.stackSize} onChange={(stackSize) => set({ stackSize })} options={[['small', 'Küçük', '360 × 300'], ['medium', 'Orta', '520 × 420'], ['full', 'Tam ekran', 'Çalışma alanı'], ['custom', 'Özel']]} />
         {s.stackSize === 'custom' && (
@@ -404,7 +440,7 @@ function WindowsTab({ s, set }: { s: DockSettings; set: Update }) {
       <Card title="Nasıl çalışır">
         <p className="st-prose">Dock'taki bir klasöre sağ tıklayıp <b>Yığın olarak göster</b> de, ya da <b>Yeni grup</b> ile bir uygulama grubu oluştur. Tıklayınca pencere simgeden büyüyerek açılır; <kbd>Esc</kbd> ya da dışarı tıklama kapatır. Açılış efektini Animasyonlar sekmesinden seçebilirsin.</p>
       </Card>
-    </>
+    </Pages>
   )
 }
 
@@ -541,7 +577,7 @@ function TweaksTab() {
   const categories = [...new Set((tweaks ?? []).map((t) => t.category))]
   const nameOf = (id: string) => tweaks?.find((t) => t.id === id)?.name ?? id
   return (
-    <>
+    <Pages id="tweaks">
       <Card title="Güvenli ayarlar" hint="Çoğu ayar yalnızca kullanıcı kaydında (HKCU) değişir. Değiştirmeden önce eski değer saklanır; kapatınca tam o değer geri gelir.">
         <Message text="Yönetici yazan ayarlar yönetici onayı ister (Windows'un kendi onay penceresi açılır); uygulama kendisi hiçbir zaman yönetici çalışmaz. Hizmetleri (SysMain, telemetri, Windows Search) kapatan ayarlar henüz yok. Defender, Windows Update, güvenlik duvarı ve kullanıcı hesaplarına hiç dokunulmaz." />
         {categories.map((category) => (
@@ -570,7 +606,7 @@ function TweaksTab() {
           </div>
         </Card>
       )}
-    </>
+    </Pages>
   )
 }
 
@@ -612,7 +648,7 @@ function GeneralTab({ s, set }: { s: DockSettings; set: Update }) {
     if (r.message !== 'cancelled') setMessage({ text: r.ok ? r.message : r.message, error: !r.ok })
   }
   return (
-    <>
+    <Pages id="general">
       <Card title="Başlangıç">
         <Row label="Windows ile başlat" hint={info && !info.loginSupported ? 'Yalnızca kurulu sürümde çalışır (geliştirme çalıştırmasında kapalı)' : 'Bilgisayar açılınca dock kendiliğinden başlar'}>
           <Switch label="Windows ile başlat" value={s.launchAtLogin} disabled={info ? !info.loginSupported : true} onChange={(launchAtLogin) => set({ launchAtLogin })} />
@@ -637,7 +673,7 @@ function GeneralTab({ s, set }: { s: DockSettings; set: Update }) {
           <button className="st-btn st-btn--danger" onClick={() => invoke('app:quit')}><Icon name="power" size={15} />Çık</button>
         </div>
       </Card>
-    </>
+    </Pages>
   )
 }
 
