@@ -5,9 +5,12 @@ import SettingsView from './views/SettingsView'
 import StackView from './views/StackView'
 import WidgetView from './views/WidgetView'
 import MenuView from './views/MenuView'
+import WheelView from './views/WheelView'
+import PowerView from './views/PowerView'
 import './styles/base.css'
 import './styles/dock.css'
 import './styles/windows.css'
+import './styles/panels.css'
 import './styles/widgets.css'
 import './styles/settings.css'
 
@@ -23,6 +26,10 @@ function Root() {
       return <SettingsView />
     case 'stack':
       return <StackView itemId={param} />
+    case 'wheel':
+      return <WheelView />
+    case 'power':
+      return <PowerView />
     case 'menu':
       return <MenuView origin={new URLSearchParams(route.split('?')[1] ?? '').get('o') ?? 'tl'} />
     case 'widget':

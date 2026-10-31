@@ -41,8 +41,12 @@ export function closeStack() {
   stackWindow = null
 }
 
-/** `anchor` is the screen point the window grows out of (the dock icon). */
 export function showStack(item: DockItem, anchor: { x: number; y: number }) {
+  showPanel(`/stack/${item.id}`, anchor)
+}
+
+/** Opens a dock window at `route`; `anchor` is the screen point it grows out of (the dock icon). */
+export function showPanel(route: string, anchor: { x: number; y: number }) {
   closeStack()
   const s = getSettings()
   const display = screen.getDisplayNearestPoint(anchor)
@@ -79,7 +83,7 @@ export function showStack(item: DockItem, anchor: { x: number; y: number }) {
   })
   stackWindow = win
   win.setAlwaysOnTop(true, 'screen-saver')
-  loadRoute(win, `/stack/${item.id}?ox=${Math.round(anchor.x - x)}&oy=${Math.round(anchor.y - y)}`)
+  loadRoute(win, `${route}?ox=${Math.round(anchor.x - x)}&oy=${Math.round(anchor.y - y)}`)
   win.once('ready-to-show', () => {
     win.show()
     win.focus()

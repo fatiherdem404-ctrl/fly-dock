@@ -196,6 +196,11 @@ kbd { padding: 1px 6px; border: 1px solid var(--line-strong); border-bottom-widt
 .st-list { display: flex; flex-direction: column; gap: var(--s-2); margin-top: var(--s-2); }
 .st-list__row { display: grid; grid-template-columns: 36px 1fr 1fr auto; gap: var(--s-3); align-items: center; padding: var(--s-2) var(--s-3); border-radius: var(--r-md); background: var(--fill); transition: background 160ms; }
 .st-list__row:hover { background: var(--fill-hover); }
+.st-list__row--wheel { grid-template-columns: 36px 1fr auto auto; }
+.st-wheel-icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; color: #fff; background: linear-gradient(145deg, var(--accent), color-mix(in srgb, var(--accent) 50%, #000)); }
+.st-muted { color: var(--panel-muted); }
+.st-subtitle { margin: var(--s-4) 0 var(--s-1); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--panel-muted); }
+.st-log { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--panel-muted); }
 .st-list__row--widget { grid-template-columns: 1fr 1fr auto; }
 .st-list__row img { width: 32px; height: 32px; object-fit: contain; }
 

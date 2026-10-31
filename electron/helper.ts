@@ -145,6 +145,12 @@ class Helper extends EventEmitter {
   emptyTrash() {
     return this.call<boolean>('emptyTrash', {}, 120_000)
   }
+  lock() {
+    return this.call<boolean>('lock')
+  }
+  sleep() {
+    return this.call<boolean>('sleep')
+  }
   startMenu() {
     return this.call<boolean>('startMenu')
   }

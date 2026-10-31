@@ -155,6 +155,16 @@ export function replaceItems(next: DockItem[]): DockItem[] {
   return commit(cleaned)
 }
 
+/** Adds a built-in item (gear menu, power menu) once; asking again returns the dock unchanged. */
+export function addSpecial(type: 'wheel' | 'power', label: string): DockItem[] {
+  const items = getItems()
+  if (items.some((i) => i.type === type)) return items
+  const trashAt = items.findIndex((i) => i.type === 'trash')
+  const next = [...items]
+  next.splice(trashAt >= 0 ? trashAt : next.length, 0, { id: crypto.randomUUID(), type, label })
+  return commit(next)
+}
+
 export function addStartButton(): DockItem[] {
   const items = getItems()
   if (items.some((i) => i.type === 'start')) return items
@@ -188,7 +198,8 @@ export function openRecycleBin() {
 
 export async function activateItem(id: string, onStack: (item: DockItem) => void) {
   const item = visibleItems().find((i) => i.id === id)
-  if (!item?.targetPath && item?.type !== 'trash' && item?.type !== 'group' && item?.type !== 'start') return
+  const special = ['trash', 'group', 'start', 'wheel', 'power']
+  if (!item?.targetPath && !special.includes(item?.type ?? '')) return
   switch (item!.type) {
     case 'trash':
       return openRecycleBin()
@@ -196,6 +207,8 @@ export async function activateItem(id: string, onStack: (item: DockItem) => void
       return void (await helper.startMenu().catch(() => {}))
     case 'stack':
     case 'group':
+    case 'wheel':
+    case 'power':
       return onStack(item!)
     case 'app': {
       const wins = windowsOf(item!)

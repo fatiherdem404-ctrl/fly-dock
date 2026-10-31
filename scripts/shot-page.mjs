@@ -19,7 +19,7 @@ const win = (p) => p.replaceAll('/', String.fromCharCode(92))
 const windir = process.env.SystemRoot ?? 'C:/Windows'
 const app = (name, p) => ({ id: name, type: 'app', targetPath: win(p), label: name })
 writeFileSync(join(profile, 'config.json'), JSON.stringify({
-  items: [{ id: 'start', type: 'start', label: 'Başlat' }, app('notepad', `${windir}/System32/notepad.exe`), app('calc', `${windir}/System32/calc.exe`), app('explorer', `${windir}/explorer.exe`), { id: 'folder', type: 'folder', targetPath: win(`${windir}/Fonts`), label: 'Fonts' }, { id: 'trash', type: 'trash' }],
+  items: [{ id: 'start', type: 'start', label: 'Başlat' }, app('notepad', `${windir}/System32/notepad.exe`), app('calc', `${windir}/System32/calc.exe`), app('explorer', `${windir}/explorer.exe`), { id: 'folder', type: 'folder', targetPath: win(`${windir}/Fonts`), label: 'Fonts' }, { id: 'wheel1', type: 'wheel', label: 'Denetim' }, { id: 'power1', type: 'power', label: 'Güç' }, { id: 'trash', type: 'trash' }],
   settings,
   widgets: [],
 }))
@@ -49,6 +49,8 @@ try {
   if (!page) throw new Error('app did not start')
   const dock = await connect(page)
   if (route.includes('settings')) await dock.evaluate("window.api.invoke('app:open-settings')")
+  if (route.includes('wheel')) await dock.evaluate("window.api.invoke('items:activate', 'wheel1')")
+  if (route.includes('power')) await dock.evaluate("window.api.invoke('items:activate', 'power1')")
   if (route.includes('menu')) await dock.evaluate("window.api.invoke('menu:show', { kind: 'icon', itemId: 'folder' })")
   if (route.includes('stack')) await dock.evaluate("window.api.invoke('stack:show', 'folder', { x: 900, y: 800 })")
   let target

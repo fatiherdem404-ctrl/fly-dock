@@ -87,3 +87,18 @@ Hâlâ elle denenmesi gereken: gerçek fareyle dosya sürükle-bırak (Explorer'
 | ✅ 1.5.9 | Ek ayarlar: etiket modu/boyut/yazı tipi, kilitle, tam ekranda gizle, çalışan program göstergesi, yedekle/geri yükle, kısayol tuşları | tamam |
 
 Sınırlar: akrilik/Mica ayrı bir sistem penceresi olduğu için sabit durur (tema rafı simgelerle birebir hareket eder). Raf stillerinin 3B görünümü CSS perspektifidir, gerçek 3B değildir.
+
+## Yeni fikirler (wi-dock-ozellikler.md, 2026-10-31)
+| # | Madde | Durum |
+|---|---|---|
+| ✅ N.1 | Taşma/kesilme: pencere boyutu tek hesaptan (ikon × büyütme + etiket + raf + boşluklar), 4 kenar, DPI %100/125/150/200 ölçüldü; ekrandan uzun dock otomatik küçülür | tamam |
+| ✅ N.2 | Raf boşlukları: üst/alt/sol/sağ ayrı, "hepsini bağla", canlı önizleme | tamam |
+| ✅ N.3 | Konsept farkı belgesi ve yan yana karşılaştırma (docs/konsept-farki.md), palet ve hap raf | tamam |
+| ✅ N.4 | Çark menüsü (madde 7): sabit katalog, arama, görünürlük ve sıralama, yalnızca listedeki komutlar | tamam |
+| ✅ N.5 | Güç menüsü (madde 6): tam ekran, kilitle/uyku/oturumu kapat/yeniden başlat/kapat, ikinci tıklama onayı. Karşılama animasyonu ve kilit ekranı görseli yok | kısmen |
+| ✅ N.6 | WI Tweaks çekirdeği (madde 10): 7 HKCU ayarı, eski değeri saklayıp geri yükler, günlük, hepsini geri al | tamam |
+| ⏳ | Tweaks: yönetici gerektirenler (kısayol oku, hazırda bekletme, hizmetler), geri yükleme noktası, ayrı yükseltilmiş yardımcı | bekliyor |
+| ⏳ | Tema paketine duvar kağıdı/imleç/ses şeması, `.theme` yöneticisi (madde 1) | v2 ile |
+| ⏳ | DWM efektleri, AppBar çubuğu ve tepsi ikonları (madde 3, 5) | bekliyor: sistem pencerelerine dokunma kararı |
+| ⛔ | Gelişmiş Tema Desteği / SecureUxTheme (madde 4) | kullanıcı onayı yok, sistem dosyalarını yamar |
+| ⏳ | Toys / sanal evcil hayvan (madde 9), WI Explorer (madde 8), plugin API | büyük, ayrı proje |

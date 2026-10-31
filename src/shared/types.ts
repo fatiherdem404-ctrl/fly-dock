@@ -1,6 +1,6 @@
 // Types shared by the main process, the preload bridge and every renderer view.
 
-export type DockItemType = 'app' | 'file' | 'folder' | 'stack' | 'group' | 'start' | 'separator' | 'trash'
+export type DockItemType = 'app' | 'file' | 'folder' | 'stack' | 'group' | 'start' | 'wheel' | 'power' | 'separator' | 'trash'
 
 export interface DockItem {
   id: string
@@ -14,6 +14,34 @@ export interface DockItem {
   hotkey?: string
   /** For a group: the programs and files it holds. */
   children?: string[]
+}
+
+export interface WheelEntry {
+  id: string
+  name: string
+  category: string
+  icon: string
+}
+
+export type PowerAction = 'lock' | 'sleep' | 'restart' | 'shutdown' | 'logout'
+
+export interface TweakInfo {
+  id: string
+  name: string
+  description: string
+  category: string
+  risk: 'safe' | 'caution'
+  /** What the user has to do before the change is visible. */
+  effect: 'none' | 'explorer' | 'signout'
+  enabled: boolean
+  /** True when this app changed the setting and can put the old value back. */
+  changedByUs: boolean
+}
+
+export interface TweakLogEntry {
+  at: number
+  id: string
+  action: 'apply' | 'revert'
 }
 
 export interface MenuItemView {
@@ -170,6 +198,8 @@ export interface Persisted {
   items: DockItem[]
   settings: DockSettings
   widgets: WidgetInstance[]
+  wheel?: { hidden: string[]; order: string[] }
+  tweaks?: { applied: Record<string, { existed: boolean; type?: string; data?: string }>; log: TweakLogEntry[] }
 }
 
 export const SCHEMA_VERSION = 6
@@ -245,6 +275,16 @@ export interface InvokeMap {
   'dock:layout': { args: [layout: { main: number; cross: number; shelfMain: number; shelfCross: number }]; result: void }
   'dock:state': { args: []; result: { hidden: boolean } }
   'stack:list': { args: [id: string]; result: StackEntry[] }
+  'wheel:list': { args: []; result: { entries: WheelEntry[]; hidden: string[] } }
+  'wheel:run': { args: [id: string]; result: boolean }
+  'wheel:set': { args: [state: { hidden: string[]; order: string[] }]; result: { entries: WheelEntry[]; hidden: string[] } }
+  'power:run': { args: [action: PowerAction]; result: { ok: boolean; message: string } }
+  'power:close': { args: []; result: void }
+  'tweaks:list': { args: []; result: TweakInfo[] }
+  'tweaks:set': { args: [id: string, enabled: boolean]; result: { ok: boolean; message: string } }
+  'tweaks:revert-all': { args: []; result: number }
+  'tweaks:log': { args: []; result: TweakLogEntry[] }
+  'tweaks:restart-explorer': { args: []; result: void }
   'stack:close': { args: []; result: void }
   'group:add': { args: [id: string, paths: string[]]; result: DockItem[] }
   'menu:items': { args: []; result: MenuItemView[] }

@@ -1,5 +1,6 @@
 import { app, BrowserWindow, Menu, Tray, nativeImage, dialog, shell, screen, globalShortcut, MenuItemConstructorOptions } from 'electron'
 import path from 'node:path'
+import { execFile, spawn } from 'node:child_process'
 import fs from 'node:fs'
 import brand from './brand'
 import { getItems, setItems, getSettings, updateSettings, getWidgets, setWidgets } from './store'
@@ -7,7 +8,7 @@ import { handle, broadcast } from './ipc'
 import { helper } from './helper'
 import {
   setSnapshot, runningState, addPaths, addSeparator, removeItem, updateItem, replaceItems,
-  activateItem, openRecycleBin, launchAtLogin, loginEnabled, onItemsChanged, visibleItems, isRunningItem, broadcastItems, createGroup, addToGroup, addStartButton,
+  activateItem, openRecycleBin, launchAtLogin, loginEnabled, onItemsChanged, visibleItems, isRunningItem, broadcastItems, createGroup, addToGroup, addStartButton, addSpecial,
 } from './items'
 import { iconForItem, setTrashState } from './icons'
 import { shellIcon } from './iconService'
@@ -16,7 +17,11 @@ import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN } from './windows'
 import {
   importPackDialog, exportPackDialog, listThemes, listInstalled, builtinThemeInfos, getTheme, removePack, clearPackCaches,
 } from './packs'
-import { showStack, closeStack, readEntries } from './stackWindow'
+import { showStack, showPanel, closeStack, readEntries } from './stackWindow'
+import { wheelEntries, runWheelEntry, setWheelState } from './wheel'
+import { showPowerMenu, closePowerMenu, runPowerAction } from './power'
+import { createTweakEngine, realRegistry, TWEAKS } from './tweaks'
+import { store } from './store'
 import { popupMenu, menuItemsForRenderer, pickMenuItem, closeMenu, MenuSpec } from './contextMenu'
 import { initWidgets, addWidget, removeWidget, updateWidget, moveWidget, systemStats, weatherFor, nowPlaying, disposeWidgets } from './widgets'
 import type { DockItem, DockSettings, StackEntry } from '../src/shared/types'
@@ -93,7 +98,25 @@ function registerHotkeys() {
 }
 
 function showStackAtCursor(item: DockItem) {
-  showStack(item, screen.getCursorScreenPoint())
+  const at = screen.getCursorScreenPoint()
+  if (item.type === 'wheel') showPanel('/wheel', at)
+  else if (item.type === 'power') showPowerMenu()
+  else showStack(item, at)
+}
+
+const tweakEngine = createTweakEngine({
+  registry: realRegistry,
+  tweaks: TWEAKS,
+  store: {
+    get: () => ({ applied: store.get('tweaks')?.applied ?? {}, log: store.get('tweaks')?.log ?? [] }),
+    set: (state) => store.set('tweaks', state),
+  },
+})
+
+function restartExplorer() {
+  execFile('taskkill.exe', ['/f', '/im', 'explorer.exe'], { windowsHide: true }, () => {
+    spawn('explorer.exe', [], { detached: true, stdio: 'ignore' }).unref()
+  })
 }
 
 function applySettings(partial: Partial<DockSettings>): DockSettings {
@@ -141,6 +164,8 @@ function showMenu(_e: Electron.IpcMainInvokeEvent, payload: { kind: 'empty' | 'i
     add('Program ekle…', 'plus', () => pickAndAdd(['openFile'], [{ name: 'Programlar', extensions: ['exe', 'lnk'] }]), { disabled: locked })
     add('Klasör ekle…', 'folder', () => pickAndAdd(['openDirectory']), { disabled: locked })
     add('Yeni grup', 'group', () => createGroup(), { disabled: locked })
+    add('Çark menüsü ekle', 'settings', () => addSpecial('wheel', 'Denetim'), { disabled: locked || getItems().some((i) => i.type === 'wheel') })
+    add('Güç menüsü ekle', 'power', () => addSpecial('power', 'Güç'), { disabled: locked || getItems().some((i) => i.type === 'power') })
     add('Başlat düğmesi ekle', 'play', () => addStartButton(), { disabled: locked || getItems().some((i) => i.type === 'start') })
     add('Ayraç ekle', 'minus', addSeparator, { disabled: locked })
   }
@@ -216,6 +241,23 @@ function registerIpc() {
     const item = visibleItems().find((i) => i.id === id)
     if (item) showStack(item, anchor)
   })
+  handle('wheel:list', () => wheelEntries())
+  handle('wheel:run', async (_e, id) => {
+    const ok = await runWheelEntry(id)
+    if (ok) closeStack()
+    return ok
+  })
+  handle('wheel:set', (_e, state) => {
+    setWheelState(state)
+    return wheelEntries()
+  })
+  handle('power:run', (_e, action) => runPowerAction(action))
+  handle('power:close', () => closePowerMenu())
+  handle('tweaks:list', () => tweakEngine.list())
+  handle('tweaks:set', (_e, id, enabled) => tweakEngine.set(id, enabled))
+  handle('tweaks:revert-all', () => tweakEngine.revertAll())
+  handle('tweaks:log', () => tweakEngine.log())
+  handle('tweaks:restart-explorer', () => restartExplorer())
   handle('group:add', (_e, id, paths) => addToGroup(id, paths))
   handle('menu:items', () => menuItemsForRenderer())
   handle('menu:pick', (_e, index) => pickMenuItem(index))

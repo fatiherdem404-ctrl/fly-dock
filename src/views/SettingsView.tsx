@@ -4,11 +4,11 @@ import Icon, { IconName } from '@/icons'
 import DockPreview from '@/components/DockPreview'
 import { DESK_LABELS, DESK_PRESETS, deskTransform } from '@/desk'
 import {
-  DESK_STYLES, DockItem, DockSettings, PackInfo, ThemeDef, WidgetType,
+  DESK_STYLES, DockItem, TweakInfo, DockSettings, PackInfo, ThemeDef, WidgetType,
   AnimationCurve, DeskShape, DeskStyle, FalloffCurve, HoverAnimation, IndicatorStyle, LaunchAnimation, ShowAnimation, SpeedPreset, StackSize, WindowAnimation, LabelMode,
 } from '@/shared/types'
 
-type Tab = 'dock' | 'desk' | 'motion' | 'windows' | 'theme' | 'icons' | 'items' | 'widgets' | 'general'
+type Tab = 'dock' | 'desk' | 'motion' | 'windows' | 'theme' | 'icons' | 'items' | 'wheel' | 'tweaks' | 'widgets' | 'general'
 const TABS: [Tab, string, IconName][] = [
   ['dock', 'Dock', 'dock'],
   ['desk', 'Zemin ve raf', 'desk'],
@@ -17,6 +17,8 @@ const TABS: [Tab, string, IconName][] = [
   ['theme', 'Temalar', 'theme'],
   ['icons', 'Simge paketleri', 'pack'],
   ['items', 'Öğeler', 'items'],
+  ['wheel', 'Çark menüsü', 'settings'],
+  ['tweaks', 'Tweaks', 'tools'],
   ['widgets', 'Widget\'lar', 'widgets'],
   ['general', 'Genel', 'general'],
 ]
@@ -382,6 +384,84 @@ function ItemsTab() {
   )
 }
 
+function WheelTab() {
+  const [data, setData] = useRemote('wheel:list', [])
+  const save = (hidden: string[], order: string[]) => invoke('wheel:set', { hidden, order }).then(setData)
+  if (!data) return null
+  const order = data.entries.map((e) => e.id)
+  const move = (i: number, by: number) => {
+    const next = [...order]
+    const j = i + by
+    if (j < 0 || j >= next.length) return
+    ;[next[i], next[j]] = [next[j], next[i]]
+    save(data.hidden, next)
+  }
+  return (
+    <Card title="Çark menüsü" hint="Dock'a sağ tıklayıp 'Çark menüsü ekle' dersen bu liste açılır. Yalnızca bu listedeki, Windows'un kendi araçları çalışır; açılacakları ve sıralarını buradan seçersin.">
+      <div className="st-list">
+        {data.entries.map((e, i) => (
+          <div className="st-list__row st-list__row--wheel" key={e.id}>
+            <span className="st-wheel-icon"><Icon name={e.icon as IconName} size={18} /></span>
+            <span>{e.name}<small className="st-muted"> · {e.category}</small></span>
+            <div className="st-row-inline" style={{ margin: 0 }}>
+              <button className="st-btn" aria-label="Yukarı" disabled={i === 0} onClick={() => move(i, -1)}><Icon name="arrowUp" size={14} /></button>
+              <button className="st-btn" aria-label="Aşağı" disabled={i === order.length - 1} onClick={() => move(i, 1)}><Icon name="arrowDown" size={14} /></button>
+            </div>
+            <Switch label={e.name} value={!data.hidden.includes(e.id)} onChange={(on) => save(on ? data.hidden.filter((h) => h !== e.id) : [...data.hidden, e.id], order)} />
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+const EFFECT_NOTE: Record<TweakInfo['effect'], string> = { none: '', explorer: "Gezgin'i yeniden başlatınca görünür", signout: 'Oturumu kapatıp açınca görünür' }
+
+function TweaksTab() {
+  const [tweaks, setTweaks] = useRemote('tweaks:list', [])
+  const [log] = useRemote('tweaks:log', [])
+  const [notice, setNotice] = useState<string | null>(null)
+  const refresh = () => invoke('tweaks:list').then(setTweaks)
+  const toggle = async (t: TweakInfo, enabled: boolean) => {
+    const r = await invoke('tweaks:set', t.id, enabled)
+    setNotice(r.ok ? (t.effect === 'none' ? null : EFFECT_NOTE[t.effect]) : `Uygulanamadı: ${r.message}`)
+    refresh()
+  }
+  const categories = [...new Set((tweaks ?? []).map((t) => t.category))]
+  const nameOf = (id: string) => tweaks?.find((t) => t.id === id)?.name ?? id
+  return (
+    <>
+      <Card title="Güvenli ayarlar" hint="Her ayar yalnızca kullanıcı kaydında (HKCU) değişir, yönetici izni gerekmez. Değiştirmeden önce eski değer saklanır; kapatınca tam o değer geri gelir.">
+        <Message text="Hizmetleri (SysMain, telemetri, Windows Search) kapatan ve yönetici izni isteyen ayarlar henüz yok. Defender, Windows Update, güvenlik duvarı ve kullanıcı hesaplarına hiç dokunulmaz." />
+        {categories.map((category) => (
+          <div key={category}>
+            <h4 className="st-subtitle">{category}</h4>
+            {(tweaks ?? []).filter((t) => t.category === category).map((t) => (
+              <Row key={t.id} label={t.name} hint={`${t.description}${t.effect !== 'none' ? ' · ' + EFFECT_NOTE[t.effect] : ''}`}>
+                <Switch label={t.name} value={t.enabled} onChange={(on) => toggle(t, on)} />
+              </Row>
+            ))}
+          </div>
+        ))}
+        {notice && <Message text={notice} />}
+        <div className="st-row-inline">
+          <button className="st-btn" onClick={() => invoke('tweaks:restart-explorer')}><Icon name="refresh" size={15} />Gezgin'i yeniden başlat</button>
+          <button className="st-btn st-btn--danger" onClick={() => invoke('tweaks:revert-all').then(refresh)}><Icon name="refresh" size={15} />Hepsini eski haline döndür</button>
+        </div>
+      </Card>
+      {(log ?? []).length > 0 && (
+        <Card title="Değişiklik kaydı">
+          <div className="st-log">
+            {[...(log ?? [])].reverse().slice(0, 12).map((l, i) => (
+              <div key={i}>{new Date(l.at).toLocaleString('tr-TR')} — {nameOf(l.id)}: {l.action === 'apply' ? 'açıldı' : 'geri alındı'}</div>
+            ))}
+          </div>
+        </Card>
+      )}
+    </>
+  )
+}
+
 const WIDGET_NAMES: Record<WidgetType, string> = { clock: 'Saat', weather: 'Hava durumu', system: 'CPU / RAM / Disk', media: 'Medya', calendar: 'Takvim' }
 
 function WidgetsTab() {
@@ -501,6 +581,8 @@ export default function SettingsView() {
           {tab === 'theme' && <ThemeTab s={settings} set={set} kind="theme" />}
           {tab === 'icons' && <ThemeTab s={settings} set={set} kind="icons" />}
           {tab === 'items' && <ItemsTab />}
+          {tab === 'wheel' && <WheelTab />}
+          {tab === 'tweaks' && <TweaksTab />}
           {tab === 'widgets' && <WidgetsTab />}
           {tab === 'general' && <GeneralTab s={settings} set={set} />}
         </div>

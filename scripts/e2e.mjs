@@ -17,6 +17,8 @@ writeFileSync(
       { id: 'explorer', type: 'app', targetPath: win(`${windir}/explorer.exe`), label: 'explorer', order: 0 },
       { id: 'dl', type: 'folder', targetPath: win(`${windir}/System32`), label: 'System32', order: 1 },
       { id: 'grp', type: 'group', label: 'Group', children: [win(`${windir}/System32/notepad.exe`), win(`${windir}/System32/calc.exe`)], order: 2 },
+      { id: 'wheel1', type: 'wheel', label: 'Denetim', order: 3 },
+      { id: 'power1', type: 'power', label: 'Güç', order: 4 },
       { id: 'trash', type: 'trash', order: 999 },
     ],
     settings: { material: 'none' },
@@ -163,6 +165,39 @@ try {
     assert.notEqual(code, 'still running', 'the second instance exits by itself')
     const docks = (await pages()).filter((p) => p.url.includes('#/dock'))
     assert.equal(docks.length, 1)
+  })
+
+  await check('the gear menu opens as a dock window, lists tools and only runs known ids', async () => {
+    await invoke('items:activate', 'wheel1')
+    const page = await until(async () => (await pages()).find((p) => p.url.includes('#/wheel')), 'gear window')
+    const conn = await connect(page)
+    const count = await until(async () => conn.call("document.querySelectorAll('.wheel .stack__entry').length"), 'gear entries')
+    assert.ok(count >= 10, `catalogue is shown (got ${count})`)
+    assert.equal(await conn.call("document.querySelectorAll('.wheel__icon svg').length === document.querySelectorAll('.wheel .stack__entry').length"), true, 'every entry has an icon')
+    // typing filters the grid
+    await conn.call("(() => { const i = document.querySelector('.wheel input'); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(i, 'ses'); i.dispatchEvent(new Event('input', { bubbles: true })) })()")
+    await until(async () => (await conn.call("document.querySelectorAll('.wheel .stack__entry').length")) < count, 'search filters')
+    assert.equal(await invoke('wheel:run', 'not-in-the-list; calc.exe'), false, 'unknown ids never run')
+    conn.ws.close()
+    await invoke('stack:close')
+  })
+
+  await check('the power menu is a full-screen overlay and asks twice before ending the session', async () => {
+    await invoke('items:activate', 'power1')
+    const page = await until(async () => (await pages()).find((p) => p.url.includes('#/power')), 'power window')
+    const conn = await connect(page)
+    assert.equal(await until(async () => conn.call("document.querySelectorAll('.power__btn').length"), 'power buttons'), 5)
+    await conn.call("document.querySelector('.power__btn--danger').click()")
+    assert.equal(await conn.call("document.querySelector('.power__btn--danger').classList.contains('power__btn--armed')"), true, 'first click only arms the button')
+    assert.match((await invoke('power:run', 'shutdown')).message, /dry run/, 'tests never touch the machine')
+    conn.ws.close()
+    await invoke('power:close')
+  })
+
+  await check('tweaks are listed with their current state (nothing is changed here)', async () => {
+    const list = await invoke('tweaks:list')
+    assert.ok(list.length >= 5 && list.every((t) => typeof t.enabled === 'boolean' && t.name))
+    assert.deepEqual((await invoke('tweaks:set', 'no-such-tweak', true)).ok, false)
   })
 
   await check('moving the dock to the left resizes its window to a tall, narrow shape', async () => {
