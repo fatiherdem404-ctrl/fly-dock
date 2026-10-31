@@ -1,66 +1,47 @@
-// Icon pack builder: the user assigns pictures to the keys a pack can replace (programs by file name, folders,
-// recycle bin), then the result is written as an ordinary .flypack and installed through the same validation as
-// an imported one. Only image files picked in a system dialog during this session can be read back.
-import { dialog } from 'electron'
+// Icon pack builder: the user assigns pictures to the keys a pack can replace (every dock item and gear-menu entry),
+// then the result is written as an ordinary .flypack and installed through the same validation as an imported one.
+// Only pictures from the icon library or chosen in a system dialog can be used.
 import path from 'node:path'
-import fs from 'node:fs'
 import { getItems } from './store'
 import { installPack } from './packs'
 import { writeZip, ZipEntry } from './zip'
+import { wheelEntries } from './wheel'
+import { isAllowedImage, readAllowed, libraryThumb, pickFolderImages } from './iconLibrary'
 import type { PackInfo, PackBuilderKey } from '../src/shared/types'
-
-const IMAGE_EXT = new Set(['.png', '.ico', '.svg', '.jpg', '.jpeg', '.webp'])
-const MAX_IMAGE_BYTES = 2 * 1024 * 1024
-const picked = new Set<string>()
-
-const MIME: Record<string, string> = { '.png': 'image/png', '.ico': 'image/x-icon', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp' }
 
 const keyOfPath = (p: string) => path.win32.basename(p, path.win32.extname(p)).toLowerCase().replace(/[^a-z0-9 ._-]/g, '').slice(0, 60)
 
-/** Everything a pack can replace: the dock's own programs and files, then the generic folder / file / trash icons. */
+const SPECIAL: Record<string, string> = { start: 'Başlat düğmesi', wheel: 'Çark menüsü simgesi', power: 'Güç menüsü simgesi', group: 'Gruplar' }
+
+/** Everything a pack can replace: every dock item, every gear-menu entry, then the generic folder / file / trash icons. */
 export function builderKeys(): PackBuilderKey[] {
   const keys: PackBuilderKey[] = []
   const seen = new Set<string>()
-  for (const item of getItems()) {
-    if (!item.targetPath || (item.type !== 'app' && item.type !== 'file')) continue
-    const key = keyOfPath(item.targetPath)
-    if (!key || seen.has(key)) continue
-    seen.add(key)
-    keys.push({ key, label: item.label || key, path: item.targetPath })
+  const add = (k: PackBuilderKey) => {
+    if (!k.key || seen.has(k.key)) return
+    seen.add(k.key)
+    keys.push(k)
   }
-  keys.push({ key: 'folder', label: 'Klasörler' }, { key: 'file', label: 'Diğer dosyalar' }, { key: 'trash', label: 'Geri dönüşüm kutusu (boş)' }, { key: 'trash-full', label: 'Geri dönüşüm kutusu (dolu)' })
+  for (const item of getItems()) {
+    if (item.type === 'start' || item.type === 'wheel' || item.type === 'power' || item.type === 'group') add({ key: item.type, label: SPECIAL[item.type], itemId: item.id })
+    else if ((item.type === 'app' || item.type === 'file') && item.targetPath) add({ key: keyOfPath(item.targetPath), label: item.label || keyOfPath(item.targetPath), itemId: item.id })
+  }
+  add({ key: 'folder', label: 'Klasörler' })
+  add({ key: 'file', label: 'Diğer dosyalar' })
+  add({ key: 'trash', label: 'Geri dönüşüm kutusu (boş)' })
+  add({ key: 'trash-full', label: 'Geri dönüşüm kutusu (dolu)' })
+  for (const e of wheelEntries().entries) if (!e.path) add({ key: `wheel-${e.id}`, label: `Çark: ${e.name}`, wheelId: e.id })
   return keys
 }
 
-function remember(file: string): { path: string; preview: string } | null {
-  const ext = path.extname(file).toLowerCase()
-  if (!IMAGE_EXT.has(ext)) return null
-  try {
-    const buf = fs.readFileSync(file)
-    if (buf.length > MAX_IMAGE_BYTES) return null
-    picked.add(file)
-    return { path: file, preview: `data:${MIME[ext]};base64,${buf.toString('base64')}` }
-  } catch {
-    return null
-  }
-}
-
-export async function pickBuilderImage(): Promise<{ path: string; preview: string } | null> {
-  const r = await dialog.showOpenDialog({ properties: ['openFile'], filters: [{ name: 'Resim', extensions: ['png', 'ico', 'svg', 'jpg', 'jpeg', 'webp'] }] })
-  return r.canceled || !r.filePaths[0] ? null : remember(r.filePaths[0])
-}
-
-/** A folder of pictures named like the programs (chrome.png, folder.png…) fills every matching key at once. */
+/** A folder of pictures named like the keys (chrome.png, folder.png, wheel-apps.png…) fills every matching key at once. */
 export async function pickBuilderFolder(keys: string[]): Promise<Record<string, { path: string; preview: string }>> {
-  const r = await dialog.showOpenDialog({ properties: ['openDirectory'] })
   const out: Record<string, { path: string; preview: string }> = {}
-  if (r.canceled || !r.filePaths[0]) return out
-  for (const f of fs.readdirSync(r.filePaths[0], { withFileTypes: true })) {
-    if (!f.isFile()) continue
-    const key = keyOfPath(f.name)
+  for (const file of await pickFolderImages()) {
+    const key = keyOfPath(file)
     if (!keys.includes(key) || out[key]) continue
-    const got = remember(path.join(r.filePaths[0], f.name))
-    if (got) out[key] = got
+    const preview = libraryThumb(file)
+    if (preview) out[key] = { path: file, preview }
   }
   return out
 }
@@ -73,10 +54,11 @@ export function createBuilderPack(name: string, author: string, map: Record<stri
   const valid = new Set(builderKeys().map((k) => k.key))
   let n = 0
   for (const [key, file] of Object.entries(map)) {
-    if (!valid.has(key) || !picked.has(file)) continue
-    const ext = path.extname(file).toLowerCase()
-    const entryName = `icons/${String(++n).padStart(3, '0')}${ext}`
-    entries.push({ name: entryName, data: fs.readFileSync(file) })
+    if (!valid.has(key) || !isAllowedImage(file)) continue
+    const data = readAllowed(file)
+    if (!data) continue
+    const entryName = `icons/${String(++n).padStart(3, '0')}${path.extname(file).toLowerCase()}`
+    entries.push({ name: entryName, data })
     iconMap[key] = entryName
   }
   if (n === 0) return { ok: false, message: 'Hiçbir öğeye resim seçilmedi.' }

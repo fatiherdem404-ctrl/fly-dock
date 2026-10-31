@@ -19,7 +19,7 @@ const [width, height] = (arg('size') ?? '1100x760').split('x').map(Number)
 const profile = mkdtempSync(join(tmpdir(), 'dock-shot-'))
 
 // --texture=sample stores a generated 96x96 test image (diagonal stripes with a dot) as the custom desk texture
-function samplePng() {
+function samplePng(hue = 0) {
   const W = 96
   const raw = Buffer.alloc(W * (W * 4 + 1))
   for (let y = 0; y < W; y++) {
@@ -27,7 +27,7 @@ function samplePng() {
     for (let x = 0; x < W; x++) {
       const stripe = ((x + y) % 24) < 12
       const dot = (x - 48) ** 2 + (y - 48) ** 2 < 100
-      const px = dot ? [255, 255, 255, 255] : stripe ? [210, 120, 60, 255] : [120, 60, 30, 255]
+      const px = dot ? [255, 255, 255, 255] : stripe ? [(210 + hue * 3) % 256, (120 + hue * 5) % 256, (60 + hue * 7) % 256, 255] : [(120 + hue * 3) % 256, (60 + hue * 5) % 256, (30 + hue * 7) % 256, 255]
       raw.set(px, y * (W * 4 + 1) + 1 + x * 4)
     }
   }
@@ -43,6 +43,14 @@ if (arg('texture') === 'sample') {
   mkdirSync(join(profile, 'textures'), { recursive: true })
   writeFileSync(join(profile, 'textures', file), png)
   settings.deskTexFile = file
+}
+// --icons=sample puts 16 generated pictures in a folder and adds it to the icon library
+if (arg('icons') === 'sample') {
+  const dir = join(profile, 'sample-icons')
+  mkdirSync(dir, { recursive: true })
+  const names = ['chrome', 'notepad', 'calc', 'explorer', 'folder', 'trash', 'start', 'power', 'game', 'music', 'photo', 'mail', 'code', 'chat', 'maps', 'clock']
+  names.forEach((n, i) => writeFileSync(join(dir, n + '.png'), samplePng(i * 22)))
+  settings.iconFolders = [dir]
 }
 const win = (p) => p.replaceAll('/', String.fromCharCode(92))
 const windir = process.env.SystemRoot ?? 'C:/Windows'
@@ -84,6 +92,7 @@ try {
   if (route.includes('settings')) await dock.evaluate("window.api.invoke('app:open-settings')")
   if (route.includes('wheel')) await dock.evaluate("window.api.invoke('items:activate', 'wheel1')")
   if (route.includes('power')) await dock.evaluate("window.api.invoke('items:activate', 'power1')")
+  if (route.includes('iconpick')) await dock.evaluate("window.api.invoke('iconpick:show', 'notepad')")
   if (route.includes('menu')) await dock.evaluate("window.api.invoke('menu:show', { kind: 'icon', itemId: 'folder' })")
   if (route.includes('stack')) await dock.evaluate("window.api.invoke('stack:show', 'folder', { x: 900, y: 800 })")
   let target
@@ -101,6 +110,8 @@ try {
     await view.evaluate(`document.querySelectorAll(${JSON.stringify(click)}).forEach((b) => b.click())`)
     await sleep(250)
   }
+  const evalExpr = arg('eval')
+  if (evalExpr) console.log('EVAL:', JSON.stringify(await view.evaluate(evalExpr)).slice(0, 400))
   await sleep(Number(arg('wait') ?? 900))
   const shot = await view.send('Page.captureScreenshot', { format: 'png' })
   writeFileSync(out, Buffer.from(shot.result.data, 'base64'))

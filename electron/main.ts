@@ -13,7 +13,9 @@ import {
 import { iconForItem, setTrashState } from './icons'
 import { shellIcon, thumbnail } from './iconService'
 import { askConfirm, answerConfirm } from './confirm'
-import { builderKeys, pickBuilderImage, pickBuilderFolder, createBuilderPack } from './packBuilder'
+import { listLibrary, libraryThumb, pickImage, addLibraryFolder, removeLibraryFolder } from './iconLibrary'
+import { showIconPicker, closeIconPicker, pickerInfo, applyPickedIcon } from './iconPicker'
+import { builderKeys, pickBuilderFolder, createBuilderPack } from './packBuilder'
 import { initDockWindows, syncDocks, setLayout, applyLayer, dockIsOnTop, isDockHidden, setFullscreenHidden, toggleDockVisibility, disposeDockWindows } from './dockWindows'
 import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN } from './windows'
 import {
@@ -167,7 +169,7 @@ function showMenu(_e: Electron.IpcMainInvokeEvent, payload: { kind: 'empty' | 'i
       if (item.type === 'group') add('Gruba ekle…', 'plus', () => pickForGroup(item.id))
       if (item.targetPath) add('Konumunu göster', 'location', () => shell.showItemInFolder(item.targetPath!))
       separator()
-      add('Simge değiştir…', 'image', () => pickIconFor(item.id))
+      add('Simge değiştir…', 'image', () => showIconPicker(item.id))
       if (item.customIconPath) add('Simgeyi sıfırla', 'refresh', () => updateItem(item.id, { customIconPath: undefined }))
       add("Dock'tan kaldır", 'trash', () => removeItem(item.id), { danger: true, disabled: locked })
     }
@@ -201,11 +203,6 @@ async function closeWindowsOf(item: DockItem) {
 async function pickAndAdd(properties: ('openFile' | 'openDirectory')[], filters?: Electron.FileFilter[]) {
   const result = await dialog.showOpenDialog({ properties, filters })
   if (!result.canceled && result.filePaths[0]) addPaths(result.filePaths, getItems().length)
-}
-
-async function pickIconFor(id: string) {
-  const result = await dialog.showOpenDialog({ properties: ['openFile'], filters: [{ name: 'Simgeler', extensions: ['ico', 'png', 'svg', 'jpg', 'webp'] }] })
-  if (!result.canceled && result.filePaths[0]) updateItem(id, { customIconPath: result.filePaths[0] })
 }
 
 // ---- IPC ----
@@ -292,7 +289,19 @@ function registerIpc() {
   handle('themes:get', (_e, id) => getTheme(id))
   handle('confirm:answer', (_e, id, answer) => answerConfirm(id, answer))
   handle('builder:keys', () => builderKeys())
-  handle('builder:pick', () => pickBuilderImage())
+  handle('library:list', () => listLibrary())
+  handle('library:thumb', (_e, file) => libraryThumb(file))
+  handle('library:pick', () => pickImage())
+  handle('library:add-folder', () => addLibraryFolder())
+  handle('library:remove-folder', (_e, folder) => removeLibraryFolder(folder))
+  handle('iconpick:show', (_e, target) => showIconPicker(target))
+  handle('iconpick:info', (_e, target) => pickerInfo(target))
+  handle('iconpick:apply', (_e, target, file) => {
+    const result = applyPickedIcon(target, file)
+    if (result.ok) broadcast('icons:changed', null)
+    return result
+  })
+  handle('iconpick:close', () => closeIconPicker())
   handle('builder:folder', (_e, keys) => pickBuilderFolder(keys))
   handle('builder:create', (_e, name, author, map) => {
     const result = createBuilderPack(name, author, map)

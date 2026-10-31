@@ -5,7 +5,8 @@ import crypto from 'node:crypto'
 import path from 'node:path'
 import { pickTexture } from './textures'
 import { spawn } from 'node:child_process'
-import { store } from './store'
+import { store, getSettings } from './store'
+import { packWheelIcon } from './packs'
 import type { WheelEntry } from '../src/shared/types'
 
 type Launch =
@@ -83,11 +84,23 @@ export function setWheelState(next: { hidden: string[]; order: string[] }): Whee
 }
 
 /** Every entry in the user's order, with a flag for the ones they switched off. */
+export function setWheelIconFile(id: string, file: string | null): { ok: boolean; message: string } {
+  const state = wheelState()
+  if (!state.order.includes(id)) return { ok: false, message: 'unknown entry' }
+  const { [id]: _gone, ...rest } = state.icons
+  store.set('wheel', { ...state, icons: file ? { ...rest, [id]: file } : rest })
+  return { ok: true, message: 'ok' }
+}
+
 export function wheelEntries(): { entries: WheelEntry[]; hidden: string[] } {
   const { hidden, order, custom, icons } = wheelState()
   const byId = new Map<string, WheelEntry>(CATALOG.map(({ launch: _launch, ...view }) => [view.id, view]))
   for (const c of custom) byId.set(c.id, { id: c.id, name: c.name, category: 'Eklediklerim', icon: 'folder', path: c.path })
-  const entries = order.map((id) => byId.get(id)).filter((e): e is WheelEntry => !!e).map((e) => (icons[e.id] ? { ...e, iconFile: icons[e.id] } : e))
+  const entries = order.map((id) => byId.get(id)).filter((e): e is WheelEntry => !!e).map((e) => {
+    if (icons[e.id]) return { ...e, iconFile: icons[e.id] }
+    const packIcon = packWheelIcon(getSettings().iconPack, e.id)
+    return packIcon ? { ...e, packIcon } : e
+  })
   return { entries, hidden }
 }
 

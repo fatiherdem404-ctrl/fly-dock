@@ -40,7 +40,7 @@ export default function WheelView() {
               <div className="stack__grid">
                 {entries.map((e) => (
                   <button key={e.id} className="stack__entry" title={e.name} onClick={() => invoke('wheel:run', e.id)}>
-                    <span className={`wheel__icon${e.iconFile || e.path ? ' wheel__icon--plain' : ''}`}><WheelGlyph entry={e} size={e.iconFile || e.path ? 44 : 26} /></span>
+                    <span className={`wheel__icon${e.iconFile || e.path || e.packIcon ? ' wheel__icon--plain' : ''}`}><WheelGlyph entry={e} size={e.iconFile || e.path || e.packIcon ? 44 : 26} /></span>
                     <span>{e.name}</span>
                   </button>
                 ))}

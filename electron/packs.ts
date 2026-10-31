@@ -304,6 +304,7 @@ export function packIconFor(packId: string, item: DockItem, trashHasItems: boole
   if (!map) return null
   let key: string
   if (item.type === 'trash') key = trashHasItems ? 'trash-full' : 'trash'
+  else if (item.type === 'start' || item.type === 'wheel' || item.type === 'power' || item.type === 'group') key = item.type
   else if (item.type === 'folder' || item.type === 'stack') key = 'folder'
   else if (item.targetPath) {
     key = path.win32.basename(item.targetPath, path.win32.extname(item.targetPath)).toLowerCase()
@@ -311,4 +312,18 @@ export function packIconFor(packId: string, item: DockItem, trashHasItems: boole
   } else return null
   const file = map[key]
   return file ? path.join(packDir('icons', packId), ...file.split('/')) : null
+}
+
+/** Picture a pack gives one gear-menu entry (key "wheel-<id>"), as a data URL. */
+export function packWheelIcon(packId: string, wheelId: string): string | null {
+  if (!packId) return null
+  const file = iconMap(packId)?.[`wheel-${wheelId}`]
+  if (!file) return null
+  try {
+    const full = path.join(packDir('icons', packId), ...file.split('/'))
+    const ext = path.extname(full).slice(1).toLowerCase()
+    return `data:image/${ext === 'svg' ? 'svg+xml' : ext === 'jpg' ? 'jpeg' : ext};base64,${fs.readFileSync(full).toString('base64')}`
+  } catch {
+    return null
+  }
 }

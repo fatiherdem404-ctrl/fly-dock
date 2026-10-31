@@ -3,6 +3,7 @@ import { invoke, useActiveTheme, useEvent, useRemote } from '@/api'
 import Icon, { IconName } from '@/icons'
 import DockPreview from '@/components/DockPreview'
 import WheelGlyph from '@/components/WheelGlyph'
+import IconLibrary from '@/components/IconLibrary'
 import Shelf from '@/components/Shelf'
 import { useTexture, forgetTexture } from '@/useTexture'
 import { initSound, playSound, previewSound, SOUND_THEMES } from '@/sound'
@@ -489,23 +490,40 @@ function PackCards({ packs, activeId, onUse, type, onChanged }: { packs: PackInf
 
 type Picked = { path: string; preview: string }
 
-/** Build an icon pack: a picture for each program in the dock (by hand or from a folder), then save it as a pack. */
+/**
+ * Build an icon pack the way RocketDock does it: the dock's own items (and the gear-menu entries) are listed on the
+ * left with their current icons, the icon library is on the right. Pick a row, click a picture, and the row moves on.
+ */
 function PackBuilder({ onMade }: { tab?: string; onMade: (id: string) => void }) {
   const [keys] = useRemote('builder:keys', [])
+  const [wheel] = useRemote('wheel:list', [])
+  const [current, setCurrent] = useState<Record<string, string>>({})
   const [chosen, setChosen] = useState<Record<string, Picked>>({})
+  const [active, setActive] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [author, setAuthor] = useState('')
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
   const count = Object.keys(chosen).length
-  const pick = async (key: string) => {
-    const got = await invoke('builder:pick')
-    if (got) setChosen((cur) => ({ ...cur, [key]: got }))
+  const row = active ?? keys?.[0]?.key ?? null
+
+  useEffect(() => {
+    ;(keys ?? []).forEach((k) => k.itemId && invoke('items:icon', k.itemId).then((src) => src && setCurrent((cur) => ({ ...cur, [k.key]: src }))))
+  }, [keys])
+
+  const assign = async (file: string, preview?: string) => {
+    if (!row || !keys) return
+    const shown = preview ?? (await invoke('library:thumb', file))
+    if (!shown) return setMessage({ text: 'Bu resim okunamadı ya da çok büyük (en çok 2 MB).', error: true })
+    setChosen((cur) => ({ ...cur, [row]: { path: file, preview: shown } }))
+    const i = keys.findIndex((k) => k.key === row)
+    setActive(keys[i + 1]?.key ?? row)
+    setMessage(null)
   }
   const fromFolder = async () => {
     const got = await invoke('builder:folder', (keys ?? []).map((k) => k.key))
     const n = Object.keys(got).length
     setChosen((cur) => ({ ...cur, ...got }))
-    setMessage({ text: n ? `${n} simge eşleşti.` : 'Bu klasörde öğelerle aynı adlı resim bulunamadı (ör. chrome.png, folder.png).', error: n === 0 })
+    setMessage({ text: n ? `${n} simge eşleşti.` : 'Bu klasörde öğelerle aynı adlı resim bulunamadı (ör. chrome.png, folder.png, wheel-apps.png).', error: n === 0 })
   }
   const create = async () => {
     const map = Object.fromEntries(Object.entries(chosen).map(([k, v]) => [k, v.path]))
@@ -513,23 +531,31 @@ function PackBuilder({ onMade }: { tab?: string; onMade: (id: string) => void })
     setMessage({ text: r.ok ? `"${r.message}" oluşturuldu ve kullanılıyor. Dışa aktarmak için Simge paketleri sekmesindeki listeyi kullan.` : r.message, error: !r.ok })
     if (r.ok && r.pack) onMade(r.pack.id)
   }
+  const glyph = (k: { key: string; wheelId?: string }) => {
+    if (chosen[k.key]) return <img src={chosen[k.key].preview} alt="" />
+    if (k.wheelId) {
+      const e = wheel?.entries.find((w) => w.id === k.wheelId)
+      return e ? <WheelGlyph entry={e} size={28} /> : <Icon name="image" size={16} />
+    }
+    return current[k.key] ? <img src={current[k.key]} alt="" /> : <Icon name="image" size={16} />
+  }
   return (
-    <Card title="Paket oluştur" hint="Dock'taki her program için bir resim seç ya da adları programlarla aynı olan resimlerin durduğu bir klasör ver (chrome.png, folder.png, trash.png…). PNG, ICO, SVG, JPEG ya da WebP, en çok 2 MB.">
-      <div className="st-row-inline">
-        <button className="st-btn st-btn--accent" onClick={fromFolder}><Icon name="folder" size={15} />Klasörden dağıt…</button>
-        {count > 0 && <button className="st-btn" onClick={() => setChosen({})}><Icon name="refresh" size={15} />Seçimleri temizle</button>}
+    <Card title="Paket oluştur" hint="Soldan bir öğe seç, sağdaki kütüphaneden simgesine tıkla; sıradaki öğeye kendiliğinden geçer. Kütüphaneye simge klasörü ekleyebilir ya da tek tek resim seçebilirsin. Simgeler dock'tan da değiştirilebilir: bir öğeye sağ tıkla, 'Simge değiştir'.">
+      <div className="st-builder">
+        <div className="st-builder__items">
+          {(keys ?? []).map((k) => (
+            <button key={k.key} className="st-builder__item" aria-pressed={row === k.key} onClick={() => setActive(k.key)}>
+              <span className="st-builder-thumb">{glyph(k)}</span>
+              <span className="st-builder__label">{k.label}{chosen[k.key] && <i className="st-builder__done" />}</span>
+              {chosen[k.key] && <span className="st-builder__clear" role="button" aria-label="Seçimi kaldır" onClick={(e) => { e.stopPropagation(); setChosen((cur) => { const { [k.key]: _gone, ...rest } = cur; return rest }) }}>×</span>}
+            </button>
+          ))}
+        </div>
+        <div className="st-builder__lib"><IconLibrary onPick={assign} selected={row ? chosen[row]?.path : null} /></div>
       </div>
-      <div className="st-list">
-        {(keys ?? []).map((k) => (
-          <div className="st-list__row st-list__row--builder" key={k.key}>
-            <span className="st-builder-thumb">{chosen[k.key] ? <img src={chosen[k.key].preview} alt="" /> : <Icon name="image" size={16} />}</span>
-            <span>{k.label}<small className="st-muted"> · {k.key}</small></span>
-            <div className="st-row-inline" style={{ margin: 0 }}>
-              <button className="st-btn" onClick={() => pick(k.key)}><Icon name="image" size={14} />{chosen[k.key] ? 'Değiştir' : 'Resim seç…'}</button>
-              {chosen[k.key] && <button className="st-btn" aria-label="Kaldır" onClick={() => setChosen((cur) => { const { [k.key]: _gone, ...rest } = cur; return rest })}><Icon name="trash" size={14} /></button>}
-            </div>
-          </div>
-        ))}
+      <div className="st-row-inline">
+        <button className="st-btn" onClick={fromFolder}><Icon name="folder" size={15} />Adlarına göre klasörden dağıt…</button>
+        {count > 0 && <button className="st-btn" onClick={() => setChosen({})}><Icon name="refresh" size={15} />Seçimleri temizle</button>}
       </div>
       <Row label="Paket adı"><input className="st-input" type="text" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Benim simgelerim" /></Row>
       <Row label="Yapımcı" hint="İstersen boş bırak"><input className="st-input" type="text" value={author} maxLength={60} onChange={(e) => setAuthor(e.target.value)} /></Row>
@@ -640,7 +666,7 @@ function ItemsTab() {
 
 function WheelTab() {
   const [data, setData] = useRemote('wheel:list', [])
-  const [message, setMessage] = useState<string | null>(null)
+  useEvent('icons:changed', () => void invoke('wheel:list').then(setData))
   const save = (hidden: string[], order: string[]) => invoke('wheel:set', { hidden, order }).then(setData)
   if (!data) return null
   const order = data.entries.map((e) => e.id)
@@ -652,25 +678,20 @@ function WheelTab() {
     save(data.hidden, next)
   }
   const add = (kind: 'file' | 'folder') => invoke('wheel:add', kind).then((d) => d && setData(d))
-  const pickIcon = (id: string) => invoke('wheel:icon', id, 'pick').then((r) => {
-    if (r.data) setData(r.data)
-    setMessage(r.ok || r.message === 'cancelled' ? null : r.message)
-  })
   return (
     <Card title="Çark menüsü" hint="Dock'a sağ tıklayıp 'Çark menüsü ekle' dersen bu liste açılır. Windows'un kendi araçlarını açıp kapatabilir, kendi program, dosya ve klasörlerini ekleyebilir, her birine istediğin simgeyi verebilirsin.">
       <div className="st-row-inline">
         <button className="st-btn st-btn--accent" onClick={() => add('file')}><Icon name="plus" size={15} />Program ya da dosya ekle…</button>
         <button className="st-btn" onClick={() => add('folder')}><Icon name="folder" size={15} />Klasör ekle…</button>
       </div>
-      {message && <Message text={message} error />}
       <div className="st-list">
         {data.entries.map((e, i) => (
           <div className="st-list__row st-list__row--wheel" key={e.id}>
-            <span className="st-wheel-icon"><WheelGlyph entry={e} size={e.iconFile || e.path ? 28 : 18} /></span>
+            <span className="st-wheel-icon"><WheelGlyph entry={e} size={e.iconFile || e.path || e.packIcon ? 28 : 18} /></span>
             <span>{e.name}<small className="st-muted"> · {e.category}</small></span>
             <div className="st-row-inline" style={{ margin: 0 }}>
-              <button className="st-btn" aria-label="Simge seç" title="Simge seç" onClick={() => pickIcon(e.id)}><Icon name="image" size={14} /></button>
-              {e.iconFile && <button className="st-btn" aria-label="Simgeyi sıfırla" title="Varsayılan simge" onClick={() => invoke('wheel:icon', e.id, null).then((r) => r.data && setData(r.data))}><Icon name="refresh" size={14} /></button>}
+              <button className="st-btn" aria-label="Simge seç" title="Simge seç" onClick={() => invoke('iconpick:show', `wheel:${e.id}`)}><Icon name="image" size={14} /></button>
+              {e.iconFile && <button className="st-btn" aria-label="Simgeyi sıfırla" title="Varsayılan simge" onClick={() => invoke('iconpick:apply', `wheel:${e.id}`, null).then(() => invoke('wheel:list').then(setData))}><Icon name="refresh" size={14} /></button>}
               <button className="st-btn" aria-label="Yukarı" disabled={i === 0} onClick={() => move(i, -1)}><Icon name="arrowUp" size={14} /></button>
               <button className="st-btn" aria-label="Aşağı" disabled={i === order.length - 1} onClick={() => move(i, 1)}><Icon name="arrowDown" size={14} /></button>
               {e.path && <button className="st-btn st-btn--danger" aria-label="Kaldır" title="Listeden kaldır" onClick={() => invoke('wheel:remove', e.id).then(setData)}><Icon name="trash" size={14} /></button>}

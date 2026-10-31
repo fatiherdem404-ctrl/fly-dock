@@ -16,6 +16,6 @@ export default function WheelGlyph({ entry, size }: { entry: WheelEntry; size: n
       live = false
     }
   }, [entry.path, entry.iconFile])
-  const picture = own?.url ?? shell
+  const picture = own?.url ?? shell ?? entry.packIcon ?? null
   return picture ? <img className="wheel-glyph" src={picture} alt="" draggable={false} style={{ width: size, height: size }} /> : <Icon name={entry.icon as IconName} size={size} />
 }

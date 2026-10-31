@@ -53,6 +53,8 @@ export interface WheelEntry {
   path?: string
   /** Picture chosen by the user (a stored image name); replaces the built-in glyph. */
   iconFile?: string
+  /** Picture from the active icon pack (data URL), used when the user has not chosen their own. */
+  packIcon?: string
 }
 
 export type PowerAction = 'lock' | 'sleep' | 'restart' | 'shutdown' | 'logout'
@@ -213,6 +215,8 @@ export interface DockSettings {
   // look
   theme: string
   iconPack: string
+  /** Folders whose pictures show up in the icon picker. */
+  iconFolders: string[]
 }
 
 export type WidgetType = 'clock' | 'weather' | 'system' | 'media' | 'calendar'
@@ -255,7 +259,16 @@ export interface ThemeDef {
 export interface PackBuilderKey {
   key: string
   label: string
-  path?: string
+  /** Dock item whose current icon is shown for this key. */
+  itemId?: string
+  /** Gear-menu entry whose current icon is shown for this key. */
+  wheelId?: string
+}
+
+export interface LibraryIcon {
+  path: string
+  name: string
+  source: string
 }
 
 export interface PackInfo {
@@ -365,6 +378,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   toggleHotkey: 'Control+Alt+D',
   theme: 'glass-dark',
   iconPack: '',
+  iconFolders: [],
 }
 
 // ---- IPC contract: one table drives the preload bridge, the main-process handlers and the renderer calls ----
@@ -414,8 +428,16 @@ export interface InvokeMap {
   'stack:open': { args: [path: string]; result: void }
   'stack:show': { args: [id: string, anchor: { x: number; y: number }]; result: void }
   'builder:keys': { args: []; result: PackBuilderKey[] }
-  'builder:pick': { args: []; result: { path: string; preview: string } | null }
   'builder:folder': { args: [keys: string[]]; result: Record<string, { path: string; preview: string }> }
+  'library:list': { args: []; result: { icons: LibraryIcon[]; folders: string[] } }
+  'library:thumb': { args: [path: string]; result: string | null }
+  'library:pick': { args: []; result: { path: string; preview: string } | null }
+  'library:add-folder': { args: []; result: boolean }
+  'library:remove-folder': { args: [folder: string]; result: void }
+  'iconpick:show': { args: [target: string]; result: void }
+  'iconpick:info': { args: [target: string]; result: { name: string; current: string | null; custom: boolean } | null }
+  'iconpick:apply': { args: [target: string, file: string | null]; result: { ok: boolean; message: string } }
+  'iconpick:close': { args: []; result: void }
   'builder:create': { args: [name: string, author: string, map: Record<string, string>]; result: { ok: boolean; message: string; pack?: PackInfo } }
   'confirm:answer': { args: [id: string, answer: boolean]; result: void }
   'themes:list': { args: []; result: PackInfo[] }
@@ -450,6 +472,7 @@ export interface EventMap {
   'widgets:changed': WidgetInstance[]
   'themes:changed': null
   'ui:open-settings': null
+  'icons:changed': null
   'sound:play': SoundEvent
 }
 
