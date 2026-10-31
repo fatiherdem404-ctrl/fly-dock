@@ -28,3 +28,10 @@
 
 /* "none": no shelf at all, the icons float on the desktop */
 .dock--desk-none .dock__desk { display: none; }
+
+/* "Mavi çerçeve": light blue glass with a clear blue frame, so it is not mistaken for the dark glass */
+.dock--desk-azure .dock__desk {
+  background: linear-gradient(180deg, rgba(120, 175, 255, 0.55), rgba(40, 90, 200, 0.45));
+  border: 2px solid rgba(150, 200, 255, 0.95);
+  box-shadow: 0 0 16px rgba(47, 123, 255, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
