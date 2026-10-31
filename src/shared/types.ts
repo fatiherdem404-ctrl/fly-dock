@@ -359,11 +359,21 @@ export interface StackEntry {
   ext: string
 }
 
+/** Where the settings window was last, so it opens in the same place and size. */
+export interface SettingsWindowState {
+  x: number
+  y: number
+  width: number
+  height: number
+  maximized: boolean
+}
+
 export interface Persisted {
   schemaVersion: number
   items: DockItem[]
   settings: DockSettings
   widgets: WidgetInstance[]
+  settingsWindow?: SettingsWindowState
   wheel?: { hidden: string[]; order: string[]; custom?: { id: string; name: string; path: string }[]; icons?: Record<string, string> }
   tweaks?: { applied: Record<string, { existed: boolean; type?: string; data?: string }>; log: TweakLogEntry[] }
 }
@@ -522,6 +532,8 @@ export interface InvokeMap {
   'wallpaper:next': { args: []; result: void }
   'wallpaper:pick-file': { args: []; result: string | null }
   'wallpaper:pick-folder': { args: []; result: string | null }
+  'window:control': { args: [action: 'minimize' | 'maximize' | 'close']; result: void }
+  'window:is-maximized': { args: []; result: boolean }
   'panel:capture': { args: [on: boolean]; result: void }
   'panel:blurred': { args: []; result: boolean }
   'themes:create': { args: [name: string, author: string, vars: ThemeVars, withDesk: boolean, withWallpaper: boolean]; result: { ok: boolean; message: string; pack?: PackInfo } }
@@ -560,6 +572,7 @@ export interface EventMap {
   'icons:changed': null
   'stack:changed': null
   'wallpaper:changed': WallpaperInfo
+  'window:maximized': boolean
   'sound:play': SoundEvent
 }
 

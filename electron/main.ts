@@ -44,18 +44,36 @@ let settingsWindow: BrowserWindow | null = null
 
 // ---- windows: settings and stack popup ----
 
+const SETTINGS_SIZE = { width: 1100, height: 760 }
+
+/** The remembered window rectangle, but only if enough of it is still on a screen (monitors come and go). */
+function savedSettingsBounds(): { x: number; y: number; width: number; height: number; maximized: boolean } | null {
+  const saved = store.get('settingsWindow')
+  if (!saved || HEADLESS) return null
+  const visible = screen.getAllDisplays().some((d) => {
+    const w = d.workArea
+    const overlapX = Math.min(saved.x + saved.width, w.x + w.width) - Math.max(saved.x, w.x)
+    const overlapY = Math.min(saved.y + saved.height, w.y + w.height) - Math.max(saved.y, w.y)
+    return overlapX > 200 && overlapY > 120
+  })
+  return visible ? saved : null
+}
+
 function openSettings() {
   if (settingsWindow && !settingsWindow.isDestroyed()) {
+    if (settingsWindow.isMinimized()) settingsWindow.restore()
     settingsWindow.show()
     settingsWindow.focus()
     return
   }
-  settingsWindow = new BrowserWindow({
-    width: 980,
-    height: 680,
-    minWidth: 780,
-    minHeight: 520,
+  const saved = savedSettingsBounds()
+  const win = new BrowserWindow({
+    ...SETTINGS_SIZE,
+    minWidth: 760,
+    minHeight: 540,
     title: `${brand.name} — Ayarlar`,
+    // our own title bar is drawn by the page
+    frame: false,
     // tests keep the window alive but far off-screen: a hidden window gets no animation frames to capture
     ...(HEADLESS ? { x: -OFFSCREEN, y: 0 } : {}),
     backgroundColor: '#14161c',
@@ -63,9 +81,35 @@ function openSettings() {
     icon: path.join(app.getAppPath(), brand.logo.icon),
     webPreferences: baseWebPreferences(),
   })
-  settingsWindow.setMenuBarVisibility(false)
-  loadRoute(settingsWindow, '/settings')
-  settingsWindow.on('closed', () => {
+  settingsWindow = win
+  win.setMenuBarVisibility(false)
+  // set after creation: the constructor sizes frameless windows slightly differently from getBounds()
+  if (saved) win.setBounds({ x: saved.x, y: saved.y, width: saved.width, height: saved.height })
+  if (saved?.maximized) win.maximize()
+  loadRoute(win, '/settings')
+
+  let timer: NodeJS.Timeout | null = null
+  const remember = () => {
+    if (win.isDestroyed() || HEADLESS) return
+    const bounds = win.isMaximized() ? (store.get('settingsWindow') ?? win.getNormalBounds()) : win.getBounds()
+    store.set('settingsWindow', { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, maximized: win.isMaximized() })
+  }
+  const later = () => {
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(remember, 400)
+  }
+  win.on('resize', later)
+  win.on('move', later)
+  win.on('maximize', () => {
+    win.webContents.send('window:maximized', true)
+    remember()
+  })
+  win.on('unmaximize', () => {
+    win.webContents.send('window:maximized', false)
+    later()
+  })
+  win.on('close', remember)
+  win.on('closed', () => {
     settingsWindow = null
   })
 }
@@ -313,6 +357,14 @@ function registerIpc() {
 
   handle('themes:list', () => listThemes())
   handle('themes:get', (_e, id) => getTheme(id))
+  handle('window:control', (e, action) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (!win) return
+    if (action === 'minimize') win.minimize()
+    else if (action === 'maximize') (win.isMaximized() ? win.unmaximize() : win.maximize())
+    else win.close()
+  })
+  handle('window:is-maximized', (e) => BrowserWindow.fromWebContents(e.sender)?.isMaximized() ?? false)
   handle('wallpaper:info', () => wallpaperInfo())
   handle('wallpaper:next', () => nextWallpaper())
   handle('wallpaper:pick-file', () => pickWallpaperFile())

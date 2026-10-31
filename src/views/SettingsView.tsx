@@ -1,1092 +1,65 @@
-import { Children, isValidElement, ReactElement, ReactNode, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { invoke, useActiveTheme, useEvent, useRemote } from '@/api'
-import Icon, { IconName } from '@/icons'
+import Icon from '@/icons'
 import DockPreview from '@/components/DockPreview'
-import WheelGlyph from '@/components/WheelGlyph'
-import IconLibrary from '@/components/IconLibrary'
-import Shelf from '@/components/Shelf'
-import { useTexture, forgetTexture } from '@/useTexture'
-import { initSound, playSound, previewSound, SOUND_THEMES } from '@/sound'
-import { DESK_LABELS, DESK_PRESETS, DESK_RADII, separatorKind } from '@/desk'
-import {
-  DESK_STYLES, DockItem, DockLayer, TweakInfo, DockSettings, PackInfo, ThemeDef, WidgetType,
-  SOUND_GROUP_OF, SoundEvent, SoundGroup, SoundTheme,
-  ThemeVars,
-  LIVE_WALLPAPERS, WallpaperMode, WallpaperFit,
-  AnimationCurve, DeskStyle, TextureMode, SeparatorStyle, FalloffCurve, HoverAnimation, IndicatorStyle, LaunchAnimation, ShowAnimation, SpeedPreset, StackSize, StackPlacement, WindowAnimation, LabelMode,
-} from '@/shared/types'
+import { initSound } from '@/sound'
+import type { DockSettings } from '@/shared/types'
+import TitleBar from '@/settings/TitleBar'
+import { NAV_GROUPS, PREVIEW_TABS, SearchEntry, Tab, TAB_INFO } from '@/settings/nav'
+import type { Update } from '@/settings/ui'
+import { DockTab } from '@/settings/pages/DockPage'
+import { DeskTab } from '@/settings/pages/DeskPage'
+import { MotionTab } from '@/settings/pages/MotionPage'
+import { WindowsTab } from '@/settings/pages/WindowsPage'
+import { ThemeTab } from '@/settings/pages/ThemesPage'
+import { WallpaperTab } from '@/settings/pages/WallpaperPage'
+import { SoundTab } from '@/settings/pages/SoundPage'
+import { ItemsTab } from '@/settings/pages/ItemsPage'
+import { WheelTab } from '@/settings/pages/WheelPage'
+import { WidgetsTab } from '@/settings/pages/WidgetsPage'
+import { TweaksTab } from '@/settings/pages/TweaksPage'
+import { GeneralTab } from '@/settings/pages/GeneralPage'
 
-type Tab = 'dock' | 'desk' | 'motion' | 'windows' | 'theme' | 'wallpaper' | 'icons' | 'items' | 'wheel' | 'sound' | 'tweaks' | 'widgets' | 'general'
-const TABS: [Tab, string, IconName][] = [
-  ['dock', 'Dock', 'dock'],
-  ['desk', 'Zemin ve raf', 'desk'],
-  ['motion', 'Animasyonlar', 'motion'],
-  ['windows', 'Dock pencereleri', 'window'],
-  ['theme', 'Temalar', 'theme'],
-  ['wallpaper', 'Duvar kâğıdı', 'image'],
-  ['icons', 'Simge paketleri', 'pack'],
-  ['items', 'Öğeler', 'items'],
-  ['wheel', 'Çark menüsü', 'settings'],
-  ['tweaks', 'Tweaks', 'tools'],
-  ['sound', 'Sesler', 'sound'],
-  ['widgets', 'Widget\'lar', 'widgets'],
-  ['general', 'Genel', 'general'],
-]
-
-type Update = (partial: Partial<DockSettings>) => void
-
-// ---- building blocks ----
-
-function Card({ title, hint, children }: { title: string; hint?: string; tab?: string; children: ReactNode }) {
-  return (
-    <section className="st-card">
-      <header>
-        <h3>{title}</h3>
-        {hint && <p>{hint}</p>}
-      </header>
-      <div className="st-card__body">{children}</div>
-    </section>
-  )
-}
-
-/** Groups of a page as sub-tabs: each child's `tab` (or `title`) names its tab, only the chosen one is shown. */
-function Pages({ id, children }: { id: string; children: ReactNode }) {
-  const pages = Children.toArray(children).filter(isValidElement) as ReactElement<{ title?: string; tab?: string }>[]
-  const label = (p: ReactElement<{ title?: string; tab?: string }>) => p.props.tab ?? p.props.title ?? ''
-  const key = 'settings.sub.' + id
-  const [chosen, setChosen] = useState(() => {
-    try {
-      return localStorage.getItem(key) ?? ''
-    } catch {
-      return ''
-    }
-  })
-  const pick = (name: string) => {
-    setChosen(name)
-    try {
-      localStorage.setItem(key, name)
-    } catch {
-      /* private window: the choice just is not remembered */
-    }
+const remembered = (key: string) => {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
   }
-  const current = pages.find((p) => label(p) === chosen) ?? pages[0]
-  if (!current) return null
-  return (
-    <>
-      {pages.length > 1 && (
-        <div className="st-subtabs" role="tablist">
-          {pages.map((p) => (
-            <button key={label(p)} role="tab" aria-selected={p === current} onClick={() => pick(label(p))}>{label(p)}</button>
-          ))}
-        </div>
-      )}
-      <div key={label(current)} className="st-subpage">{current}</div>
-    </>
-  )
 }
-
-function Row({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
-  return (
-    <div className="st-row">
-      <div className="st-row__text">
-        <span>{label}</span>
-        {hint && <small>{hint}</small>}
-      </div>
-      <div className="st-row__control">{children}</div>
-    </div>
-  )
-}
-
-function Switch({ value, onChange, label, disabled }: { value: boolean; onChange: (v: boolean) => void; label: string; disabled?: boolean }) {
-  return <button className="st-switch" role="switch" aria-checked={value} aria-label={label} disabled={disabled} onClick={() => { playSound('toggle'); onChange(!value) }}><i /></button>
-}
-
-function Slider({ value, min, max, step = 1, unit = '', onChange, format }: { value: number; min: number; max: number; step?: number; unit?: string; onChange: (v: number) => void; format?: (v: number) => string }) {
-  const pct = ((value - min) / (max - min)) * 100
-  return (
-    <div className="st-slider">
-      <input type="range" min={min} max={max} step={step} value={value} style={{ '--pct': `${pct}%` } as React.CSSProperties} onChange={(e) => onChange(Number(e.target.value))} />
-      <output>{format ? format(value) : `${value}${unit}`}</output>
-    </div>
-  )
-}
-
-function Select<T extends string | number>({ value, options, onChange }: { value: T; options: [T, string][]; onChange: (v: T) => void }) {
-  return (
-    <select className="st-select" value={String(value)} onChange={(e) => {
-      const picked = options.find(([v]) => String(v) === e.target.value)
-      if (picked) onChange(picked[0])
-    }}>
-      {options.map(([v, label]) => <option key={String(v)} value={String(v)}>{label}</option>)}
-    </select>
-  )
-}
-
-function Segmented<T extends string>({ value, options, onChange }: { value: T; options: [T, string][]; onChange: (v: T) => void }) {
-  return (
-    <div className="st-seg" role="radiogroup">
-      {options.map(([v, label]) => (
-        <button key={v} role="radio" aria-checked={value === v} onClick={() => { playSound('toggle'); onChange(v) }}>{label}</button>
-      ))}
-    </div>
-  )
-}
-
-function Choice<T extends string>({ value, options, onChange, children }: { value: T; options: [T, string, string?][]; onChange: (v: T) => void; children?: (id: T) => ReactNode }) {
-  return (
-    <div className="st-choices">
-      {options.map(([id, label, hint]) => (
-        <button key={id} className="st-choice" aria-pressed={value === id} onClick={() => { playSound('toggle'); onChange(id) }}>
-          {children?.(id)}
-          <b>{label}</b>
-          {hint && <small>{hint}</small>}
-        </button>
-      ))}
-    </div>
-  )
-}
-
-function Message({ text, error }: { text: string; error?: boolean }) {
-  return <div className={`st-message${error ? ' st-message--error' : ''}`}>{text}</div>
-}
-
-// ---- Dock ----
-
-const SIDES: [DockSettings['position'], string][] = [['top', 'Üst'], ['left', 'Sol'], ['right', 'Sağ'], ['bottom', 'Alt']]
-
-function PositionPicker({ value, onChange }: { value: DockSettings['position']; onChange: (p: DockSettings['position']) => void }) {
-  return (
-    <div className="st-sides">
-      {SIDES.map(([side, label]) => (
-        <button key={side} className={`st-side st-side--${side}`} aria-pressed={value === side} onClick={() => onChange(side)}>
-          <span className="st-side__screen"><i /></span>
-          <b>{label}</b>
-        </button>
-      ))}
-    </div>
-  )
-}
-
-function DockTab({ s, set }: { s: DockSettings; set: Update }) {
-  const [displays] = useRemote('displays:list', [])
-  const monitors: [string, string][] = [
-    ['primary', 'Ana monitör'],
-    ['all', 'Tüm monitörler (her birinde bir dock)'],
-    ...(displays ?? []).map((d): [string, string] => [String(d.id), `Monitör ${d.label}${d.primary ? ' (ana)' : ''}`]),
-  ]
-  const current = typeof s.monitor === 'number' ? String(s.monitor) : s.monitor
-  const horizontal = s.position === 'bottom' || s.position === 'top'
-  return (
-    <Pages id="dock">
-      <Card title="Konum" hint="Dock'u ekranın hangi kenarına koyacağını, kenara uzaklığını ve kenar boyunca yerini seç. Değişiklikler anında dock'a uygulanır.">
-        <PositionPicker value={s.position} onChange={(position) => set({ position })} />
-        <Row label="Kenardan uzaklık" hint="Dock ile ekran kenarı arasındaki boşluk">
-          <Slider value={s.edgeOffset} min={0} max={160} unit=" px" onChange={(edgeOffset) => set({ edgeOffset })} />
-        </Row>
-        <Row label={horizontal ? 'Yatay yer' : 'Dikey yer'} hint="Kenar boyunca kaydır: baş, orta ya da son">
-          <Slider value={s.alignment} min={0} max={100} format={(v) => (v === 50 ? 'orta' : `%${v}`)} onChange={(alignment) => set({ alignment })} />
-        </Row>
-        <Row label="Konumu sıfırla"><button className="st-btn" onClick={() => set({ edgeOffset: 6, alignment: 50 })}><Icon name="refresh" size={15} />Ortala</button></Row>
-        <Row label="Monitör" hint="Birden çok monitörde her birine ayrı dock konabilir">
-          <Select value={current} options={monitors} onChange={(v) => set({ monitor: v === 'primary' || v === 'all' ? v : Number(v) })} />
-        </Row>
-      </Card>
-
-      <Card title="Simgeler ve büyüme" hint="İkonun kendi boyutu ile fareyle büyümesi ayrı ayarlardır.">
-        <Row label="Simge boyutu"><Slider value={s.iconSize} min={24} max={96} unit=" px" onChange={(iconSize) => set({ iconSize })} /></Row>
-        <Row label="Simge aralığı"><Slider value={s.iconSpacing} min={0} max={32} unit=" px" onChange={(iconSpacing) => set({ iconSpacing })} /></Row>
-        <Row label="Fareyle büyütme"><Switch label="Büyütme" value={s.magnification} onChange={(magnification) => set({ magnification })} /></Row>
-        {s.magnification && (
-          <>
-            <Row label="En büyük boyut" hint="Simge boyutunun katı olarak"><Slider value={s.maxScale} min={1} max={3} step={0.05} format={(v) => `${v.toFixed(2)}× (${Math.round(v * s.iconSize)} px)`} onChange={(maxScale) => set({ maxScale })} /></Row>
-            <Row label="Yayılma" hint="Kaç komşu simge etkilenir"><Slider value={s.magnificationRadius} min={0.5} max={5} step={0.5} format={(v) => `${v} simge`} onChange={(magnificationRadius) => set({ magnificationRadius })} /></Row>
-            <Row label="Etki eğrisi" hint="Büyümenin komşulara nasıl yayıldığı">
-              <Select<FalloffCurve> value={s.falloff} onChange={(falloff) => set({ falloff })} options={[['cosine', 'Yumuşak (kosinüs)'], ['gaussian', 'Çan eğrisi'], ['linear', 'Doğrusal'], ['sharp', 'Sivri']]} />
-            </Row>
-          </>
-        )}
-      </Card>
-
-      <Card title="Ayraç" hint="Dock'taki gruplar arasındaki çizgi. Otomatik seçeneği rafa ve temaya göre okunaklı olanı seçer: ahşap ve metalde oyuk, neonda ışıklı çubuk, camda net çizgi.">
-        <Choice<SeparatorStyle> value={s.separatorStyle} onChange={(separatorStyle) => set({ separatorStyle })} options={[['auto', 'Otomatik'], ['line', 'Çizgi'], ['groove', 'Oyuk'], ['dots', 'Noktalı'], ['glow', 'Işıklı'], ['none', 'Yok']]}>
-          {(id) => (
-            <div className={`st-sepcard dock dock--desk-${s.deskStyle}`}>
-              <i className="dock__separator" data-horizontal="true" data-kind={separatorKind({ ...s, separatorStyle: id })} />
-            </div>
-          )}
-        </Choice>
-      </Card>
-
-      <Card tab="Ayraç ayrıntı" title="Ayraç ayrıntıları" hint="Seçtiğin görünümün üstüne uygulanır. Boş bıraktığın ayar rafa ve temaya göre otomatik kalır.">
-        <Row label="Kalınlık" hint="0 = görünümün kendi kalınlığı"><Slider value={s.sepThickness} min={0} max={16} format={(v) => (v === 0 ? 'otomatik' : `${v} px`)} onChange={(sepThickness) => set({ sepThickness })} /></Row>
-        <Row label="Yükseklik" hint="Simge boyutunun yüzdesi"><Slider value={s.sepHeight} min={20} max={100} unit="%" onChange={(sepHeight) => set({ sepHeight })} /></Row>
-        <Row label="Köşe yuvarlaklığı"><Slider value={s.sepRadius} min={0} max={8} unit=" px" onChange={(sepRadius) => set({ sepRadius })} /></Row>
-        <Row label="Renk" hint="Boşsa otomatik">
-          <div className="st-color">
-            <input type="color" value={/^#[0-9a-f]{6}$/i.test(s.sepColor) ? s.sepColor : '#cccccc'} onChange={(e) => set({ sepColor: e.target.value })} />
-            <button className="st-btn" onClick={() => set({ sepColor: '' })} disabled={!s.sepColor}>Otomatik</button>
-          </div>
-        </Row>
-        <Row label="Sol kenar" hint="0 = kenarlık yok"><Slider value={s.sepBorderL} min={0} max={6} unit=" px" onChange={(sepBorderL) => set({ sepBorderL })} /></Row>
-        <Row label="Sol kenar rengi">
-          <div className="st-color">
-            <input type="color" value={/^#[0-9a-f]{6}$/i.test(s.sepBorderLColor) ? s.sepBorderLColor : '#ffffff'} onChange={(e) => set({ sepBorderLColor: e.target.value })} />
-            <button className="st-btn" onClick={() => set({ sepBorderLColor: '' })} disabled={!s.sepBorderLColor}>Otomatik</button>
-          </div>
-        </Row>
-        <Row label="Sağ kenar"><Slider value={s.sepBorderR} min={0} max={6} unit=" px" onChange={(sepBorderR) => set({ sepBorderR })} /></Row>
-        <Row label="Sağ kenar rengi">
-          <div className="st-color">
-            <input type="color" value={/^#[0-9a-f]{6}$/i.test(s.sepBorderRColor) ? s.sepBorderRColor : '#000000'} onChange={(e) => set({ sepBorderRColor: e.target.value })} />
-            <button className="st-btn" onClick={() => set({ sepBorderRColor: '' })} disabled={!s.sepBorderRColor}>Otomatik</button>
-          </div>
-        </Row>
-        <Row label="Ayracı sıfırla"><button className="st-btn" onClick={() => set({ separatorStyle: 'auto', sepThickness: 0, sepHeight: 70, sepColor: '', sepRadius: 2, sepBorderL: 0, sepBorderR: 0, sepBorderLColor: '', sepBorderRColor: '' })}><Icon name="refresh" size={15} />Varsayılana dön</button></Row>
-      </Card>
-
-      <Card title="Etiketler">
-        <Row label="Simge adları"><Segmented<LabelMode> value={s.labelMode} onChange={(labelMode) => set({ labelMode })} options={[['hover', 'Üzerine gelince'], ['always', 'Hep'], ['never', 'Hiç']]} /></Row>
-        {s.labelMode !== 'never' && (
-          <>
-            <Row label="Yazı boyutu"><Slider value={s.labelSize} min={9} max={20} unit=" px" onChange={(labelSize) => set({ labelSize })} /></Row>
-            <Row label="Yazı tipi"><Select value={s.labelFont} onChange={(labelFont) => set({ labelFont })} options={[['', 'Tema yazı tipi'], ['Segoe UI', 'Segoe UI'], ['Bahnschrift', 'Bahnschrift'], ['Consolas', 'Consolas'], ['Georgia', 'Georgia'], ['Trebuchet MS', 'Trebuchet MS']]} /></Row>
-          </>
-        )}
-      </Card>
-
-      <Card title="Davranış">
-        <Row label="Pencerelere göre konum" hint="Üstte: hep önde. Normal: diğer pencereler dock'u kapatabilir. Altta: masaüstü gibi, tüm pencerelerin arkasında">
-          <Segmented<DockLayer> value={s.layer} onChange={(layer) => set({ layer })} options={[['above', 'Üstte'], ['normal', 'Normal'], ['below', 'Altta']]} />
-        </Row>
-        <Row label="Çalışan programlar" hint="Sabitlenmemiş açık programlar ayraçtan sonra görünür"><Switch label="Çalışan programlar" value={s.showRunningApps} onChange={(showRunningApps) => set({ showRunningApps })} /></Row>
-        <Row label="Çalışma göstergesi" hint="Açık programın altında ışık"><Switch label="Gösterge" value={s.showRunningIndicators} onChange={(showRunningIndicators) => set({ showRunningIndicators })} /></Row>
-        <Row label="Çöp kutusu"><Switch label="Çöp kutusu" value={s.showTrash} onChange={(showTrash) => set({ showTrash })} /></Row>
-        <Row label="Simgeleri kilitle" hint="Sürükleyip sıralamayı ve kaldırmayı kapatır"><Switch label="Kilitle" value={s.lockItems} onChange={(lockItems) => set({ lockItems })} /></Row>
-        <Row label="Otomatik gizle" hint="İmleç ekran kenarına gidince dock belirir"><Switch label="Otomatik gizle" value={s.autoHide} onChange={(autoHide) => set({ autoHide })} /></Row>
-        {s.autoHide && <Row label="Gizlenme gecikmesi"><Slider value={s.autoHideDelayMs} min={0} max={3000} step={100} unit=" ms" onChange={(autoHideDelayMs) => set({ autoHideDelayMs })} /></Row>}
-        <Row label="Tam ekranda gizle" hint="Oyun ve video tam ekranken dock görünmez"><Switch label="Tam ekranda gizle" value={s.hideInFullscreen} onChange={(hideInFullscreen) => set({ hideInFullscreen })} /></Row>
-      </Card>
-    </Pages>
-  )
-}
-
-// ---- Desk ----
-
-const PATTERNED: DeskStyle[] = ['wood', 'birch', 'walnut', 'metal', 'marble', 'blackmarble', 'concrete', 'crystal', 'wall']
-
-function TextureCard({ s, set }: { s: DockSettings; set: Update; tab?: string }) {
-  const texture = useTexture(s.deskStyle === 'custom' ? s.deskTexFile : '')
-  const [message, setMessage] = useState<string | null>(null)
-  if (s.deskStyle !== 'custom' && !PATTERNED.includes(s.deskStyle)) return null
-
-  if (s.deskStyle !== 'custom') {
-    return (
-      <Card title="Doku boyutu" hint="Desenin raf üstündeki büyüklüğü. Küçültürsen damarlar, tuğlalar ve çizgiler sıklaşır.">
-        <Row label="Desen boyutu" hint="%100 = tasarlanan boyut"><Slider value={s.deskTexScale} min={20} max={300} unit="%" onChange={(deskTexScale) => set({ deskTexScale })} /></Row>
-        <Row label="Varsayılana dön"><button className="st-btn" onClick={() => set({ deskTexScale: DESK_PRESETS[s.deskStyle].scale })}><Icon name="refresh" size={15} />Sıfırla</button></Row>
-      </Card>
-    )
+const remember = (key: string, value: string) => {
+  try {
+    localStorage.setItem(key, value)
+  } catch {
+    /* private window: the choice just is not remembered */
   }
-
-  const pick = async () => {
-    const result = await invoke('texture:pick')
-    if (result.message === 'cancelled') return
-    if (!result.ok || !result.file) return setMessage(result.message)
-    if (s.deskTexFile && s.deskTexFile !== result.file) forgetTexture(s.deskTexFile)
-    setMessage(null)
-    set({ deskTexFile: result.file })
-  }
-  const remove = () => {
-    if (s.deskTexFile) invoke('texture:remove', s.deskTexFile)
-    forgetTexture(s.deskTexFile)
-    set({ deskTexFile: '' })
-  }
-  return (
-    <Card title="Özel doku" hint="Kendi resmini raf yüzeyi yap. PNG, JPEG ya da WebP, en çok 4 MB. Resim uygulamanın kendi klasörüne kopyalanır; yedeğe de girer.">
-      <div className="st-row-inline">
-        <button className="st-btn st-btn--accent" onClick={pick}><Icon name="image" size={15} />{s.deskTexFile ? 'Başka resim seç…' : 'Resim seç…'}</button>
-        {s.deskTexFile && <button className="st-btn st-btn--danger" onClick={remove}><Icon name="trash" size={15} />Kaldır</button>}
-        {texture && <img className="st-texthumb" src={texture.url} alt="" />}
-      </div>
-      {message && <Message text={message} error />}
-      {!s.deskTexFile && <p className="st-prose">Henüz resim seçilmedi; raf düz gri görünür.</p>}
-      <Row label="Yerleşim"><Segmented<TextureMode> value={s.deskTexMode} onChange={(deskTexMode) => set({ deskTexMode })} options={[['tile', 'Döşe (tekrarla)'], ['fit', 'Sığdır (tek parça)']]} /></Row>
-      <Row label="Boyut" hint={texture ? `Resim ${texture.w}×${texture.h} px; döşemede bu boyut kaydırıcıyla çarpılır` : 'Döşemede resmin kendi boyutu çarpanı'}><Slider value={s.deskTexScale} min={10} max={400} unit="%" onChange={(deskTexScale) => set({ deskTexScale })} /></Row>
-      {s.deskTexMode === 'tile' && (
-        <>
-          <Row label="Yatay kaydır"><Slider value={s.deskTexX} min={-300} max={300} unit=" px" onChange={(deskTexX) => set({ deskTexX })} /></Row>
-          <Row label="Dikey kaydır"><Slider value={s.deskTexY} min={-300} max={300} unit=" px" onChange={(deskTexY) => set({ deskTexY })} /></Row>
-        </>
-      )}
-      <Row label="Döndür"><Slider value={s.deskTexRotate} min={0} max={360} unit="°" onChange={(deskTexRotate) => set({ deskTexRotate })} /></Row>
-      <Row label="Sıfırla"><button className="st-btn" onClick={() => set({ deskTexScale: 100, deskTexX: 0, deskTexY: 0, deskTexRotate: 0, deskTexMode: 'tile' })}><Icon name="refresh" size={15} />Boyut ve konumu sıfırla</button></Row>
-    </Card>
-  )
 }
 
-const RADIUS_KEYS: ['deskRadTL' | 'deskRadTR' | 'deskRadBL' | 'deskRadBR', string][] = [['deskRadTL', 'Sol üst'], ['deskRadTR', 'Sağ üst'], ['deskRadBL', 'Sol alt'], ['deskRadBR', 'Sağ alt']]
-const allRadii = (v: number) => ({ deskRadTL: v, deskRadTR: v, deskRadBL: v, deskRadBR: v })
-
-const PAD_KEYS: ['deskPadTop' | 'deskPadBottom' | 'deskPadLeft' | 'deskPadRight', string][] = [['deskPadTop', 'Üst'], ['deskPadBottom', 'Alt'], ['deskPadLeft', 'Sol'], ['deskPadRight', 'Sağ']]
-
-function DeskCard({ style }: { style: DeskStyle }) {
-  const preset = DESK_PRESETS[style]
-  return (
-    <div className={`st-desk dock dock--desk-${style} dock--bottom`} style={{ '--desk-depth': `${DESK_PRESETS[style].depth}px` } as React.CSSProperties}>
-      <div style={{ position: 'absolute', left: '8%', right: '8%', bottom: 5, height: 34 }}>
-        {style === 'none' ? null : preset.depth > 0 ? (
-          <Shelf length={116} thickness={34} edge={Math.round(preset.edge * 0.5)} depth={preset.depth * 0.5} side="bottom" radii={{ tl: DESK_RADII[style][0], tr: DESK_RADII[style][0], bl: DESK_RADII[style][1], br: DESK_RADII[style][1] }} opacity={1} />
-        ) : (
-          <div className="dock__desk" style={{ position: 'absolute', inset: '8px 0 0 0', borderRadius: 999 }}><span className="dock__desk-sheen" /></div>
-        )}
-      </div>
-
-      <div className="st-desk__row" style={{ bottom: style === 'none' ? 18 : 14 }}>{[0, 1, 2].map((i) => <i key={i} className="st-desk__icon" style={{ transform: i === 1 ? 'translateY(-4px)' : undefined }} />)}</div>
-    </div>
-  )
+/** Which Pages id remembers the sub-tab of each page. */
+function subKey(tab: Tab): string {
+  return tab === 'theme' ? 'themes' : tab
 }
 
-/** Right under the style list: a custom desk needs a picture, so ask for it where the style was chosen. */
-function CustomTexturePrompt({ s, set }: { s: DockSettings; set: Update }) {
-  const texture = useTexture(s.deskStyle === 'custom' ? s.deskTexFile : '')
-  const [message, setMessage] = useState<string | null>(null)
-  const pick = async () => {
-    const result = await invoke('texture:pick')
-    if (result.message === 'cancelled') return
-    if (!result.ok || !result.file) return setMessage(result.message)
-    if (s.deskTexFile && s.deskTexFile !== result.file) forgetTexture(s.deskTexFile)
-    setMessage(null)
-    set({ deskTexFile: result.file })
-  }
-  return (
-    <div className="st-custom-pick">
-      <button className="st-btn st-btn--accent" onClick={pick}><Icon name="image" size={15} />{s.deskTexFile ? 'Başka resim seç…' : 'Raf için resim seç…'}</button>
-      {texture && <img className="st-texthumb" src={texture.url} alt="" />}
-      <span className="st-muted">{s.deskTexFile ? 'Boyut, kaydırma ve dönüş için Doku sekmesine bak.' : 'Özel doku bir resim ister; seçene kadar raf düz gri görünür.'}</span>
-      {message && <Message text={message} error />}
-    </div>
-  )
-}
-
-function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
-  return (
-    <Pages id="desk">
-      <Card title="Raf stili" hint="Simgelerin üzerinde durduğu zemin. Seçince o stilin en iyi derinliği ve saydamlığı uygulanır, sonra ayrıca değiştirebilirsin.">
-        <Choice<DeskStyle>
-          value={s.deskStyle}
-          onChange={(deskStyle) => set({ deskStyle, deskDepth: DESK_PRESETS[deskStyle].depth, deskOpacity: DESK_PRESETS[deskStyle].opacity, deskEdge: DESK_PRESETS[deskStyle].edge, deskTexScale: DESK_PRESETS[deskStyle].scale, deskRadTL: DESK_RADII[deskStyle][0], deskRadTR: DESK_RADII[deskStyle][0], deskRadBL: DESK_RADII[deskStyle][1], deskRadBR: DESK_RADII[deskStyle][1] })}
-          options={DESK_STYLES.map((d): [DeskStyle, string] => [d, DESK_LABELS[d]])}
-        >
-          {(id) => <DeskCard style={id} />}
-        </Choice>
-        {s.deskStyle === 'custom' && <CustomTexturePrompt s={s} set={set} />}
-      </Card>
-      <Card title="Görünüm">
-        <Row label="Renk tonu" hint="Boşsa temanın rengi kullanılır">
-          <div className="st-color">
-            <input type="color" value={/^#[0-9a-f]{6}$/i.test(s.deskColor) ? s.deskColor : '#4da3ff'} onChange={(e) => set({ deskColor: e.target.value })} />
-            <button className="st-btn" onClick={() => set({ deskColor: '' })} disabled={!s.deskColor}>Temaya dön</button>
-          </div>
-        </Row>
-        <Row label="Saydamlık"><Slider value={s.deskOpacity} min={0.2} max={1} step={0.05} format={(v) => `%${Math.round(v * 100)}`} onChange={(deskOpacity) => set({ deskOpacity })} /></Row>
-        <Row label="Alt kalınlığı" hint="Rafın ekran kenarına bakan ön yüzü; 3B rafların altındaki kalınlık"><Slider value={s.deskEdge} min={0} max={30} unit=" px" onChange={(deskEdge) => set({ deskEdge })} /></Row>
-        <Row label="3B derinlik" hint="0 = düz; yükseldikçe raf perspektifle yatar"><Slider value={s.deskDepth} min={0} max={60} unit=" px" onChange={(deskDepth) => set({ deskDepth })} /></Row>
-        <Row label="Raf simgelerle büyüsün" hint="Kapalıyken simgeler raftan taşar (macOS gibi)"><Switch label="Raf büyümesi" value={s.shelfGrows} onChange={(shelfGrows) => set({ shelfGrows })} /></Row>
-      </Card>
-      {(s.deskStyle === 'custom' || PATTERNED.includes(s.deskStyle)) && <TextureCard tab="Doku" s={s} set={set} />}
-      <Card title="Köşe yuvarlaklığı" hint="Rafın dört köşesi ayrı ayrı. Alt köşeler yuvarlanınca ön yüzün kalınlığı da o köşeyle birlikte yuvarlanır.">
-        <Row label="Hazır şekiller">
-          <div className="st-row-inline" style={{ margin: 0 }}>
-            <button className="st-btn" onClick={() => set(allRadii(60))}>Hap</button>
-            <button className="st-btn" onClick={() => set(allRadii(14))}>Yuvarlak</button>
-            <button className="st-btn" onClick={() => set(allRadii(2))}>Kare</button>
-          </div>
-        </Row>
-        <Row label="Hepsini bağla" hint="Bir kaydırıcıyı oynatınca dördü birlikte değişir"><Switch label="Köşeleri bağla" value={s.deskRadLinked} onChange={(deskRadLinked) => set(deskRadLinked ? { deskRadLinked, ...allRadii(s.deskRadTL) } : { deskRadLinked })} /></Row>
-        {RADIUS_KEYS.map(([key, label]) => (
-          <Row key={key} label={label}>
-            <Slider value={s[key]} min={0} max={60} unit=" px" onChange={(v) => set(s.deskRadLinked ? allRadii(v) : { [key]: v })} />
-          </Row>
-        ))}
-      </Card>
-      <Card title="Raf boşlukları" hint="Rafın kenarları ile simgeler arasındaki boşluk, ekranın dört yanı için ayrı. Pencere bu boşluklara göre kendiliğinden büyür.">
-        <Row label="Hepsini bağla" hint="Bir kaydırıcıyı oynatınca dördü birlikte değişir"><Switch label="Hepsini bağla" value={s.deskPadLinked} onChange={(deskPadLinked) => set(deskPadLinked ? { deskPadLinked, deskPadTop: s.deskPadTop, deskPadBottom: s.deskPadTop, deskPadLeft: s.deskPadTop, deskPadRight: s.deskPadTop } : { deskPadLinked })} /></Row>
-        {PAD_KEYS.map(([key, label]) => (
-          <Row key={key} label={label}>
-            <Slider value={s[key]} min={0} max={48} unit=" px" onChange={(v) => set(s.deskPadLinked ? { deskPadTop: v, deskPadBottom: v, deskPadLeft: v, deskPadRight: v } : { [key]: v })} />
-          </Row>
-        ))}
-        <Row label="Varsayılana dön"><button className="st-btn" onClick={() => set({ deskPadTop: 10, deskPadBottom: 10, deskPadLeft: 16, deskPadRight: 16, deskPadLinked: false })}><Icon name="refresh" size={15} />Sıfırla</button></Row>
-      </Card>
-    </Pages>
-  )
-}
-
-// ---- Motion ----
-
-function MotionTab({ s, set, preview }: { s: DockSettings; set: Update; preview: () => void }) {
-  return (
-    <Pages id="motion">
-      <Card title="Hız" hint="Tüm dock animasyonlarının süresi">
-        <Row label="Hız"><Segmented<SpeedPreset> value={s.speed} onChange={(speed) => set({ speed })} options={[['fast', 'Hızlı'], ['medium', 'Orta'], ['slow', 'Yavaş'], ['custom', 'Özel']]} /></Row>
-        {s.speed === 'custom' && <Row label="Süre"><Slider value={s.speedMs} min={100} max={1500} step={10} unit=" ms" onChange={(speedMs) => set({ speedMs })} /></Row>}
-        <Row label="Hareket tipi">
-          <Select<AnimationCurve> value={s.animationCurve} onChange={(animationCurve) => set({ animationCurve })} options={[['spring', 'Yay (sıçramasız)'], ['bounce', 'Zıplayan yay'], ['ease', 'Yumuşak'], ['linear', 'Hızlı ve düz']]} />
-        </Row>
-      </Card>
-      <Card title="Fare üzerine gelince">
-        <Choice<HoverAnimation> value={s.hoverAnimation} onChange={(hoverAnimation) => set({ hoverAnimation })} options={[['zoom', 'Büyüme', 'Simge büyür'], ['lift', 'Yükselme', 'Simge raftan kalkar'], ['wave', 'Dalga', 'Büyür ve kalkar']]} />
-      </Card>
-      <Card title="Uygulama başlatma" hint="Bir programı başlatınca simgenin hareketi">
-        <Choice<LaunchAnimation> value={s.launchAnimation} onChange={(launchAnimation) => set({ launchAnimation })} options={[['bounce', 'Sıçrama', 'İki kez zıplar'], ['hop', 'Atlama', 'Tek zıplama'], ['pulse', 'Işık atımı', 'Parlar ve büyür'], ['none', 'Yok']]} />
-        <div className="st-row-inline"><button className="st-btn" onClick={preview}><Icon name="play" size={14} />Önizle</button></div>
-      </Card>
-      <Card title="Çalışan uygulama göstergesi">
-        <Choice<IndicatorStyle> value={s.indicatorStyle} onChange={(indicatorStyle) => set({ indicatorStyle })} options={[['dot', 'Nokta'], ['bar', 'Çubuk'], ['glow', 'Işıltı'], ['ring', 'Halka']]} />
-      </Card>
-      <Card title="Dock giriş ve çıkışı" hint="Otomatik gizleme açıkken dock'un ekrana gelişi">
-        <Choice<ShowAnimation> value={s.showAnimation} onChange={(showAnimation) => set({ showAnimation })} options={[['slide', 'Kayma'], ['fade', 'Solma'], ['scale', 'Ölçek']]} />
-      </Card>
-      <Card title="Dock pencereleri" hint="Klasör ve grup pencerelerinin açılış/kapanış efekti">
-        <Choice<WindowAnimation> value={s.windowAnimation} onChange={(windowAnimation) => set({ windowAnimation })} options={[['genie', 'Cin (genie)', 'Simgeden akarak açılır'], ['scale', 'Büyüme'], ['fade', 'Solma'], ['slide', 'Kayma']]} />
-      </Card>
-    </Pages>
-  )
-}
-
-// ---- Dock windows ----
-
-function WindowsTab({ s, set }: { s: DockSettings; set: Update }) {
-  return (
-    <Pages id="windows">
-      <Card title="Pencere boyutu" hint="Bir klasöre ya da gruba tıklayınca açılan dock penceresinin boyutu. İçerik uzunsa kaydırılır.">
-        <Choice<StackSize> value={s.stackSize} onChange={(stackSize) => set({ stackSize })} options={[['small', 'Küçük', '360 × 300'], ['medium', 'Orta', '520 × 420'], ['full', 'Tam ekran', 'Çalışma alanı'], ['custom', 'Özel']]} />
-        {s.stackSize === 'custom' && (
-          <>
-            <Row label="Genişlik"><Slider value={s.stackWidth} min={240} max={1600} step={10} unit=" px" onChange={(stackWidth) => set({ stackWidth })} /></Row>
-            <Row label="Yükseklik"><Slider value={s.stackHeight} min={200} max={1000} step={10} unit=" px" onChange={(stackHeight) => set({ stackHeight })} /></Row>
-          </>
-        )}
-      </Card>
-      <Card tab="Açılış konumu" title="Açılış konumu" hint="Klasör, grup ve çark penceresi ekranın neresinde açılsın. Açılış efekti her durumda simgenin olduğu yerden başlar.">
-        <Choice<StackPlacement> value={s.stackPlacement} onChange={(stackPlacement) => set({ stackPlacement })} options={[['icon', 'Simgenin üstünde', 'Tıkladığın simgeye yaslı'], ['dock', 'Dock ortasında', 'Dockun kenarına yaslı, ortalı'], ['center', 'Ekranın ortasında', 'Çalışma alanının ortası'], ['cursor', 'Fare imlecinde', 'İmlecin olduğu yer']]} />
-      </Card>
-      <Card title="Nasıl çalışır">
-        <p className="st-prose">Dock'taki bir klasöre sağ tıklayıp <b>Yığın olarak göster</b> de, ya da <b>Yeni grup</b> ile bir uygulama grubu oluştur. Tıklayınca pencere simgeden büyüyerek açılır; <kbd>Esc</kbd> ya da dışarı tıklama kapatır. Açılış efektini Animasyonlar sekmesinden seçebilirsin.</p>
-      </Card>
-    </Pages>
-  )
-}
-
-// ---- Themes and icon packs ----
-
-function PackCards({ packs, activeId, onUse, type, onChanged }: { packs: PackInfo[]; activeId: string; onUse: (id: string) => void; type: PackInfo['type']; onChanged: () => void }) {
-  const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
-  const list = packs.filter((p) => p.type === type)
-  const act = async (fn: () => Promise<{ ok: boolean; message: string }>, success: string) => {
-    const result = await fn()
-    if (result.message === 'cancelled') return
-    setMessage({ text: result.ok ? `${success}: ${result.message}` : result.message, error: !result.ok })
-    onChanged()
-  }
-  return (
-    <>
-      <div className="st-cards">
-        {type === 'icons' && (
-          <div className="st-pack" data-active={activeId === ''}>
-            <b>Sistem simgeleri</b>
-            <small>Windows'un kendi simgeleri</small>
-            <div className="st-pack__actions"><button className="st-btn" onClick={() => onUse('')}>Kullan</button></div>
-          </div>
-        )}
-        {list.map((p) => (
-          <div key={p.id} className="st-pack" data-active={activeId === p.id}>
-            <b>{p.name}</b>
-            <small>{p.builtin ? 'Hazır' : p.author ?? 'Bilinmeyen yazar'}{p.version ? ` · ${p.version}` : ''}{p.hasDesk ? ' · raflı' : ''}</small>
-            <div className="st-pack__actions">
-              <button className="st-btn" onClick={() => onUse(p.id)}>Kullan</button>
-              <button className="st-btn" onClick={() => act(() => invoke('packs:export', p.id), 'Dışa aktarıldı')}>Dışa aktar</button>
-              {!p.builtin && <button className="st-btn st-btn--danger" onClick={() => invoke('packs:remove', p.id).then(onChanged)}>Sil</button>}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="st-row-inline"><button className="st-btn st-btn--accent" onClick={() => act(() => invoke('packs:import'), 'İçe aktarıldı')}><Icon name="download" size={15} />Paket içe aktar (.flypack)</button></div>
-      {message && <Message text={message.text} error={message.error} />}
-    </>
-  )
-}
-
-type Picked = { path: string; preview: string }
-
-/**
- * Build an icon pack the way RocketDock does it: the dock's own items (and the gear-menu entries) are listed on the
- * left with their current icons, the icon library is on the right. Pick a row, click a picture, and the row moves on.
- */
-function PackBuilder({ onMade }: { tab?: string; onMade: (id: string) => void }) {
-  const [keys] = useRemote('builder:keys', [])
-  const [wheel] = useRemote('wheel:list', [])
-  const [current, setCurrent] = useState<Record<string, string>>({})
-  const [chosen, setChosen] = useState<Record<string, Picked>>({})
-  const [active, setActive] = useState<string | null>(null)
-  const [name, setName] = useState('')
-  const [author, setAuthor] = useState('')
-  const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
-  const count = Object.keys(chosen).length
-  const row = active ?? keys?.[0]?.key ?? null
-
-  useEffect(() => {
-    ;(keys ?? []).forEach((k) => k.itemId && invoke('items:icon', k.itemId).then((src) => src && setCurrent((cur) => ({ ...cur, [k.key]: src }))))
-  }, [keys])
-
-  const assign = async (file: string, preview?: string) => {
-    if (!row || !keys) return
-    const shown = preview ?? (await invoke('library:thumb', file))
-    if (!shown) return setMessage({ text: 'Bu resim okunamadı ya da çok büyük (en çok 2 MB).', error: true })
-    setChosen((cur) => ({ ...cur, [row]: { path: file, preview: shown } }))
-    const i = keys.findIndex((k) => k.key === row)
-    setActive(keys[i + 1]?.key ?? row)
-    setMessage(null)
-  }
-  const fromFolder = async () => {
-    const got = await invoke('builder:folder', (keys ?? []).map((k) => k.key))
-    const n = Object.keys(got).length
-    setChosen((cur) => ({ ...cur, ...got }))
-    setMessage({ text: n ? `${n} simge eşleşti.` : 'Bu klasörde öğelerle aynı adlı resim bulunamadı (ör. chrome.png, folder.png, wheel-apps.png).', error: n === 0 })
-  }
-  const create = async () => {
-    const map = Object.fromEntries(Object.entries(chosen).map(([k, v]) => [k, v.path]))
-    const r = await invoke('builder:create', name, author, map)
-    setMessage({ text: r.ok ? `"${r.message}" oluşturuldu ve kullanılıyor. Dışa aktarmak için Simge paketleri sekmesindeki listeyi kullan.` : r.message, error: !r.ok })
-    if (r.ok && r.pack) onMade(r.pack.id)
-  }
-  const glyph = (k: { key: string; wheelId?: string }) => {
-    if (chosen[k.key]) return <img src={chosen[k.key].preview} alt="" />
-    if (k.wheelId) {
-      const e = wheel?.entries.find((w) => w.id === k.wheelId)
-      return e ? <WheelGlyph entry={e} size={28} /> : <Icon name="image" size={16} />
-    }
-    return current[k.key] ? <img src={current[k.key]} alt="" /> : <Icon name="image" size={16} />
-  }
-  return (
-    <Card title="Paket oluştur" hint="Soldan bir öğe seç, sağdaki kütüphaneden simgesine tıkla; sıradaki öğeye kendiliğinden geçer. Kütüphaneye simge klasörü ekleyebilir ya da tek tek resim seçebilirsin. Simgeler dock'tan da değiştirilebilir: bir öğeye sağ tıkla, 'Simge değiştir'.">
-      <div className="st-builder">
-        <div className="st-builder__items">
-          {(keys ?? []).map((k) => (
-            <button key={k.key} className="st-builder__item" aria-pressed={row === k.key} onClick={() => setActive(k.key)}>
-              <span className="st-builder-thumb">{glyph(k)}</span>
-              <span className="st-builder__label">{k.label}{chosen[k.key] && <i className="st-builder__done" />}</span>
-              {chosen[k.key] && <span className="st-builder__clear" role="button" aria-label="Seçimi kaldır" onClick={(e) => { e.stopPropagation(); setChosen((cur) => { const { [k.key]: _gone, ...rest } = cur; return rest }) }}>×</span>}
-            </button>
-          ))}
-        </div>
-        <div className="st-builder__lib"><IconLibrary onPick={assign} selected={row ? chosen[row]?.path : null} /></div>
-      </div>
-      <div className="st-row-inline">
-        <button className="st-btn" onClick={fromFolder}><Icon name="folder" size={15} />Adlarına göre klasörden dağıt…</button>
-        {count > 0 && <button className="st-btn" onClick={() => setChosen({})}><Icon name="refresh" size={15} />Seçimleri temizle</button>}
-      </div>
-      <Row label="Paket adı"><input className="st-input" type="text" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Benim simgelerim" /></Row>
-      <Row label="Yapımcı" hint="İstersen boş bırak"><input className="st-input" type="text" value={author} maxLength={60} onChange={(e) => setAuthor(e.target.value)} /></Row>
-      <div className="st-row-inline"><button className="st-btn st-btn--accent" disabled={count === 0 || !name.trim()} onClick={create}><Icon name="download" size={15} />Paketi oluştur ve kullan ({count})</button></div>
-      {message && <Message text={message.text} error={message.error} />}
-    </Card>
-  )
-}
-
-// ---- Theme builder ----
-
-/** "#rrggbb" plus alpha 0..1 from any hex / rgb() / rgba() colour; falls back to the given colour when it cannot be read. */
-function readColor(css: string, fallback = '#808080'): { hex: string; alpha: number } {
-  const c = css.trim()
-  const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(c)
-  if (hex) {
-    const h = hex[1].length === 3 ? hex[1].split('').map((x) => x + x).join('') : hex[1]
-    return { hex: '#' + h.toLowerCase(), alpha: 1 }
-  }
-  const rgb = /^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)(?:[\s,/]+([\d.]+%?))?\s*\)$/i.exec(c)
-  if (rgb) {
-    const to = (n: string) => Math.min(255, Number(n)).toString(16).padStart(2, '0')
-    const a = rgb[4] === undefined ? 1 : rgb[4].endsWith('%') ? parseFloat(rgb[4]) / 100 : parseFloat(rgb[4])
-    return { hex: '#' + to(rgb[1]) + to(rgb[2]) + to(rgb[3]), alpha: Math.min(1, Math.max(0, a)) }
-  }
-  return { hex: fallback, alpha: 1 }
-}
-
-function writeColor(hex: string, alpha: number): string {
-  if (alpha >= 0.995) return hex
-  const n = parseInt(hex.slice(1), 16)
-  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${Math.round(alpha * 100) / 100})`
-}
-
-const SHADOWS: [string, string][] = [['none', 'Yok'], ['soft', 'Hafif'], ['strong', 'Güçlü'], ['glow', 'Parlama']]
-const shadowCss = (kind: string, accent: string) =>
-  kind === 'none' ? '0 0 0 rgba(0, 0, 0, 0)' : kind === 'soft' ? '0 6px 16px rgba(0, 0, 0, 0.25)' : kind === 'glow' ? `0 0 26px ${accent}` : '0 14px 34px rgba(0, 0, 0, 0.55)'
-const FONTS: [string, string][] = [
-  ["'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif", 'Segoe UI (varsayılan)'],
-  ["'Bahnschrift', 'Segoe UI', sans-serif", 'Bahnschrift'],
-  ["'Trebuchet MS', 'Segoe UI', sans-serif", 'Trebuchet'],
-  ["Georgia, 'Times New Roman', serif", 'Georgia (serif)'],
-  ["Consolas, 'Cascadia Mono', monospace", 'Consolas (mono)'],
-]
-
-const COLOR_FIELDS: [keyof ThemeVars, string, string, boolean][] = [
-  ['surface', 'Dock zemini', 'Simgelerin arkasındaki cam ya da düz renk', true],
-  ['surfaceBorder', 'Dock kenarlığı', 'İnce çerçeve', true],
-  ['accent', 'Vurgu rengi', 'Düğmeler, seçili öğeler, ayar penceresi', false],
-  ['indicator', 'Çalışan uygulama işareti', 'Simgenin altındaki nokta', false],
-  ['tooltipBg', 'Etiket ve menü zemini', 'Sağ tık menüsü, simge etiketi, klasör penceresi', true],
-  ['tooltipText', 'Etiket ve menü yazısı', '', false],
-  ['panelBg', 'Ayar penceresi zemini', '', false],
-  ['panelText', 'Ayar penceresi yazısı', '', false],
-  ['panelMuted', 'Soluk yazı', 'Açıklamalar ve ikincil metin', false],
-]
-
-function ThemeBuilder({ packs, onMade }: { tab?: string; packs: PackInfo[]; onMade: (id: string) => void }) {
-  const themes = packs.filter((p) => p.type === 'theme')
-  const [base, setBase] = useState('glass-dark')
-  const [vars, setVars] = useState<ThemeVars | null>(null)
-  const [shadowKind, setShadowKind] = useState('strong')
-  const [name, setName] = useState('')
-  const [author, setAuthor] = useState('')
-  const [withDesk, setWithDesk] = useState(true)
-  const [withWallpaper, setWithWallpaper] = useState(true)
-  const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
-  useEffect(() => {
-    invoke('themes:get', base).then((t) => t && setVars(t.vars))
-  }, [base])
-  if (!vars) return null
-  const put = (partial: Partial<ThemeVars>) => setVars((cur) => (cur ? { ...cur, ...partial } : cur))
-  const setShadow = (kind: string, accent = vars.accent) => {
-    setShadowKind(kind)
-    put({ shadow: shadowCss(kind, accent) })
-  }
-  const create = async () => {
-    const r = await invoke('themes:create', name, author, vars, withDesk, withWallpaper)
-    setMessage({ text: r.ok ? `"${r.message}" oluşturuldu ve kullanılıyor. Dışa aktarmak için Temalar sekmesindeki listeyi kullan.` : r.message, error: !r.ok })
-    if (r.ok && r.pack) onMade(r.pack.id)
-  }
-  const css = {
-    '--surface': vars.surface, '--surface-border': vars.surfaceBorder, '--surface-blur': `${vars.surfaceBlur}px`, '--radius': `${vars.radius}px`, '--shadow': vars.shadow,
-    '--indicator': vars.indicator, '--tooltip-bg': vars.tooltipBg, '--tooltip-text': vars.tooltipText, '--accent': vars.accent,
-    '--panel-bg': vars.panelBg, '--panel-text': vars.panelText, '--panel-muted': vars.panelMuted, '--font': vars.fontFamily,
-  } as React.CSSProperties
-  return (
-    <Card title="Tema oluştur" hint="Bir temayı başlangıç al, renkleri ve camı değiştir; solda canlı görürsün. Bitince adını yazıp oluştur: tema listene eklenir, oradan .flypack olarak dışa aktarabilirsin.">
-      <Row label="Başlangıç teması"><Select<string> value={base} onChange={setBase} options={themes.map((t): [string, string] => [t.id, t.name])} /></Row>
-      <div className="st-tb">
-        <div className="st-tb__preview" style={css}>
-          <div className="st-tb__wall">
-            <div className="st-tb__dock">
-              {['#ff7a59', '#4da3ff', '#8be28b', '#f5c542'].map((c, i) => <i key={c} style={{ background: `linear-gradient(145deg, ${c}, color-mix(in srgb, ${c} 55%, #000))` }}>{i === 1 && <b />}</i>)}
-            </div>
-            <div className="st-tb__tip">Etiket</div>
-          </div>
-          <div className="st-tb__panel">
-            <strong>Ayar penceresi</strong>
-            <span>Soluk açıklama yazısı</span>
-            <em>Düğme</em>
-          </div>
-          <div className="st-tb__menu"><span>Aç</span><span className="on">Seçili</span><span>Ayarlar</span></div>
-        </div>
-        <div className="st-tb__fields">
-          {COLOR_FIELDS.map(([key, label, hint, alpha]) => {
-            const c = readColor(String(vars[key]))
-            return (
-              <Row key={key} label={label} hint={hint || undefined}>
-                <div className="st-color">
-                  <input type="color" value={c.hex} onChange={(e) => { put({ [key]: writeColor(e.target.value, c.alpha) }); if (key === 'accent' && shadowKind === 'glow') setShadow('glow', e.target.value) }} />
-                  {alpha && <input className="st-tb__alpha" type="range" min={0} max={100} value={Math.round(c.alpha * 100)} title="Saydamlık" onChange={(e) => put({ [key]: writeColor(c.hex, Number(e.target.value) / 100) })} />}
-                </div>
-              </Row>
-            )
-          })}
-          <Row label="Cam bulanıklığı" hint="0 = düz renk"><Slider value={vars.surfaceBlur} min={0} max={60} unit=" px" onChange={(surfaceBlur) => put({ surfaceBlur })} /></Row>
-          <Row label="Köşe yuvarlaklığı"><Slider value={vars.radius} min={0} max={40} unit=" px" onChange={(radius) => put({ radius })} /></Row>
-          <Row label="Gölge"><Segmented<string> value={shadowKind} onChange={(k) => setShadow(k)} options={SHADOWS} /></Row>
-          <Row label="Yazı tipi"><Select<string> value={vars.fontFamily} onChange={(fontFamily) => put({ fontFamily })} options={FONTS.some(([v]) => v === vars.fontFamily) ? FONTS : [[vars.fontFamily, 'Özel'], ...FONTS]} /></Row>
-        </div>
-      </div>
-      <Row label="Şu anki rafı da ekle" hint="Rafın stili, derinliği, köşeleri ve özel dokusu temayla birlikte kaydedilir; tema seçilince raf da değişir"><Switch label="Rafı da ekle" value={withDesk} onChange={setWithDesk} /></Row>
-      <Row label="Duvar kâğıdını da ekle" hint="Seçili canlı arka plan, resim ya da video (8 MB a kadar) temayla birlikte kaydedilir"><Switch label="Duvar kâğıdını da ekle" value={withWallpaper} onChange={setWithWallpaper} /></Row>
-      <Row label="Tema adı"><input className="st-input" type="text" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Benim temam" /></Row>
-      <Row label="Yapımcı" hint="İstersen boş bırak"><input className="st-input" type="text" value={author} maxLength={60} onChange={(e) => setAuthor(e.target.value)} /></Row>
-      <div className="st-row-inline"><button className="st-btn st-btn--accent" disabled={!name.trim()} onClick={create}><Icon name="download" size={15} />Temayı oluştur ve kullan</button></div>
-      {message && <Message text={message.text} error={message.error} />}
-    </Card>
-  )
-}
-
-function ThemeTab({ s, set, kind }: { s: DockSettings; set: Update; kind: 'theme' | 'icons' }) {
-  const [packs, setPacks] = useRemote('packs:list', [], 'themes:changed')
-  const refresh = () => invoke('packs:list').then(setPacks)
-  const [swatches, setSwatches] = useState<Record<string, ThemeDef['vars']>>({})
-  useEffect(() => {
-    ;(packs ?? []).filter((p) => p.type === 'theme').forEach((p) => invoke('themes:get', p.id).then((t) => t && setSwatches((cur) => ({ ...cur, [p.id]: t.vars }))))
-  }, [packs])
-  const vars = swatches[s.theme]
-  return kind === 'theme' ? (
-    <Pages id="themes">
-      <Card title="Temalar" hint="Renkler, cam, yazı tipi ve istersen dock rafı. Tema dosyaları .flypack olarak içe ve dışa aktarılır; 'raflı' temalar rafıyla birlikte gelir.">
-        <Row label="Tema seçince rafını da uygula" hint="Kapalıyken yalnızca renkler değişir, rafın olduğu gibi kalır"><Switch label="Temanın rafını uygula" value={s.themeDesk} onChange={(themeDesk) => set({ themeDesk })} /></Row>
-        <PackCards packs={packs ?? []} activeId={s.theme} onUse={(theme) => set({ theme })} type="theme" onChanged={refresh} />
-        {vars && <div className="st-swatches">{[vars.surface, vars.accent, vars.indicator, vars.panelBg].map((c, i) => <i key={i} style={{ background: c }} />)}</div>}
-      </Card>
-      <ThemeBuilder tab="Tema oluştur" packs={packs ?? []} onMade={(theme) => { refresh(); set({ theme }) }} />
-    </Pages>
-  ) : (
-    <Pages id="icons">
-      <Card title="Simge paketleri" hint="Programlar için toplu simge değişimi">
-        <PackCards packs={packs ?? []} activeId={s.iconPack} onUse={(iconPack) => set({ iconPack })} type="icons" onChanged={refresh} />
-      </Card>
-      <PackBuilder tab="Paket oluştur" onMade={(iconPack) => { refresh(); set({ iconPack }) }} />
-    </Pages>
-  )
-}
-
-// ---- Wallpaper ----
-
-const WALLPAPER_MODES: [WallpaperMode, string, string][] = [
-  ['off', 'Kapalı', 'Windows’un kendi duvar kâğıdı kalır'],
-  ['theme', 'Temadan gelsin', 'Seçili temanın arka planı; tema değişince arka plan da değişir'],
-  ['single', 'Ben seçeyim', 'Canlı arka plan, resim ya da video'],
-  ['folder', 'Klasörden slayt', 'Klasördeki resim ve videolar belli aralıkla değişir'],
-]
-const FITS: [WallpaperFit, string][] = [['fill', 'Doldur'], ['fit', 'Sığdır'], ['stretch', 'Uzat'], ['center', 'Ortala'], ['tile', 'Döşe']]
-const INTERVALS: [number, string][] = [[1, '1 dakika'], [5, '5 dakika'], [10, '10 dakika'], [15, '15 dakika'], [30, '30 dakika'], [60, '1 saat'], [180, '3 saat'], [1440, 'Günde bir']]
-const LIVE_SWATCH: Record<string, string> = {
-  aurora: 'linear-gradient(135deg, #0b3a66, #1fb0ff 45%, #4a2aa0)',
-  flow: 'linear-gradient(135deg, #2a1c70, #7a30c8 55%, #b02a7c)',
-  stars: 'radial-gradient(circle at 30% 40%, #fff 0 1px, transparent 2px), radial-gradient(circle at 70% 25%, #fff 0 1px, transparent 2px), linear-gradient(180deg, #05060f, #151a3a)',
-  waves: 'linear-gradient(180deg, #7d6bd8 0 45%, #20367e 45% 70%, #3a28c0 70%)',
-  bubbles: 'radial-gradient(circle at 30% 35%, rgba(140,170,240,.7) 0 14%, transparent 15%), radial-gradient(circle at 68% 60%, rgba(150,160,240,.6) 0 18%, transparent 19%), linear-gradient(135deg, #15204a, #2f1c6a)',
-}
-
-function WallpaperTab({ s, set }: { s: DockSettings; set: Update }) {
-  const [info] = useRemote('wallpaper:info', [], 'wallpaper:changed', (p) => p)
-  const [theme] = useRemote('themes:get', [s.theme])
-  const fileName = (p: string) => p.split(/[\\/]/).filter(Boolean).pop() ?? p
-  const pickFile = async () => {
-    const file = await invoke('wallpaper:pick-file')
-    if (file) set({ wallpaperMode: 'single', wallpaperSingle: file })
-  }
-  const pickFolder = async () => {
-    const folder = await invoke('wallpaper:pick-folder')
-    if (folder) set({ wallpaperMode: 'folder', wallpaperFolder: folder })
-  }
-  return (
-    <Pages id="wallpaper">
-      <Card title="Duvar kâğıdı" hint="Duvar kâğıdı masaüstü simgelerinin arkasında, Windows’a hiçbir şey yazmadan gösterilir. Uygulamayı kapatınca kendi duvar kâğıdın geri gelir.">
-        <Choice<WallpaperMode> value={s.wallpaperMode} onChange={(wallpaperMode) => set({ wallpaperMode })} options={WALLPAPER_MODES} />
-        {s.wallpaperMode === 'theme' && (
-          <p className="st-prose">
-            {theme?.wallpaper?.live
-              ? `"${theme.name}" teması canlı arka plan getiriyor: ${LIVE_WALLPAPERS.find(([id]) => id === theme.wallpaper?.live)?.[1] ?? ''}.`
-              : theme ? `"${theme.name}" teması bir arka plan getirmiyor ya da resim/video olarak getiriyor; yoksa masaüstün olduğu gibi kalır.` : ''}
-          </p>
-        )}
-        {info?.message && <Message text={info.message} error />}
-      </Card>
-      {s.wallpaperMode === 'single' && (
-        <Card tab="Seçim" title="Canlı arka plan ya da dosya" hint="Hazır canlı sahnelerden birini seç ya da kendi resmini ya da videonu (mp4, webm) ver.">
-          <div className="st-cards">
-            {LIVE_WALLPAPERS.map(([id, name, hint]) => (
-              <button key={id} className="st-pack st-live" aria-pressed={s.wallpaperSingle === `live:${id}`} data-active={s.wallpaperSingle === `live:${id}`} onClick={() => set({ wallpaperSingle: `live:${id}` })}>
-                <span className="st-live__swatch" style={{ background: LIVE_SWATCH[id] }} />
-                <b>{name}</b>
-                <small>{hint}</small>
-              </button>
-            ))}
-          </div>
-          <div className="st-row-inline">
-            <button className="st-btn st-btn--accent" onClick={pickFile}><Icon name="image" size={15} />Resim ya da video seç…</button>
-            {s.wallpaperSingle && !s.wallpaperSingle.startsWith('live:') && <span className="st-muted" title={s.wallpaperSingle}>{fileName(s.wallpaperSingle)}</span>}
-          </div>
-        </Card>
-      )}
-      {s.wallpaperMode === 'folder' && (
-        <Card tab="Klasör" title="Klasörden slayt" hint="Klasördeki (ve bir alt klasördeki) resim ve videolar belli aralıkla birbirine karışarak değişir.">
-          <div className="st-row-inline">
-            <button className="st-btn st-btn--accent" onClick={pickFolder}><Icon name="folder" size={15} />{s.wallpaperFolder ? 'Başka klasör seç…' : 'Klasör seç…'}</button>
-            {s.wallpaperFolder && <span className="st-muted" title={s.wallpaperFolder}>{fileName(s.wallpaperFolder)}{info ? ` · ${info.folderCount} dosya` : ''}</span>}
-          </div>
-          <Row label="Değişme aralığı"><Select<number> value={s.wallpaperMinutes} onChange={(wallpaperMinutes) => set({ wallpaperMinutes })} options={INTERVALS} /></Row>
-          <Row label="Karışık sırayla" hint="Kapalıyken dosya adı sırasıyla"><Switch label="Karışık sırayla" value={s.wallpaperShuffle} onChange={(wallpaperShuffle) => set({ wallpaperShuffle })} /></Row>
-          <Row label="Şimdi değiştir"><button className="st-btn" onClick={() => invoke('wallpaper:next')} disabled={!s.wallpaperFolder}><Icon name="arrowRight" size={15} />Sonrakine geç</button></Row>
-        </Card>
-      )}
-      <Card tab="Davranış" title="Yerleşim ve tasarruf">
-        <Row label="Resim yerleşimi"><Select<WallpaperFit> value={s.wallpaperFit} onChange={(wallpaperFit) => set({ wallpaperFit })} options={FITS} /></Row>
-        <Row label="Tam ekran uygulamada dur" hint="Oyun ya da video tam ekranken arka plan çalışmaz, işlemciyi yormaz"><Switch label="Tam ekranda dur" value={s.wallpaperPauseFullscreen} onChange={(wallpaperPauseFullscreen) => set({ wallpaperPauseFullscreen })} /></Row>
-        <Row label="Pilde dur" hint="Dizüstü pille çalışırken hareketli arka plan durur"><Switch label="Pilde dur" value={s.wallpaperPauseBattery} onChange={(wallpaperPauseBattery) => set({ wallpaperPauseBattery })} /></Row>
-        {info && <p className="st-prose">{info.paused ? 'Şu an duraklatılmış.' : info.source ? 'Çalışıyor.' : 'Arka plan yok.'}</p>}
-      </Card>
-    </Pages>
-  )
-}
-
-// ---- Sounds ----
-
-const SOUND_GROUPS: [SoundGroup, string, string][] = [
-  ['hover', 'Üzerine gelince', 'Fare bir simgenin üstünden geçerken küçük bir tık'],
-  ['click', 'Tıklama', 'Simgeye tıklayınca'],
-  ['launch', 'Uygulama açılışı', 'Kapalı bir program başlatılınca'],
-  ['dock', 'Dock', 'Simge bırakma, silme ve otomatik gizlenen dockun gelip gitmesi'],
-  ['windows', 'Dock pencereleri', 'Klasör, grup ve çark penceresinin cin efektiyle açılıp kapanması'],
-  ['menus', 'Menüler', 'Sağ tık menüsünün açılması ve seçim'],
-  ['trash', 'Çöp kutusu', 'Dosya atma ve çöp kutusunu boşaltma'],
-  ['dialogs', 'Onay pencereleri', 'Soru, onay, vazgeçme ve uyarı sesleri'],
-  ['ui', 'Ayarlar ve bildirimler', 'Bu penceredeki anahtarlar ve bildirim sesi'],
-]
-
-const SOUND_TESTS: [SoundEvent, string][] = [
-  ['hover', 'Üzerine gelme'], ['click', 'Tıklama'], ['launch', 'Açılış'], ['drop', 'Bırakma'], ['remove', 'Silme (puf)'], ['dockShow', 'Dock gelir'], ['dockHide', 'Dock gider'],
-  ['windowOpen', 'Pencere açılır (cin)'], ['windowClose', 'Pencere kapanır (cin)'], ['menuOpen', 'Menü açılır'], ['menuPick', 'Menü seçimi'],
-  ['trashDrop', 'Çöpe atma'], ['trashEmpty', 'Çöp boşaltma'], ['confirmOpen', 'Soru'], ['accept', 'Onay'], ['cancel', 'Vazgeç'], ['warn', 'Uyarı'], ['error', 'Hata'], ['toggle', 'Anahtar'], ['notify', 'Bildirim'],
-]
-
-function SoundTab({ s, set }: { s: DockSettings; set: Update }) {
-  useEffect(() => initSound(), [])
-  const toggleGroup = (g: SoundGroup, on: boolean) => set({ soundGroups: on ? [...s.soundGroups, g] : s.soundGroups.filter((x) => x !== g) })
-  return (
-    <Pages id="sound">
-      <Card title="Genel" hint="Sesler uygulamanın kendi içinde üretilir; ses dosyası gerekmez. Windows'un genel sesine ve ses karıştırıcısına bağlıdır.">
-        <Row label="Sesleri aç"><Switch label="Sesleri aç" value={s.soundEnabled} onChange={(soundEnabled) => set({ soundEnabled })} /></Row>
-        <Row label="Ses düzeyi"><Slider value={s.soundVolume} min={0} max={100} unit="%" onChange={(soundVolume) => set({ soundVolume })} /></Row>
-        <Row label="Ses stili" hint="Aynı olaylar, farklı bir karakterle çalar">
-          <Select<SoundTheme> value={s.soundTheme} onChange={(soundTheme) => { set({ soundTheme }); previewSound('click', soundTheme, s.soundVolume) }} options={(Object.keys(SOUND_THEMES) as SoundTheme[]).map((k): [SoundTheme, string] => [k, SOUND_THEMES[k].label])} />
-        </Row>
-      </Card>
-      <Card tab="Olaylar" title="Hangi olaylarda ses çalsın">
-        {SOUND_GROUPS.map(([group, label, hint]) => (
-          <Row key={group} label={label} hint={hint}><Switch label={label} value={s.soundGroups.includes(group)} onChange={(on) => toggleGroup(group, on)} /></Row>
-        ))}
-      </Card>
-      <Card tab="Dene" title="Sesleri dene" hint="Her ses seçili stille ve düzeyle çalar; olay kapalı olsa bile buradan dinleyebilirsin.">
-        <div className="st-row-inline" style={{ flexWrap: 'wrap' }}>
-          {SOUND_TESTS.map(([event, label]) => (
-            <button key={event} className="st-btn" title={SOUND_GROUPS.find(([g]) => g === SOUND_GROUP_OF[event])?.[1]} onClick={() => previewSound(event, s.soundTheme, s.soundVolume)}><Icon name="play" size={13} />{label}</button>
-          ))}
-        </div>
-      </Card>
-    </Pages>
-  )
-}
-
-// ---- Items and widgets ----
-
-function ItemsTab() {
-  const [items, setItems] = useRemote('items:get', [], 'items:changed', (p) => p)
-  const [icons, setIcons] = useState<Record<string, string>>({})
-  const pinned = (items ?? []).filter((i) => i.type !== 'separator' && i.type !== 'trash' && !i.id.startsWith('run:'))
-  useEffect(() => {
-    pinned.forEach((i) => invoke('items:icon', i.id).then((src) => src && setIcons((cur) => ({ ...cur, [i.id]: src }))))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items])
-  const update = (id: string, patch: Partial<DockItem>) => invoke('items:update', id, patch).then(setItems)
-  return (
-    <Card title="Sabit öğeler" hint="Dock'a dosya, program ya da klasör sürükleyip bırakarak ekleyebilirsin. Buradan ad ve kısayol düzenlenir.">
-      <div className="st-list">
-        {pinned.map((item) => (
-          <div className="st-list__row" key={item.id}>
-            {icons[item.id] ? <img src={icons[item.id]} alt="" /> : <span />}
-            <input className="st-input" type="text" defaultValue={item.label ?? ''} onBlur={(e) => e.target.value !== (item.label ?? '') && update(item.id, { label: e.target.value })} />
-            <input className="st-input" type="text" placeholder="Kısayol (ör. Ctrl+Alt+1)" defaultValue={item.hotkey ?? ''} onBlur={(e) => e.target.value !== (item.hotkey ?? '') && update(item.id, { hotkey: e.target.value.trim() || undefined })} />
-            <button className="st-btn st-btn--danger" onClick={() => invoke('items:remove', item.id).then(setItems)}><Icon name="trash" size={15} /></button>
-          </div>
-        ))}
-        {pinned.length === 0 && <p className="st-prose">Dock'ta henüz sabit öğe yok. Bir programı dock'a sürükleyip bırak.</p>}
-      </div>
-    </Card>
-  )
-}
-
-function WheelTab() {
-  const [data, setData] = useRemote('wheel:list', [])
-  useEvent('icons:changed', () => void invoke('wheel:list').then(setData))
-  const save = (hidden: string[], order: string[]) => invoke('wheel:set', { hidden, order }).then(setData)
-  if (!data) return null
-  const order = data.entries.map((e) => e.id)
-  const move = (i: number, by: number) => {
-    const next = [...order]
-    const j = i + by
-    if (j < 0 || j >= next.length) return
-    ;[next[i], next[j]] = [next[j], next[i]]
-    save(data.hidden, next)
-  }
-  const add = (kind: 'file' | 'folder') => invoke('wheel:add', kind).then((d) => d && setData(d))
-  return (
-    <Card title="Çark menüsü" hint="Dock'a sağ tıklayıp 'Çark menüsü ekle' dersen bu liste açılır. Windows'un kendi araçlarını açıp kapatabilir, kendi program, dosya ve klasörlerini ekleyebilir, her birine istediğin simgeyi verebilirsin.">
-      <div className="st-row-inline">
-        <button className="st-btn st-btn--accent" onClick={() => add('file')}><Icon name="plus" size={15} />Program ya da dosya ekle…</button>
-        <button className="st-btn" onClick={() => add('folder')}><Icon name="folder" size={15} />Klasör ekle…</button>
-      </div>
-      <div className="st-list">
-        {data.entries.map((e, i) => (
-          <div className="st-list__row st-list__row--wheel" key={e.id}>
-            <span className="st-wheel-icon"><WheelGlyph entry={e} size={e.iconFile || e.path || e.packIcon ? 28 : 18} /></span>
-            <span>{e.name}<small className="st-muted"> · {e.category}</small></span>
-            <div className="st-row-inline" style={{ margin: 0 }}>
-              <button className="st-btn" aria-label="Simge seç" title="Simge seç" onClick={() => invoke('iconpick:show', `wheel:${e.id}`)}><Icon name="image" size={14} /></button>
-              {e.iconFile && <button className="st-btn" aria-label="Simgeyi sıfırla" title="Varsayılan simge" onClick={() => invoke('iconpick:apply', `wheel:${e.id}`, null).then(() => invoke('wheel:list').then(setData))}><Icon name="refresh" size={14} /></button>}
-              <button className="st-btn" aria-label="Yukarı" disabled={i === 0} onClick={() => move(i, -1)}><Icon name="arrowUp" size={14} /></button>
-              <button className="st-btn" aria-label="Aşağı" disabled={i === order.length - 1} onClick={() => move(i, 1)}><Icon name="arrowDown" size={14} /></button>
-              {e.path && <button className="st-btn st-btn--danger" aria-label="Kaldır" title="Listeden kaldır" onClick={() => invoke('wheel:remove', e.id).then(setData)}><Icon name="trash" size={14} /></button>}
-            </div>
-            <Switch label={e.name} value={!data.hidden.includes(e.id)} onChange={(on) => save(on ? data.hidden.filter((h) => h !== e.id) : [...data.hidden, e.id], order)} />
-          </div>
-        ))}
-      </div>
-    </Card>
-  )
-}
-
-const EFFECT_NOTE: Record<TweakInfo['effect'], string> = { none: '', explorer: "Gezgin'i yeniden başlatınca görünür", signout: 'Oturumu kapatıp açınca görünür' }
-
-function TweaksTab() {
-  const [tweaks, setTweaks] = useRemote('tweaks:list', [])
-  const [log] = useRemote('tweaks:log', [])
-  const [notice, setNotice] = useState<string | null>(null)
-  const refresh = () => invoke('tweaks:list').then(setTweaks)
-  const toggle = async (t: TweakInfo, enabled: boolean) => {
-    const r = await invoke('tweaks:set', t.id, enabled)
-    setNotice(r.ok ? (t.effect === 'none' ? null : EFFECT_NOTE[t.effect]) : `Uygulanamadı: ${r.message}`)
-    refresh()
-  }
-  const categories = [...new Set((tweaks ?? []).map((t) => t.category))]
-  const nameOf = (id: string) => tweaks?.find((t) => t.id === id)?.name ?? id
-  return (
-    <Pages id="tweaks">
-      <Card title="Güvenli ayarlar" hint="Çoğu ayar yalnızca kullanıcı kaydında (HKCU) değişir. Değiştirmeden önce eski değer saklanır; kapatınca tam o değer geri gelir.">
-        <Message text="Yönetici yazan ayarlar yönetici onayı ister (Windows'un kendi onay penceresi açılır); uygulama kendisi hiçbir zaman yönetici çalışmaz. Hizmetleri (SysMain, telemetri, Windows Search) kapatan ayarlar henüz yok. Defender, Windows Update, güvenlik duvarı ve kullanıcı hesaplarına hiç dokunulmaz." />
-        {categories.map((category) => (
-          <div key={category}>
-            <h4 className="st-subtitle">{category}</h4>
-            {(tweaks ?? []).filter((t) => t.category === category).map((t) => (
-              <Row key={t.id} label={t.admin ? `${t.name} · yönetici` : t.name} hint={`${t.description}${t.effect !== 'none' ? ' · ' + EFFECT_NOTE[t.effect] : ''}`}>
-                <Switch label={t.name} value={t.enabled} onChange={(on) => toggle(t, on)} />
-              </Row>
-            ))}
-          </div>
-        ))}
-        {notice && <Message text={notice} />}
-        <div className="st-row-inline">
-          <button className="st-btn" onClick={() => invoke('tweaks:restore-point').then((r) => setNotice(r.ok ? 'Geri yükleme noktası oluşturuldu.' : r.message === 'cancelled' ? 'Onay verilmedi, nokta oluşturulmadı.' : `Oluşturulamadı: ${r.message} (Sistem Geri Yükleme kapalı olabilir, Windows günde bir noktaya izin verir)`))}><Icon name="lock" size={15} />Geri yükleme noktası oluştur</button>
-          <button className="st-btn" onClick={() => invoke('tweaks:restart-explorer')}><Icon name="refresh" size={15} />Gezgin'i yeniden başlat</button>
-          <button className="st-btn st-btn--danger" onClick={() => invoke('tweaks:revert-all').then(refresh)}><Icon name="refresh" size={15} />Hepsini eski haline döndür</button>
-        </div>
-      </Card>
-      {(log ?? []).length > 0 && (
-        <Card title="Değişiklik kaydı">
-          <div className="st-log">
-            {[...(log ?? [])].reverse().slice(0, 12).map((l, i) => (
-              <div key={i}>{new Date(l.at).toLocaleString('tr-TR')} — {nameOf(l.id)}: {l.action === 'apply' ? 'açıldı' : 'geri alındı'}</div>
-            ))}
-          </div>
-        </Card>
-      )}
-    </Pages>
-  )
-}
-
-const WIDGET_NAMES: Record<WidgetType, string> = { clock: 'Saat', weather: 'Hava durumu', system: 'CPU / RAM / Disk', media: 'Medya', calendar: 'Takvim' }
-
-function WidgetsTab() {
-  const [widgets, setWidgets] = useRemote('widgets:list', [], 'widgets:changed', (p) => p)
-  return (
-    <Card title="Widget'lar" hint="Masaüstünde serbest pencereler olarak durur; sürükleyerek yerini değiştirebilirsin.">
-      <div className="st-row-inline">
-        {(Object.keys(WIDGET_NAMES) as WidgetType[]).map((type) => (
-          <button key={type} className="st-btn" onClick={() => invoke('widgets:add', type).then(setWidgets)}><Icon name="plus" size={14} />{WIDGET_NAMES[type]}</button>
-        ))}
-      </div>
-      <div className="st-list">
-        {(widgets ?? []).map((w) => (
-          <div className="st-list__row st-list__row--widget" key={w.id}>
-            <b>{WIDGET_NAMES[w.type]}</b>
-            {w.type === 'weather' ? (
-              <input className="st-input" type="text" placeholder="Şehir" defaultValue={String(w.options.city ?? '')} onBlur={(e) => invoke('widgets:update', w.id, { city: e.target.value.trim() || 'Istanbul' }).then(setWidgets)} />
-            ) : w.type === 'clock' ? (
-              <label className="st-check"><input type="checkbox" checked={!!w.options.seconds} onChange={(e) => invoke('widgets:update', w.id, { seconds: e.target.checked }).then(setWidgets)} /> Saniye göster</label>
-            ) : <span />}
-            <button className="st-btn st-btn--danger" onClick={() => invoke('widgets:remove', w.id).then(setWidgets)}><Icon name="trash" size={15} /></button>
-          </div>
-        ))}
-      </div>
-    </Card>
-  )
-}
-
-// ---- General ----
-
-function GeneralTab({ s, set }: { s: DockSettings; set: Update }) {
-  const [info] = useRemote('app:info', [])
-  const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
-  const backup = async (fn: () => Promise<{ ok: boolean; message: string }>) => {
-    const r = await fn()
-    if (r.message !== 'cancelled') setMessage({ text: r.ok ? r.message : r.message, error: !r.ok })
-  }
-  return (
-    <Pages id="general">
-      <Card title="Başlangıç">
-        <Row label="Windows ile başlat" hint={info && !info.loginSupported ? 'Yalnızca kurulu sürümde çalışır (geliştirme çalıştırmasında kapalı)' : 'Bilgisayar açılınca dock kendiliğinden başlar'}>
-          <Switch label="Windows ile başlat" value={s.launchAtLogin} disabled={info ? !info.loginSupported : true} onChange={(launchAtLogin) => set({ launchAtLogin })} />
-        </Row>
-        <Row label="Dock'u göster / gizle kısayolu" hint="Electron biçimi: Control+Alt+D">
-          <input className="st-input" type="text" defaultValue={s.toggleHotkey} onBlur={(e) => e.target.value !== s.toggleHotkey && set({ toggleHotkey: e.target.value.trim() })} />
-        </Row>
-      </Card>
-      <Card title="Yedekle ve geri yükle" hint="Ayarlar, öğeler ve widget'lar tek bir JSON dosyasında. Geri yükleyince uygulama yeniden başlar.">
-        <div className="st-row-inline">
-          <button className="st-btn" onClick={() => backup(() => invoke('backup:export'))}><Icon name="upload" size={15} />Yedekle</button>
-          <button className="st-btn" onClick={() => backup(() => invoke('backup:import'))}><Icon name="download" size={15} />Geri yükle</button>
-        </div>
-        {message && <Message text={message.text} error={message.error} />}
-      </Card>
-      <Card title="Hakkında">
-        <p className="st-prose"><b>{info?.name}</b> {info?.version && `v${info.version}`}<br />{info?.tagline}<br />Ücretsiz ve açık kaynak (GPLv3). Beğendiysen geliştirmeyi destekleyebilirsin.</p>
-        <div className="st-row-inline">
-          <button className="st-btn st-btn--accent" onClick={() => invoke('app:open-external', 'support')}><Icon name="heart" size={15} />Ko-fi'de destek ol</button>
-          <button className="st-btn" onClick={() => invoke('app:open-external', 'repo')}><Icon name="code" size={15} />Kaynak kodu</button>
-          <button className="st-btn" onClick={() => invoke('app:open-external', 'issues')}><Icon name="bug" size={15} />Sorun bildir</button>
-          <button className="st-btn st-btn--danger" onClick={() => invoke('app:quit')}><Icon name="power" size={15} />Çık</button>
-        </div>
-      </Card>
-    </Pages>
-  )
-}
-
-// ---- shell ----
-
-const PREVIEW_TABS: Tab[] = ['dock', 'desk', 'motion']
-
+/** The settings window: our own title bar, a grouped navigation that shrinks to icons, and one page at a time. */
 export default function SettingsView() {
-  const [tab, setTab] = useState<Tab>('dock')
+  const [tab, setTab] = useState<Tab>(() => {
+    const saved = remembered('settings.tab') as Tab | null
+    return saved && saved in TAB_INFO ? saved : 'dock'
+  })
+  const [nonce, setNonce] = useState(0)
   const [settings, setSettings] = useState<DockSettings | null>(null)
   const [info] = useRemote('app:info', [])
   const [launchTick, setLaunchTick] = useState(0)
-  const [showPreview, setShowPreview] = useState(() => {
-    try {
-      return localStorage.getItem('settings.preview') !== 'off'
-    } catch {
-      return true
-    }
-  })
-  const togglePreview = () => {
-    setShowPreview((on) => {
-      try {
-        localStorage.setItem('settings.preview', on ? 'off' : 'on')
-      } catch {
-        /* private window: the choice just is not remembered */
-      }
-      return !on
-    })
-  }
+  const [maximized, setMaximized] = useState(false)
+  const [showPreview, setShowPreview] = useState(() => remembered('settings.preview') !== 'off')
+
   useEffect(() => {
     initSound()
     invoke('settings:get').then(setSettings)
+    invoke('window:is-maximized').then(setMaximized)
   }, [])
   useEvent('settings:changed', setSettings)
+  useEvent('window:maximized', setMaximized)
   useActiveTheme(settings?.theme)
 
   const set: Update = (partial) => {
@@ -1094,48 +67,81 @@ export default function SettingsView() {
     if ('launchAnimation' in partial) setLaunchTick((t) => t + 1)
     invoke('settings:update', partial)
   }
+  const go = (next: Tab) => {
+    setTab(next)
+    remember('settings.tab', next)
+  }
+  const jump = (entry: SearchEntry) => {
+    if (entry.sub) remember(`settings.sub.${subKey(entry.tab)}`, entry.sub)
+    go(entry.tab)
+    setNonce((n) => n + 1)
+  }
+  const togglePreview = () => {
+    setShowPreview((on) => {
+      remember('settings.preview', on ? 'off' : 'on')
+      return !on
+    })
+  }
 
   if (!settings) return null
+  const page = TAB_INFO[tab]
   return (
-    <div className="st">
-      <nav className="st-nav" role="tablist">
-        <div className="st-brand">
-          <span className="st-brand__mark"><Icon name="dock" size={22} /></span>
-          <div><b>{info?.name}</b><small>{info?.tagline}</small></div>
-        </div>
-        {TABS.map(([id, label, icon]) => (
-          <button key={id} role="tab" aria-selected={tab === id} className="st-tab" onClick={() => setTab(id)}>
-            <Icon name={icon} size={18} />
-            <span>{label}</span>
-          </button>
-        ))}
-      </nav>
-      <main className="st-main">
-        {PREVIEW_TABS.includes(tab) && (
-          <div className={`st-preview${showPreview ? '' : ' st-preview--off'}`}>
-            {showPreview && <DockPreview settings={settings} launchTick={launchTick} />}
-            <button className="st-preview__tag" onClick={togglePreview} aria-pressed={showPreview}>
-              <Icon name={showPreview ? 'eyeOff' : 'play'} size={13} />{showPreview ? 'Önizlemeyi gizle' : 'Canlı önizlemeyi göster'}
-            </button>
+    <div className="st" data-tab={tab}>
+      <TitleBar
+        name={info?.name ?? 'Fly Dock'}
+        pageLabel={page.label}
+        pageIcon={page.icon}
+        maximized={maximized}
+        onControl={(action) => invoke('window:control', action)}
+        onJump={jump}
+      />
+      <div className="st-body">
+        <nav className="st-nav" role="tablist" aria-label="Ayar sayfaları">
+          {NAV_GROUPS.map((group) => (
+            <div className="st-nav__group" key={group.title}>
+              <small>{group.title}</small>
+              {group.tabs.map((id) => (
+                <button key={id} role="tab" aria-selected={tab === id} className="st-tab" title={TAB_INFO[id].label} onClick={() => go(id)}>
+                  <Icon name={TAB_INFO[id].icon} size={18} />
+                  <span>{TAB_INFO[id].label}</span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </nav>
+        <main className="st-main">
+          {PREVIEW_TABS.includes(tab) && (
+            <div className={`st-preview${showPreview ? '' : ' st-preview--off'}`}>
+              {showPreview && <DockPreview settings={settings} launchTick={launchTick} />}
+              <button className="st-preview__tag" onClick={togglePreview} aria-pressed={showPreview}>
+                <Icon name={showPreview ? 'eyeOff' : 'play'} size={13} />{showPreview ? 'Önizlemeyi gizle' : 'Canlı önizlemeyi göster'}
+              </button>
+            </div>
+          )}
+          <div className="st-page" key={`${tab}-${nonce}`}>
+            <div className="st-page__head">
+              <span className="st-page__icon"><Icon name={page.icon} size={22} /></span>
+              <div>
+                <h2>{page.label}</h2>
+                <p>{page.blurb}</p>
+              </div>
+            </div>
+            {tab === 'dock' && <DockTab s={settings} set={set} />}
+            {tab === 'desk' && <DeskTab s={settings} set={set} />}
+            {tab === 'motion' && <MotionTab s={settings} set={set} preview={() => setLaunchTick((t) => t + 1)} />}
+            {tab === 'windows' && <WindowsTab s={settings} set={set} />}
+            {tab === 'theme' && <ThemeTab s={settings} set={set} kind="theme" />}
+            {tab === 'icons' && <ThemeTab s={settings} set={set} kind="icons" />}
+            {tab === 'items' && <ItemsTab />}
+            {tab === 'wheel' && <WheelTab />}
+            {tab === 'tweaks' && <TweaksTab />}
+            {tab === 'wallpaper' && <WallpaperTab s={settings} set={set} />}
+            {tab === 'sound' && <SoundTab s={settings} set={set} />}
+            {tab === 'widgets' && <WidgetsTab />}
+            {tab === 'general' && <GeneralTab s={settings} set={set} />}
           </div>
-        )}
-        <div className="st-page" key={tab}>
-          <h2>{TABS.find(([id]) => id === tab)?.[1]}</h2>
-          {tab === 'dock' && <DockTab s={settings} set={set} />}
-          {tab === 'desk' && <DeskTab s={settings} set={set} />}
-          {tab === 'motion' && <MotionTab s={settings} set={set} preview={() => setLaunchTick((t) => t + 1)} />}
-          {tab === 'windows' && <WindowsTab s={settings} set={set} />}
-          {tab === 'theme' && <ThemeTab s={settings} set={set} kind="theme" />}
-          {tab === 'icons' && <ThemeTab s={settings} set={set} kind="icons" />}
-          {tab === 'items' && <ItemsTab />}
-          {tab === 'wheel' && <WheelTab />}
-          {tab === 'tweaks' && <TweaksTab />}
-          {tab === 'wallpaper' && <WallpaperTab s={settings} set={set} />}
-          {tab === 'sound' && <SoundTab s={settings} set={set} />}
-          {tab === 'widgets' && <WidgetsTab />}
-          {tab === 'general' && <GeneralTab s={settings} set={set} />}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }

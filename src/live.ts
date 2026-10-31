@@ -188,11 +188,11 @@ const SCALE: Record<string, number> = { aurora: 0.2, flow: 0.2, waves: 0.5, star
 const SCENES: Record<string, (canvas: HTMLCanvasElement, hue: number) => () => void> = { aurora, flow, stars, waves, bubbles }
 
 /** Starts a scene on the canvas and returns the function that stops it. */
-export function startLive(canvas: HTMLCanvasElement, id: string, hue: number): () => void {
+export function startLive(canvas: HTMLCanvasElement, id: string, hue: number, size?: { w: number; h: number }): () => void {
   const scene = SCENES[id] ?? SCENES.aurora
   const k = SCALE[id] ?? 0.5
-  canvas.width = Math.max(64, Math.round(window.innerWidth * k))
-  canvas.height = Math.max(64, Math.round(window.innerHeight * k))
+  canvas.width = size ? size.w : Math.max(64, Math.round(window.innerWidth * k))
+  canvas.height = size ? size.h : Math.max(64, Math.round(window.innerHeight * k))
   return scene(canvas, hue)
 }
 

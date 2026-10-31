@@ -128,3 +128,9 @@ Sınırlar: akrilik/Mica ayrı bir sistem penceresi olduğu için sabit durur (t
 - Canlı sahneler (dosyasız): aurora, akış, yıldızlı gece, dalgalar, baloncuklar; temanın vurgu rengine göre boyanır, 30 fps, tam ekran uygulama / pil / ekran kilidinde durur.
 - Temalar duvar kâğıdı taşıyabilir (`wallpaper` + `wallpaper.mp4/png/jpg/webp`); hazır temaların kendi canlı sahnesi var; tema oluşturucuda "Duvar kâğıdını da ekle".
 - Test: `FLY_DOCK_HELPER_DIR=<yeni derlenmiş helper klasörü> node scripts/check-wallpaper.mjs` (gerçek masaüstünde birkaç saniye; `WP_DESKTOP=1 WP_SHOT=x.png` ile masaüstünü gösterip resmini alır).
+
+## Ayarlar yeniden yazıldı (2026-10-31)
+- Kendi başlık çubuğu (çerçevesiz pencere): uygulama simgesi, sayfa yolu, ayar arama (Ctrl+F), küçült/büyüt/kapat simgeleri; boyutlandırılabilir, varsayılan 1100×760, en az 760×540, boyut ve konum hatırlanır (`scripts/check-settings-window.mjs`).
+- Duyarlı yerleşim: dar pencerede sol menü simgelere iner, kartlar tek sütuna düşer.
+- `src/settings/`: ortak parçalar (`ui.tsx`), önizlemeler (`previews.tsx`), arama dizini (`nav.ts`), her sayfa ayrı dosya (`pages/`).
+- Önizlemeli seçimler: animasyonlar, ayraç, etiket, dock katmanı, pencere boyutu ve konumu, raf stilleri, hız eğrileri, ses stilleri; tema kartları masaüstünün küçük hâli (arka plan + raf + etiket + ayar paneli); duvar kâğıdı kartları canlı küçük resimlerle.

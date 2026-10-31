@@ -52,6 +52,16 @@ const VAR_NAMES: Record<keyof ThemeDef['vars'], string> = {
   fontFamily: '--font',
 }
 
+/** The theme's variables as an inline style, to paint one preview with a theme without applying it. */
+export function themeStyle(vars: ThemeDef['vars']): React.CSSProperties {
+  const out: Record<string, string> = {}
+  for (const [key, cssName] of Object.entries(VAR_NAMES)) {
+    const value = vars[key as keyof ThemeDef['vars']]
+    out[cssName] = typeof value === 'number' ? `${value}px` : value
+  }
+  return out as React.CSSProperties
+}
+
 export function applyTheme(theme: ThemeDef | null) {
   if (!theme) return
   const root = document.documentElement.style
