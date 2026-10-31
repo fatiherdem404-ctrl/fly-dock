@@ -88,6 +88,25 @@ export interface DeskTexture {
   h: number
 }
 
+/** The separator look for the current desk when the setting is "auto": what reads best on that material. */
+export function separatorKind(s: Pick<DockSettings, 'separatorStyle' | 'deskStyle' | 'deskDepth'>): 'line' | 'groove' | 'dots' | 'glow' | 'none' {
+  if (s.separatorStyle !== 'auto') return s.separatorStyle
+  switch (s.deskStyle) {
+    case 'neon':
+    case 'azure':
+      return 'glow'
+    case 'wood':
+    case 'metal':
+    case 'marble':
+    case 'wall':
+    case 'custom':
+    case 'matte':
+      return 'groove'
+    default:
+      return 'line'
+  }
+}
+
 export function deskStyleVars(s: DockSettings, _thickness: number, _side: DockPosition, texture: DeskTexture | null = null): { rootVars: Record<string, string>; plate: CSSProperties } {
   return {
     rootVars: {

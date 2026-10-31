@@ -4,10 +4,10 @@ import Icon, { IconName } from '@/icons'
 import DockPreview from '@/components/DockPreview'
 import Shelf from '@/components/Shelf'
 import { useTexture, forgetTexture } from '@/useTexture'
-import { DESK_LABELS, DESK_PRESETS, DESK_RADII } from '@/desk'
+import { DESK_LABELS, DESK_PRESETS, DESK_RADII, separatorKind } from '@/desk'
 import {
   DESK_STYLES, DockItem, DockLayer, TweakInfo, DockSettings, PackInfo, ThemeDef, WidgetType,
-  AnimationCurve, DeskStyle, TextureMode, FalloffCurve, HoverAnimation, IndicatorStyle, LaunchAnimation, ShowAnimation, SpeedPreset, StackSize, WindowAnimation, LabelMode,
+  AnimationCurve, DeskStyle, TextureMode, SeparatorStyle, FalloffCurve, HoverAnimation, IndicatorStyle, LaunchAnimation, ShowAnimation, SpeedPreset, StackSize, WindowAnimation, LabelMode,
 } from '@/shared/types'
 
 type Tab = 'dock' | 'desk' | 'motion' | 'windows' | 'theme' | 'icons' | 'items' | 'wheel' | 'tweaks' | 'widgets' | 'general'
@@ -161,6 +161,16 @@ function DockTab({ s, set }: { s: DockSettings; set: Update }) {
             </Row>
           </>
         )}
+      </Card>
+
+      <Card title="Ayraç" hint="Dock'taki gruplar arasındaki çizgi. Otomatik seçeneği rafa ve temaya göre okunaklı olanı seçer: ahşap ve metalde oyuk, neonda ışıklı çubuk, camda net çizgi.">
+        <Choice<SeparatorStyle> value={s.separatorStyle} onChange={(separatorStyle) => set({ separatorStyle })} options={[['auto', 'Otomatik'], ['line', 'Çizgi'], ['groove', 'Oyuk'], ['dots', 'Noktalı'], ['glow', 'Işıklı'], ['none', 'Yok']]}>
+          {(id) => (
+            <div className={`st-sepcard dock dock--desk-${s.deskStyle}`}>
+              <i className="dock__separator" data-horizontal="true" data-kind={separatorKind({ ...s, separatorStyle: id })} />
+            </div>
+          )}
+        </Choice>
       </Card>
 
       <Card title="Etiketler">

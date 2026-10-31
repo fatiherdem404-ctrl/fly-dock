@@ -1,0 +1,35 @@
+/*
+ * The separator between groups of icons. "auto" picks the look that reads best on the chosen desk and theme:
+ * a lit/dark groove cut into wood and metal, a glowing bar on neon, a clear line on glass. Colours come from
+ * variables each desk style defines, so a light theme gets a dark line and a dark theme gets a light one.
+ */
+.dock { --sep-main: color-mix(in srgb, var(--tooltip-text) 58%, transparent); --sep-dark: rgba(0, 0, 0, 0.45); --sep-light: rgba(255, 255, 255, 0.5); --sep-glow: transparent; }
+.dock--desk-glass3d { --sep-main: rgba(40, 60, 100, 0.55); --sep-dark: rgba(40, 60, 100, 0.5); --sep-light: rgba(255, 255, 255, 0.9); }
+.dock--desk-wood { --sep-dark: rgba(40, 20, 6, 0.75); --sep-light: rgba(255, 224, 170, 0.5); --sep-main: rgba(40, 20, 6, 0.7); }
+.dock--desk-metal { --sep-dark: rgba(50, 56, 66, 0.7); --sep-light: rgba(255, 255, 255, 0.9); --sep-main: rgba(50, 56, 66, 0.65); }
+.dock--desk-marble { --sep-dark: rgba(70, 70, 85, 0.55); --sep-light: rgba(255, 255, 255, 0.95); --sep-main: rgba(70, 70, 85, 0.5); }
+.dock--desk-neon { --sep-main: var(--accent); --sep-glow: var(--accent); --sep-dark: var(--accent); --sep-light: #fff; }
+.dock--desk-azure { --sep-main: rgba(150, 195, 255, 0.85); --sep-glow: rgba(47, 123, 255, 0.55); }
+.dock--desk-crystal { --sep-main: rgba(255, 255, 255, 0.85); --sep-dark: rgba(40, 90, 170, 0.5); --sep-light: rgba(255, 255, 255, 0.95); }
+.dock--desk-matte { --sep-main: rgba(255, 255, 255, 0.4); --sep-dark: rgba(0, 0, 0, 0.8); --sep-light: rgba(255, 255, 255, 0.28); }
+.dock--desk-mirror { --sep-main: rgba(255, 255, 255, 0.55); --sep-dark: rgba(0, 0, 0, 0.7); --sep-light: rgba(255, 255, 255, 0.5); }
+.dock--desk-wall { --sep-dark: rgba(40, 12, 6, 0.8); --sep-light: rgba(255, 190, 160, 0.45); --sep-main: rgba(40, 12, 6, 0.7); }
+.dock--desk-custom { --sep-dark: rgba(0, 0, 0, 0.7); --sep-light: rgba(255, 255, 255, 0.5); --sep-main: rgba(0, 0, 0, 0.55); }
+
+.dock__separator::after { content: ''; display: block; border-radius: 2px; flex: none; }
+.dock__separator[data-kind='none']::after { display: none; }
+
+/* along a horizontal dock the separator is a vertical bar, along a vertical dock a horizontal one */
+.dock__separator[data-kind='line'][data-horizontal='true']::after { width: 2px; height: 100%; background: var(--sep-main); }
+.dock__separator[data-kind='line'][data-horizontal='false']::after { height: 2px; width: 100%; background: var(--sep-main); }
+
+.dock__separator[data-kind='groove'][data-horizontal='true']::after { width: 4px; height: 100%; background: linear-gradient(90deg, var(--sep-dark) 0 50%, var(--sep-light) 50% 100%); }
+.dock__separator[data-kind='groove'][data-horizontal='false']::after { height: 4px; width: 100%; background: linear-gradient(180deg, var(--sep-dark) 0 50%, var(--sep-light) 50% 100%); }
+
+.dock__separator[data-kind='dots'][data-horizontal='true']::after { width: 3px; height: 100%; background: repeating-linear-gradient(180deg, var(--sep-main) 0 3px, transparent 3px 8px); border-radius: 0; }
+.dock__separator[data-kind='dots'][data-horizontal='false']::after { height: 3px; width: 100%; background: repeating-linear-gradient(90deg, var(--sep-main) 0 3px, transparent 3px 8px); border-radius: 0; }
+
+.dock__separator[data-kind='glow'][data-horizontal='true']::after { width: 3px; height: 100%; background: var(--sep-main); box-shadow: 0 0 10px 1px var(--sep-glow, var(--accent)); }
+.dock__separator[data-kind='glow'][data-horizontal='false']::after { height: 3px; width: 100%; background: var(--sep-main); box-shadow: 0 0 10px 1px var(--sep-glow, var(--accent)); }
+.dock--desk-glass .dock__separator[data-kind='glow']::after,
+.dock--desk-matte .dock__separator[data-kind='glow']::after { box-shadow: 0 0 10px 1px var(--accent); }

@@ -175,13 +175,6 @@
   align-items: center;
   justify-content: center;
 }
-.dock__separator::after {
-  content: '';
-  background: var(--surface-border);
-  border-radius: 1px;
-}
-.dock__separator[data-horizontal='true']::after { width: 2px; height: 100%; }
-.dock__separator[data-horizontal='false']::after { height: 2px; width: 100%; }
 
 .dock__insert {
   background: var(--accent);

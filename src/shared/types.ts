@@ -64,6 +64,7 @@ export type ShowAnimation = 'slide' | 'fade' | 'scale'
 export type WindowAnimation = 'genie' | 'scale' | 'fade' | 'slide'
 export type SpeedPreset = 'fast' | 'medium' | 'slow' | 'custom'
 export type FalloffCurve = 'cosine' | 'gaussian' | 'linear' | 'sharp'
+export type SeparatorStyle = 'auto' | 'line' | 'groove' | 'dots' | 'glow' | 'none'
 export type LabelMode = 'hover' | 'always' | 'never'
 export type StackSize = 'small' | 'medium' | 'full' | 'custom'
 /** Where the dock sits relative to other windows: always on top, as a normal window, or below all of them. */
@@ -137,6 +138,7 @@ export interface DockSettings {
   stackSize: StackSize
   stackWidth: number
   stackHeight: number
+  separatorStyle: SeparatorStyle
   // labels
   labelMode: LabelMode
   labelSize: number
@@ -267,6 +269,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   stackSize: 'medium',
   stackWidth: 520,
   stackHeight: 420,
+  separatorStyle: 'auto',
   labelMode: 'hover',
   labelSize: 12,
   labelFont: '',
