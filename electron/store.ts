@@ -6,7 +6,7 @@ import {
 
 // schemaVersion is deliberately absent: a missing value means an old file that still needs migrating.
 const defaults: Omit<Persisted, 'schemaVersion'> = {
-  items: [{ id: 'trash', type: 'trash' }],
+  items: [{ id: 'start', type: 'start', label: 'Başlat' }, { id: 'trash', type: 'trash' }],
   settings: DEFAULT_SETTINGS,
   widgets: [],
 }
@@ -33,6 +33,14 @@ function migrate() {
     if (old.magnifiedSize && old.iconSize) {
       const { magnifiedSize: _gone, ...rest } = old
       store.set('settings', { ...rest, maxScale: Math.round((old.magnifiedSize / old.iconSize) * 100) / 100 } as unknown as DockSettings)
+    }
+  }
+  if (version < 6) {
+    // shelfPadding (one value for both cross sides) became four per-side paddings; the along-dock padding was a constant 10.
+    const old = store.get('settings') as unknown as { shelfPadding?: number }
+    if (old.shelfPadding !== undefined) {
+      const { shelfPadding, ...rest } = old
+      store.set('settings', { ...rest, deskPadTop: shelfPadding, deskPadBottom: shelfPadding, deskPadLeft: 14, deskPadRight: 14 } as unknown as DockSettings)
     }
   }
   // Fill settings added since the file was written.

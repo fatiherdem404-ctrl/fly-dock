@@ -16,8 +16,8 @@
 }
 
 .widget__big {
-  font-size: 30px;
-  font-weight: 600;
+  font-size: 36px;
+  font-weight: 500;
   letter-spacing: 0.5px;
   line-height: 1.1;
 }
@@ -71,7 +71,8 @@
 }
 .widget__bar div {
   height: 100%;
-  background: var(--accent);
+  background: linear-gradient(90deg, #2f7bff, #6cc8ff);
+  box-shadow: 0 0 8px rgba(47, 123, 255, 0.6);
   border-radius: 3px;
   transition: width 400ms ease;
 }

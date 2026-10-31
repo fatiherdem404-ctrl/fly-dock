@@ -3,6 +3,7 @@ import type { DockItem, DockSettings, RunningState } from '@/shared/types'
 import { invoke } from '@/api'
 import { isSettled, layoutRow, springFor, speedToMs, stepSpring, targetLifts, targetSizes } from '@/physics'
 import { deskStyleVars, hoverProfile } from '@/desk'
+import { dockGeometry, fitToScreen } from '@/layout'
 import DockIcon from './DockIcon'
 
 interface DockProps {
@@ -16,10 +17,6 @@ interface DockProps {
   onActivate: (item: DockItem) => void
 }
 
-const PAD = 10 // desk padding along the dock axis
-const SEPARATOR = 0.35 // separator width as a share of the icon size
-const LABEL_ROOM = 34 // room above the biggest icon for its label
-
 const DRAG_TYPE = 'application/x-dock-item'
 
 declare global {
@@ -29,43 +26,30 @@ declare global {
   }
 }
 
-export default function Dock({ items, settings, running, icons, launching, hidden, flat, onActivate }: DockProps) {
-  const horizontal = settings.position === 'bottom' || settings.position === 'top'
-  const { iconSize, iconSpacing: GAP, shelfPadding: PAD_CROSS } = settings
+export default function Dock({ items, settings: wanted, running, icons, launching, hidden, flat, onActivate }: DockProps) {
+  const horizontal = wanted.position === 'bottom' || wanted.position === 'top'
+
+  // One calculation decides the window size, the resting row and every padding, so nothing can be cut off.
+  const types = useMemo(() => items.map((i) => i.type), [items])
+  const longestLabel = useMemo(() => items.reduce((m, i) => Math.max(m, (i.label ?? (i.type === 'trash' ? 'Çöp kutusu' : '')).length), 0), [items])
+  // what the settings ask for, eased until the dock fits along its screen edge
+  const edgeLength = horizontal ? window.screen.availWidth : window.screen.availHeight
+  const settings = useMemo(() => fitToScreen(wanted, types, flat, longestLabel, edgeLength), [wanted, types, flat, longestLabel, edgeLength])
+  const { iconSize, iconSpacing: GAP } = settings
   const hover = hoverProfile(settings)
-  const magnifiedSize = settings.magnification ? iconSize + (iconSize * settings.maxScale - iconSize) * hover.sizeGain : iconSize
-  const liftMax = settings.magnification ? hover.liftMax : 0
+  const geo = useMemo(() => dockGeometry(settings, types, flat, longestLabel), [settings, types, flat, longestLabel])
+  const { pads, baseOffset, liftMax, restThickness, maxThickness, restStart } = geo
   const reflect = settings.deskStyle === 'mirror' && !flat
-  const baseOffset = reflect ? Math.round(iconSize * 0.4) : 0 // icons stand this far off the edge so the reflection has room
-
-  // ---- rest layout (no magnification): the stable coordinate space for pointer maths ----
-  const rest = useMemo(() => {
-    let cursor = 0
-    const left: number[] = []
-    const width: number[] = []
-    items.forEach((item, i) => {
-      const w = item.type === 'separator' ? iconSize * SEPARATOR : iconSize
-      left.push(cursor)
-      width.push(w)
-      cursor += w + (i < items.length - 1 ? GAP : 0)
-    })
-    return { left, width, length: cursor, separator: items.map((i) => i.type === 'separator') }
-  }, [items, iconSize, GAP])
-
-  const growth = (magnifiedSize - iconSize) * (settings.magnificationRadius + 1) * 0.5 + 12
-  const restThickness = iconSize + PAD_CROSS * 2 + baseOffset
-  const popRoom = magnifiedSize - iconSize + liftMax
-  const maxThickness = restThickness + popRoom
-  const labelRoom = settings.labelMode === 'never' ? 8 : LABEL_ROOM
-  const windowMain = Math.ceil(rest.length + PAD * 2 + growth * 2)
-  const windowCross = Math.ceil(maxThickness + labelRoom + 6 + settings.deskDepth * 0.4)
-  const restStart = (windowMain - rest.length) / 2
+  const rest = useMemo(
+    () => ({ left: geo.restLeft, width: geo.restWidth, length: geo.restLength, separator: geo.separator }),
+    [geo],
+  )
 
   useEffect(() => {
     // A system-drawn shelf (acrylic/mica) is a separate window and cannot be animated in step with the icons,
     // so it stays still: sized for the resting row plus the room magnification needs, never moved.
-    invoke('dock:layout', { main: windowMain, cross: windowCross, shelfMain: rest.length + PAD * 2 + growth, shelfCross: restThickness })
-  }, [windowMain, windowCross, rest.length, restThickness, growth])
+    invoke('dock:layout', { main: geo.main, cross: geo.cross, shelfMain: geo.restLength + pads.mainStart + pads.mainEnd + geo.overshoot, shelfCross: restThickness })
+  }, [geo, pads.mainStart, pads.mainEnd, restThickness])
 
   // ---- spring animation of icon sizes and lifts ----
   const sizes = useRef<number[]>([])
@@ -73,7 +57,7 @@ export default function Dock({ items, settings, running, icons, launching, hidde
   const lifts = useRef<number[]>([])
   const liftVelocity = useRef<number[]>([])
   const pointer = useRef<number | null>(null) // main-axis pointer in rest space, null when away
-  const lastPointer = useRef(rest.length / 2)
+  const lastPointer = useRef(geo.restLength / 2)
   const raf = useRef(0)
   const [, repaint] = useState(0)
   const spring = useMemo(() => springFor(settings.animationCurve, speedToMs(settings.speed, settings.speedMs)), [settings.animationCurve, settings.speed, settings.speedMs])
@@ -82,7 +66,7 @@ export default function Dock({ items, settings, running, icons, launching, hidde
     const p = settings.magnification ? pointer.current : null
     const common = { restLeft: rest.left, restWidth: rest.width, separator: rest.separator, pointer: p, iconSize, radiusIcons: settings.magnificationRadius, gap: GAP, curve: settings.falloff }
     return {
-      sizes: targetSizes({ ...common, magnifiedSize: iconSize + (iconSize * settings.maxScale - iconSize), gain: hover.sizeGain }),
+      sizes: targetSizes({ ...common, magnifiedSize: iconSize * settings.maxScale, gain: hover.sizeGain }),
       lifts: targetLifts({ ...common, liftMax }),
     }
   }, [rest, iconSize, GAP, hover.sizeGain, liftMax, settings.magnification, settings.magnificationRadius, settings.maxScale, settings.falloff])
@@ -142,7 +126,7 @@ export default function Dock({ items, settings, running, icons, launching, hidde
   }
 
   const track = (e: { clientX: number; clientY: number }) => {
-    if (crossDistanceFromEdge(e) > maxThickness + 8) {
+    if (crossDistanceFromEdge(e) > maxThickness + liftMax + 8) {
       pointer.current = null
     } else {
       pointer.current = mainCoord(e) - restStart
@@ -218,14 +202,17 @@ export default function Dock({ items, settings, running, icons, launching, hidde
   const current = items.map((_, i) => sizes.current[i] ?? rest.width[i])
   const row = layoutRow({ sizes: current, restLeft: rest.left, restWidth: rest.width, gap: GAP, restStart, anchor: lastPointer.current })
   const { positions, length } = row
-  const rowStart = row.start
+  // Safety net for a window the screen forced smaller than planned: keep the whole desk inside it.
+  const windowMainNow = horizontal ? window.innerWidth : window.innerHeight
+  const surfaceMax = row.length + pads.mainStart + pads.mainEnd
+  const rowStart = surfaceMax >= windowMainNow ? pads.mainStart : Math.min(Math.max(row.start, pads.mainStart), windowMainNow - row.length - pads.mainEnd)
 
   // The desk is as thick as the biggest icon when it is set to grow, so a magnified icon stays on the glass.
-  const biggest = current.reduce((m, s, i) => (items[i]?.type === 'separator' ? m : Math.max(m, s)), iconSize)
+  const biggest = current.reduce((m, sz, i) => (items[i]?.type === 'separator' ? m : Math.max(m, sz)), iconSize)
   const biggestLift = lifts.current.reduce((m, l) => Math.max(m, l), 0)
-  const thickness = settings.shelfGrows ? Math.max(restThickness, biggest + biggestLift + PAD_CROSS * 2 + baseOffset) : restThickness
-  const surfaceStart = rowStart - PAD
-  const surfaceLength = length + PAD * 2
+  const thickness = settings.shelfGrows ? Math.max(restThickness, biggest + biggestLift + pads.crossEdge + pads.crossFar + baseOffset) : restThickness
+  const surfaceStart = rowStart - pads.mainStart
+  const surfaceLength = length + pads.mainStart + pads.mainEnd
 
   const side = settings.position
   const edgeStyle = (main: number, cross: number, w: number, h: number): React.CSSProperties => {
@@ -236,6 +223,7 @@ export default function Dock({ items, settings, running, icons, launching, hidde
   }
 
   const desk = deskStyleVars(settings, thickness, side)
+  void maxThickness
 
   return (
     <div
@@ -257,7 +245,7 @@ export default function Dock({ items, settings, running, icons, launching, hidde
       </div>
       {items.map((item, i) => {
         const size = current[i]
-        const base = edgeStyle(rowStart + positions[i], PAD_CROSS + baseOffset + (lifts.current[i] ?? 0), size, size)
+        const base = edgeStyle(rowStart + positions[i], pads.crossEdge + baseOffset + (lifts.current[i] ?? 0), size, size)
         if (item.type === 'separator') {
           return (
             <div key={item.id} className="dock__separator" data-horizontal={horizontal} style={{ ...base, [horizontal ? 'height' : 'width']: iconSize * 0.7 }}
@@ -303,7 +291,7 @@ export default function Dock({ items, settings, running, icons, launching, hidde
       {insertAt !== null && (
         <div
           className="dock__insert"
-          style={edgeStyle(rowStart + (insertAt < items.length ? positions[insertAt] - GAP / 2 : length) - 1, PAD_CROSS + baseOffset, 2, iconSize)}
+          style={edgeStyle(rowStart + (insertAt < items.length ? positions[insertAt] - GAP / 2 : length) - 1, pads.crossEdge + baseOffset, 2, iconSize)}
         />
       )}
     </div>

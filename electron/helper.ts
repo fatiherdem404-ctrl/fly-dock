@@ -145,6 +145,9 @@ class Helper extends EventEmitter {
   emptyTrash() {
     return this.call<boolean>('emptyTrash', {}, 120_000)
   }
+  startMenu() {
+    return this.call<boolean>('startMenu')
+  }
   roundCorners(hwnd: number) {
     return this.call<boolean>('roundCorners', { hwnd })
   }

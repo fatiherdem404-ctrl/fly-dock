@@ -2,7 +2,7 @@
 html[data-view='settings'] {
   --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px;
   --r-sm: 8px; --r-md: 12px; --r-lg: 16px;
-  --line: color-mix(in srgb, var(--panel-text) 11%, transparent);
+  --line: rgba(160, 190, 255, 0.1);
   --line-strong: color-mix(in srgb, var(--panel-text) 20%, transparent);
   --fill: color-mix(in srgb, var(--panel-text) 6%, transparent);
   --fill-hover: color-mix(in srgb, var(--panel-text) 11%, transparent);
@@ -11,9 +11,9 @@ html[data-view='settings'] {
 }
 html[data-view='settings'] body {
   background:
-    radial-gradient(900px 500px at 85% -10%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 70%),
-    radial-gradient(700px 500px at -10% 110%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
-    var(--panel-bg);
+    radial-gradient(1000px 520px at 88% -12%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+    radial-gradient(800px 520px at -12% 112%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%),
+    linear-gradient(180deg, #0c1226, #080c1a);
   color: var(--panel-text);
   font-size: 14px;
   line-height: 1.45;
@@ -27,7 +27,7 @@ html[data-view='settings'] body {
   flex-direction: column;
   gap: var(--s-1);
   padding: var(--s-5) var(--s-3);
-  background: color-mix(in srgb, var(--panel-text) 3%, transparent);
+  background: rgba(10, 16, 34, 0.7);
   border-right: 1px solid var(--line);
   overflow-y: auto;
 }
@@ -48,10 +48,11 @@ html[data-view='settings'] body {
 .st-tab:hover { background: var(--fill); color: var(--panel-text); transform: translateX(2px); }
 .st-tab[aria-selected='true'] {
   color: var(--panel-text);
-  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 30%, transparent), color-mix(in srgb, var(--accent) 8%, transparent));
-  box-shadow: inset 2px 0 0 var(--accent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 92%, #000), color-mix(in srgb, var(--accent) 58%, #000));
+  color: #fff;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 40%, transparent);
 }
-.st-tab[aria-selected='true'] svg { color: var(--accent); }
+.st-tab[aria-selected='true'] svg { color: #fff; }
 
 /* ---- page ---- */
 .st-main { overflow-y: auto; height: 100vh; scroll-behavior: smooth; }
@@ -78,8 +79,8 @@ html[data-view='settings'] body {
 .st-card {
   margin-bottom: var(--s-4);
   border: 1px solid var(--line); border-radius: var(--r-lg);
-  background: color-mix(in srgb, var(--panel-text) 4%, transparent);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  background: linear-gradient(180deg, rgba(20, 30, 60, 0.7), rgba(14, 22, 46, 0.7));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 12px 30px rgba(2, 6, 20, 0.35);
   animation: st-in 420ms var(--ease) both;
 }
 .st-card:nth-child(2) { animation-delay: 40ms; }
@@ -114,7 +115,7 @@ kbd { padding: 1px 6px; border: 1px solid var(--line-strong); border-bottom-widt
 .st-slider { display: flex; align-items: center; gap: var(--s-3); width: 100%; }
 .st-slider output { min-width: 78px; text-align: right; color: var(--panel-muted); font-variant-numeric: tabular-nums; font-size: 13px; }
 .st-slider input[type='range'] { -webkit-appearance: none; appearance: none; flex: 1; height: 6px; border-radius: 3px; outline: none; cursor: pointer;
-  background: linear-gradient(90deg, var(--accent) var(--pct), var(--line-strong) var(--pct)); }
+  background: linear-gradient(90deg, var(--accent) var(--pct), rgba(160, 190, 255, 0.18) var(--pct)); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent); }
 .st-slider input[type='range']::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 0;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 0 4px color-mix(in srgb, var(--accent) 0%, transparent); transition: box-shadow 160ms var(--ease), transform 160ms var(--ease); }
 .st-slider input[type='range']:hover::-webkit-slider-thumb { box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 0 6px color-mix(in srgb, var(--accent) 25%, transparent); }

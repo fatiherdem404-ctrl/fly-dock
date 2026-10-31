@@ -155,6 +155,12 @@ export function replaceItems(next: DockItem[]): DockItem[] {
   return commit(cleaned)
 }
 
+export function addStartButton(): DockItem[] {
+  const items = getItems()
+  if (items.some((i) => i.type === 'start')) return items
+  return commit([{ id: crypto.randomUUID(), type: 'start', label: 'Başlat' }, ...items])
+}
+
 export function createGroup(): DockItem[] {
   const items = [...getItems()]
   const trashAt = items.findIndex((i) => i.type === 'trash')
@@ -182,10 +188,12 @@ export function openRecycleBin() {
 
 export async function activateItem(id: string, onStack: (item: DockItem) => void) {
   const item = visibleItems().find((i) => i.id === id)
-  if (!item?.targetPath && item?.type !== 'trash' && item?.type !== 'group') return
+  if (!item?.targetPath && item?.type !== 'trash' && item?.type !== 'group' && item?.type !== 'start') return
   switch (item!.type) {
     case 'trash':
       return openRecycleBin()
+    case 'start':
+      return void (await helper.startMenu().catch(() => {}))
     case 'stack':
     case 'group':
       return onStack(item!)

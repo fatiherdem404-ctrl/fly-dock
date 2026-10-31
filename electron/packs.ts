@@ -20,18 +20,18 @@ const packDir = (type: PackInfo['type'], id: string) => path.join(packsRoot(), t
 // ---- built-in themes ----
 
 const GLASS_DARK: ThemeVars = {
-  surface: 'rgba(24, 26, 32, 0.62)',
-  surfaceBorder: 'rgba(255, 255, 255, 0.14)',
+  surface: 'rgba(13, 20, 40, 0.78)',
+  surfaceBorder: 'rgba(120, 165, 255, 0.28)',
   surfaceBlur: 24,
   radius: 20,
-  shadow: '0 12px 32px rgba(0, 0, 0, 0.45)',
-  indicator: '#8ab4ff',
-  tooltipBg: 'rgba(18, 20, 26, 0.92)',
-  tooltipText: '#f2f4f8',
-  accent: '#4da3ff',
-  panelBg: '#14161c',
-  panelText: '#eef1f6',
-  panelMuted: '#98a2b3',
+  shadow: '0 14px 34px rgba(2, 8, 30, 0.55)',
+  indicator: '#5aa2ff',
+  tooltipBg: 'rgba(10, 16, 34, 0.94)',
+  tooltipText: '#eaf0ff',
+  accent: '#2f7bff',
+  panelBg: '#0a0f1f',
+  panelText: '#e6ecff',
+  panelMuted: '#8794b8',
   fontFamily: "'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif",
 }
 

@@ -5,7 +5,7 @@ import DockPreview from '@/components/DockPreview'
 import { DESK_LABELS, DESK_PRESETS, deskTransform } from '@/desk'
 import {
   DESK_STYLES, DockItem, DockSettings, PackInfo, ThemeDef, WidgetType,
-  AnimationCurve, DeskStyle, FalloffCurve, HoverAnimation, IndicatorStyle, LaunchAnimation, ShowAnimation, SpeedPreset, StackSize, WindowAnimation, LabelMode,
+  AnimationCurve, DeskShape, DeskStyle, FalloffCurve, HoverAnimation, IndicatorStyle, LaunchAnimation, ShowAnimation, SpeedPreset, StackSize, WindowAnimation, LabelMode,
 } from '@/shared/types'
 
 type Tab = 'dock' | 'desk' | 'motion' | 'windows' | 'theme' | 'icons' | 'items' | 'widgets' | 'general'
@@ -184,6 +184,8 @@ function DockTab({ s, set }: { s: DockSettings; set: Update }) {
 
 // ---- Desk ----
 
+const PAD_KEYS: ['deskPadTop' | 'deskPadBottom' | 'deskPadLeft' | 'deskPadRight', string][] = [['deskPadTop', 'Üst'], ['deskPadBottom', 'Alt'], ['deskPadLeft', 'Sol'], ['deskPadRight', 'Sağ']]
+
 function DeskCard({ style }: { style: DeskStyle }) {
   const tilt = deskTransform(DESK_PRESETS[style].depth, 'bottom')
   return (
@@ -218,7 +220,7 @@ function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
         </Row>
         <Row label="Saydamlık"><Slider value={s.deskOpacity} min={0.2} max={1} step={0.05} format={(v) => `%${Math.round(v * 100)}`} onChange={(deskOpacity) => set({ deskOpacity })} /></Row>
         <Row label="3B derinlik" hint="0 = düz; yükseldikçe raf perspektifle yatar"><Slider value={s.deskDepth} min={0} max={60} unit=" px" onChange={(deskDepth) => set({ deskDepth })} /></Row>
-        <Row label="Raf kalınlığı" hint="Simgenin altındaki ve üstündeki boşluk"><Slider value={s.shelfPadding} min={0} max={24} unit=" px" onChange={(shelfPadding) => set({ shelfPadding })} /></Row>
+        <Row label="Raf şekli" hint="Hap, konsepttekiyle aynı: uçları tam yuvarlak"><Segmented<DeskShape> value={s.deskShape} onChange={(deskShape) => set({ deskShape })} options={[['pill', 'Hap'], ['rounded', 'Yuvarlak köşe'], ['square', 'Kare']]} /></Row>
         <Row label="Raf simgelerle büyüsün" hint="Kapalıyken simgeler raftan taşar (macOS gibi)"><Switch label="Raf büyümesi" value={s.shelfGrows} onChange={(shelfGrows) => set({ shelfGrows })} /></Row>
       </Card>
       <Card title="Sistem camı (deneysel)" hint="Windows 11'in gerçek bulanıklığı. Ayrı bir pencere olduğu için hareketli olamaz: raf sabit durur, simgeler üstünde büyür.">
@@ -226,6 +228,15 @@ function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
           <Select value={s.material} onChange={(material) => set({ material })} options={[['none', 'Kapalı (tema rafı)'], ['acrylic', 'Akrilik'], ['mica', 'Mica']]} />
         </Row>
         {supported === false && <Message text="Bu Windows sürümü sistem camını desteklemiyor (Windows 11 22H2 gerekir)." error />}
+      </Card>
+      <Card title="Raf boşlukları" hint="Rafın kenarları ile simgeler arasındaki boşluk, ekranın dört yanı için ayrı. Pencere bu boşluklara göre kendiliğinden büyür.">
+        <Row label="Hepsini bağla" hint="Bir kaydırıcıyı oynatınca dördü birlikte değişir"><Switch label="Hepsini bağla" value={s.deskPadLinked} onChange={(deskPadLinked) => set(deskPadLinked ? { deskPadLinked, deskPadTop: s.deskPadTop, deskPadBottom: s.deskPadTop, deskPadLeft: s.deskPadTop, deskPadRight: s.deskPadTop } : { deskPadLinked })} /></Row>
+        {PAD_KEYS.map(([key, label]) => (
+          <Row key={key} label={label}>
+            <Slider value={s[key]} min={0} max={48} unit=" px" onChange={(v) => set(s.deskPadLinked ? { deskPadTop: v, deskPadBottom: v, deskPadLeft: v, deskPadRight: v } : { [key]: v })} />
+          </Row>
+        ))}
+        <Row label="Varsayılana dön"><button className="st-btn" onClick={() => set({ deskPadTop: 10, deskPadBottom: 10, deskPadLeft: 16, deskPadRight: 16, deskPadLinked: false })}><Icon name="refresh" size={15} />Sıfırla</button></Row>
       </Card>
     </>
   )

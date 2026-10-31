@@ -53,6 +53,11 @@
 .dock--flat .dock__desk-sheen,
 .dock--flat .dock__desk-tint { display: none; }
 
+.dock--desk-azure .dock__desk {
+  background: linear-gradient(180deg, rgba(48, 82, 160, 0.5), rgba(10, 18, 42, 0.82));
+  border: 1.5px solid rgba(130, 180, 255, 0.85);
+  box-shadow: 0 0 0 1px rgba(47, 123, 255, 0.35), 0 0 20px rgba(47, 123, 255, 0.5), 0 10px 26px rgba(2, 8, 30, 0.5), inset 0 1px 0 rgba(190, 215, 255, 0.55);
+}
 .dock--desk-glass3d .dock__desk {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.05) 70%), var(--surface);
   border-color: rgba(255, 255, 255, 0.35);
@@ -74,9 +79,9 @@
   box-shadow: 0 calc(var(--desk-depth) * 0.5) 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 #fff, inset 0 -3px 5px rgba(0, 0, 0, 0.18);
 }
 .dock--desk-neon .dock__desk {
-  background: linear-gradient(180deg, #14172a, #080914);
-  border-color: var(--accent);
-  box-shadow: 0 0 18px var(--accent), inset 0 0 12px color-mix(in srgb, var(--accent) 70%, transparent);
+  background: linear-gradient(180deg, #0c1230, #04061a);
+  border: 2px solid color-mix(in srgb, var(--accent) 90%, #fff);
+  box-shadow: 0 0 22px var(--accent), 0 0 4px var(--accent), inset 0 0 14px color-mix(in srgb, var(--accent) 65%, transparent);
 }
 .dock--desk-crystal .dock__desk {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0 10%, rgba(255, 255, 255, 0) 11%), linear-gradient(60deg, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.25) 41% 55%, rgba(255, 255, 255, 0) 56%), linear-gradient(180deg, rgba(150, 215, 255, 0.6), rgba(60, 110, 190, 0.5));
@@ -167,15 +172,18 @@
   font-size: var(--label-size, 12px);
   font-family: var(--label-font, inherit);
   white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   pointer-events: none;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
   animation: label-in 120ms ease-out;
 }
 @keyframes label-in { from { opacity: 0; } to { opacity: 1; } }
-.dock-icon[data-position='bottom'] .dock-icon__label { bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); }
-.dock-icon[data-position='top'] .dock-icon__label { top: calc(100% + 8px); left: 50%; transform: translateX(-50%); }
-.dock-icon[data-position='left'] .dock-icon__label { left: calc(100% + 8px); top: 50%; transform: translateY(-50%); }
-.dock-icon[data-position='right'] .dock-icon__label { right: calc(100% + 8px); top: 50%; transform: translateY(-50%); }
+.dock-icon[data-position='bottom'] .dock-icon__label { bottom: calc(100% + 8px); left: 50%; transform: translateX(calc(-50% + var(--shift, 0px))); }
+.dock-icon[data-position='top'] .dock-icon__label { top: calc(100% + 8px); left: 50%; transform: translateX(calc(-50% + var(--shift, 0px))); }
+.dock-icon[data-position='left'] .dock-icon__label { left: calc(100% + 8px); top: 50%; transform: translateY(calc(-50% + var(--shift, 0px))); }
+.dock-icon[data-position='right'] .dock-icon__label { right: calc(100% + 8px); top: 50%; transform: translateY(calc(-50% + var(--shift, 0px))); }
 
 .dock__separator {
   display: flex;

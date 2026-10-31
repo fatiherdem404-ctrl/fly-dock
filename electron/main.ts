@@ -7,7 +7,7 @@ import { handle, broadcast } from './ipc'
 import { helper } from './helper'
 import {
   setSnapshot, runningState, addPaths, addSeparator, removeItem, updateItem, replaceItems,
-  activateItem, openRecycleBin, launchAtLogin, loginEnabled, onItemsChanged, visibleItems, isRunningItem, broadcastItems, createGroup, addToGroup,
+  activateItem, openRecycleBin, launchAtLogin, loginEnabled, onItemsChanged, visibleItems, isRunningItem, broadcastItems, createGroup, addToGroup, addStartButton,
 } from './items'
 import { iconForItem, setTrashState } from './icons'
 import { shellIcon } from './iconService'
@@ -141,6 +141,7 @@ function showMenu(_e: Electron.IpcMainInvokeEvent, payload: { kind: 'empty' | 'i
     add('Program ekle…', 'plus', () => pickAndAdd(['openFile'], [{ name: 'Programlar', extensions: ['exe', 'lnk'] }]), { disabled: locked })
     add('Klasör ekle…', 'folder', () => pickAndAdd(['openDirectory']), { disabled: locked })
     add('Yeni grup', 'group', () => createGroup(), { disabled: locked })
+    add('Başlat düğmesi ekle', 'play', () => addStartButton(), { disabled: locked || getItems().some((i) => i.type === 'start') })
     add('Ayraç ekle', 'minus', addSeparator, { disabled: locked })
   }
   separator()

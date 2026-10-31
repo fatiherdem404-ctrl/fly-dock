@@ -1,6 +1,6 @@
 // Types shared by the main process, the preload bridge and every renderer view.
 
-export type DockItemType = 'app' | 'file' | 'folder' | 'stack' | 'group' | 'separator' | 'trash'
+export type DockItemType = 'app' | 'file' | 'folder' | 'stack' | 'group' | 'start' | 'separator' | 'trash'
 
 export interface DockItem {
   id: string
@@ -37,9 +37,10 @@ export type SpeedPreset = 'fast' | 'medium' | 'slow' | 'custom'
 export type FalloffCurve = 'cosine' | 'gaussian' | 'linear' | 'sharp'
 export type LabelMode = 'hover' | 'always' | 'never'
 export type StackSize = 'small' | 'medium' | 'full' | 'custom'
-export type DeskStyle = 'glass' | 'glass3d' | 'wood' | 'metal' | 'marble' | 'neon' | 'crystal' | 'matte' | 'mirror' | 'wall'
+export type DeskShape = 'pill' | 'rounded' | 'square'
+export type DeskStyle = 'glass' | 'azure' | 'glass3d' | 'wood' | 'metal' | 'marble' | 'neon' | 'crystal' | 'matte' | 'mirror' | 'wall'
 
-export const DESK_STYLES: DeskStyle[] = ['glass', 'glass3d', 'wood', 'metal', 'marble', 'neon', 'crystal', 'matte', 'mirror', 'wall']
+export const DESK_STYLES: DeskStyle[] = ['glass', 'azure', 'glass3d', 'wood', 'metal', 'neon', 'marble', 'crystal', 'matte', 'mirror', 'wall']
 
 export interface DockSettings {
   // placement
@@ -68,7 +69,14 @@ export interface DockSettings {
   deskDepth: number
   /** Whether the desk gets thicker with the magnified icons. */
   shelfGrows: boolean
-  shelfPadding: number
+  deskShape: DeskShape
+  /** Space between the icons and the desk edges, per screen side (px). */
+  deskPadTop: number
+  deskPadBottom: number
+  deskPadLeft: number
+  deskPadRight: number
+  /** Moving one padding slider moves all four. */
+  deskPadLinked: boolean
   material: DockMaterial
   // animation
   animationCurve: AnimationCurve
@@ -164,7 +172,7 @@ export interface Persisted {
   widgets: WidgetInstance[]
 }
 
-export const SCHEMA_VERSION = 5
+export const SCHEMA_VERSION = 6
 
 export const DEFAULT_SETTINGS: DockSettings = {
   position: 'bottom',
@@ -182,7 +190,12 @@ export const DEFAULT_SETTINGS: DockSettings = {
   deskOpacity: 1,
   deskDepth: 0,
   shelfGrows: true,
-  shelfPadding: 8,
+  deskShape: 'pill',
+  deskPadTop: 10,
+  deskPadBottom: 10,
+  deskPadLeft: 16,
+  deskPadRight: 16,
+  deskPadLinked: false,
   material: 'none',
   animationCurve: 'spring',
   speed: 'medium',

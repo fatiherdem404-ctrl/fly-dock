@@ -82,6 +82,13 @@ internal static class Windows
     public static void Minimize(long hwnd) => Native.ShowWindow(new IntPtr(hwnd), Native.SW_MINIMIZE);
     public static void Close(long hwnd) => Native.PostMessage(new IntPtr(hwnd), Native.WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
 
+    /// Opens the Start menu the way the Windows key does.
+    public static void StartMenu()
+    {
+        Native.keybd_event(0x5B, 0, 0, UIntPtr.Zero);
+        Native.keybd_event(0x5B, 0, 2, UIntPtr.Zero);
+    }
+
     public static void MediaKey(string key)
     {
         byte vk = key switch { "next" => 0xB0, "prev" => 0xB1, "stop" => 0xB2, _ => 0xB3 };

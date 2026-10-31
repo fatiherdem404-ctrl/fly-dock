@@ -158,8 +158,8 @@ $bmp.Save('${shot}')`
     if (turns > 1) reversals++
   }
   // The glass is drawn from the same numbers as the icons, so it must hug them with the same padding on every
-  // frame: 10 px along the dock, 8 px across it. Reported separately for pointer-in, resting and pointer-out.
-  const expected = horizontal ? [10, 10, 8, 8] : [8, 8, 10, 10]
+  // frame: the desk paddings (16 px along the dock, 10 px across it by default). Reported separately for pointer-in, resting and pointer-out.
+  const expected = [16, 16, 10, 10] // left, right, top, bottom: the four screen-side paddings, whichever edge the dock is on
   const worst = (from, to) => Math.max(0, ...data.insets.slice(from, to).flatMap((row) => row.map((v, i) => Math.abs(v - expected[i]))))
   const alignment = {
     pointerIn: +worst(0, restFrom).toFixed(2),

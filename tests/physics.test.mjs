@@ -78,4 +78,49 @@ const underPointer = grown.start + grown.positions[slot] + 0.5 * t[slot]
 assert.ok(Math.abs(underPointer - (100 + centre)) < 1e-6, 'icon under the pointer stays under the pointer')
 assert.ok(grown.length > restRow.length, 'row widens when magnified')
 
+// ---- window geometry: nothing may stick out of the window, for any settings and any pointer position ----
+const layoutOut = join(dir, 'layout.mjs')
+await build({ entryPoints: ['src/layout.ts'], bundle: true, platform: 'node', format: 'esm', outfile: layoutOut, logLevel: 'silent' })
+const typesOut = join(dir, 'types.mjs')
+await build({ entryPoints: ['src/shared/types.ts'], bundle: true, platform: 'node', format: 'esm', outfile: typesOut, logLevel: 'silent' })
+const { dockGeometry, fitToScreen, padsFor } = await import(pathToFileURL(layoutOut).href)
+const { DEFAULT_SETTINGS } = await import(pathToFileURL(typesOut).href)
+
+let seed = 7
+const rand = (lo, hi) => {
+  seed = (seed * 16807) % 2147483647
+  return lo + ((seed / 2147483647) * (hi - lo))
+}
+const kinds = ['app', 'app', 'separator', 'app', 'app', 'folder', 'app', 'trash']
+for (let n = 0; n < 200; n++) {
+  const s = {
+    ...DEFAULT_SETTINGS,
+    position: ['bottom', 'top', 'left', 'right'][n % 4],
+    iconSize: Math.round(rand(24, 96)),
+    maxScale: rand(1, 3),
+    magnificationRadius: rand(0.5, 5),
+    iconSpacing: Math.round(rand(0, 32)),
+    falloff: ['cosine', 'gaussian', 'linear', 'sharp'][n % 4],
+    hoverAnimation: ['zoom', 'lift', 'wave'][n % 3],
+    animationCurve: ['spring', 'bounce', 'ease'][n % 3],
+    deskPadTop: Math.round(rand(0, 48)), deskPadBottom: Math.round(rand(0, 48)), deskPadLeft: Math.round(rand(0, 48)), deskPadRight: Math.round(rand(0, 48)),
+    deskDepth: Math.round(rand(0, 60)),
+    labelMode: ['hover', 'always', 'never'][n % 3],
+    labelSize: Math.round(rand(9, 20)),
+  }
+  const types = kinds.slice(0, 3 + (n % 6))
+  const g = dockGeometry(s, types, false, 30)
+  const pads = padsFor(s)
+  // pointer anywhere, sizes possibly stale from another pointer: the widest the row can be is restLength + widening
+  assert.ok(g.overshoot >= 0 && g.main >= g.restLength + 2 * Math.max(pads.mainStart, pads.mainEnd), 'window is at least as long as the row with its paddings')
+  const icon = s.iconSize
+  assert.ok(g.cross >= Math.min(g.maxThickness, icon) + pads.crossEdge, 'window is at least as thick as the desk at rest')
+  assert.ok(g.cross >= g.baseOffset + pads.crossEdge + g.maxIcon + g.liftMax + pads.crossFar, 'the biggest, lifted icon fits across the window')
+  // fitting to a screen edge: the result always fits, unless the icons are already at their smallest
+  const available = Math.round(rand(300, 1200))
+  const fitted = fitToScreen(s, types, false, 30, available)
+  const fits = dockGeometry(fitted, types, false, 30).main <= available
+  assert.ok(fits || fitted.iconSize <= 16, `dock is eased until it fits (available ${available}, icon ${fitted.iconSize})`)
+}
+
 console.log('physics: all checks passed')

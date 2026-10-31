@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { DockSettings } from '@/shared/types'
 import { isSettled, layoutRow, speedToMs, springFor, stepSpring, targetLifts, targetSizes } from '@/physics'
 import { deskStyleVars, hoverProfile } from '@/desk'
+import { padsFor } from '@/layout'
 
 const COLORS = ['#ff7a59', '#4da3ff', '#8be28b', '#f5c542', '#b57bff', '#ff6fa8']
 const GLYPHS = ['◐', '▣', '✦', '♪', '☁', '✉']
-const PAD = 10
 
 /** A live miniature of the dock that sweeps a pointer across itself, driven by the same maths as the real dock. */
 export default function DockPreview({ settings, launchTick = 0, height = 190 }: { settings: DockSettings; launchTick?: number; height?: number }) {
@@ -52,7 +52,8 @@ export default function DockPreview({ settings, launchTick = 0, height = 190 }: 
   const spring = useMemo(() => springFor(settings.animationCurve, speedToMs(settings.speed, settings.speedMs)), [settings.animationCurve, settings.speed, settings.speedMs])
   const liftMax = settings.magnification ? hover.liftMax * scale : 0
   const maxSize = iconSize + (iconSize * settings.maxScale - iconSize) * hover.sizeGain
-  const restThickness = iconSize + settings.shelfPadding * 2
+  const pads = padsFor({ ...settings, position: 'bottom' })
+  const restThickness = iconSize + pads.crossEdge + pads.crossFar
   const crossRoom = restThickness + (maxSize - iconSize) + liftMax + 26
 
   useEffect(() => {
@@ -90,7 +91,7 @@ export default function DockPreview({ settings, launchTick = 0, height = 190 }: 
   const row = layoutRow({ sizes: current, restLeft: rest.left, restWidth: rest.width, gap, restStart, anchor: Math.min(Math.max(lastPointer.current, 0), rest.length) })
   const biggest = Math.max(...current)
   const biggestLift = Math.max(0, ...lifts.current)
-  const thickness = settings.shelfGrows ? Math.max(restThickness, biggest + biggestLift + settings.shelfPadding * 2) : restThickness
+  const thickness = settings.shelfGrows ? Math.max(restThickness, biggest + biggestLift + pads.crossEdge + pads.crossFar) : restThickness
   const reflect = settings.deskStyle === 'mirror'
   const baseOffset = reflect ? Math.round(iconSize * 0.4) : 0
   const desk = deskStyleVars(settings, thickness, 'bottom')
@@ -101,7 +102,7 @@ export default function DockPreview({ settings, launchTick = 0, height = 190 }: 
         className={`dock dock--bottom dock--desk-${settings.deskStyle}${reflect ? ' dock--reflect' : ''}`}
         style={{ ...desk.rootVars, '--label-size': `${settings.labelSize}px` } as React.CSSProperties}
       >
-        <div className="dock__desk" style={{ position: 'absolute', left: row.start - PAD, width: row.length + PAD * 2, height: thickness, bottom: 0, ...desk.plate }}>
+        <div className="dock__desk" style={{ position: 'absolute', left: row.start - pads.mainStart, width: row.length + pads.mainStart + pads.mainEnd, height: thickness, bottom: 0, ...desk.plate }}>
           <span className="dock__desk-tint" />
           <span className="dock__desk-sheen" />
         </div>
@@ -110,7 +111,7 @@ export default function DockPreview({ settings, launchTick = 0, height = 190 }: 
             key={color}
             className={`dock-icon${launching && i === 1 && settings.launchAnimation !== 'none' ? ` dock-icon--launch-${settings.launchAnimation}` : ''}`}
             data-position="bottom"
-            style={{ position: 'absolute', left: row.start + row.positions[i], bottom: settings.shelfPadding + baseOffset + (lifts.current[i] ?? 0), width: current[i], height: current[i] }}
+            style={{ position: 'absolute', left: row.start + row.positions[i], bottom: pads.crossEdge + baseOffset + (lifts.current[i] ?? 0), width: current[i], height: current[i] }}
           >
             <div className="preview__icon" style={{ background: `linear-gradient(145deg, ${color}, color-mix(in srgb, ${color} 55%, #000))`, fontSize: current[i] * 0.5 }}>{GLYPHS[i]}</div>
             {i === 0 && settings.showRunningIndicators && <span className={`dock-icon__indicator dock-icon__indicator--${settings.indicatorStyle}`} />}

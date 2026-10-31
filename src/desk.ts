@@ -15,7 +15,8 @@ export function hoverProfile(s: Pick<DockSettings, 'hoverAnimation' | 'iconSize'
 }
 
 export const DESK_LABELS: Record<DeskStyle, string> = {
-  glass: 'Düz cam',
+  glass: 'Koyu cam',
+  azure: 'Mavi çerçeve',
   glass3d: '3B cam raf',
   wood: 'Ahşap',
   metal: 'Metal',
@@ -30,6 +31,7 @@ export const DESK_LABELS: Record<DeskStyle, string> = {
 /** Depth and opacity each style looks best with; picking a style in settings applies these. */
 export const DESK_PRESETS: Record<DeskStyle, { depth: number; opacity: number }> = {
   glass: { depth: 0, opacity: 1 },
+  azure: { depth: 0, opacity: 1 },
   glass3d: { depth: 34, opacity: 0.95 },
   wood: { depth: 26, opacity: 1 },
   metal: { depth: 22, opacity: 1 },
@@ -53,7 +55,7 @@ export function deskTransform(depth: number, side: DockPosition): { transform?: 
   const tilt = tiltFor(depth)
   if (tilt === 0) return {}
   const stretch = 1 / Math.cos((tilt * Math.PI) / 180)
-  const rotate = side === 'bottom' ? `rotateX(${tilt}deg)` : side === 'top' ? `rotateX(${-tilt}deg)` : side === 'left' ? `rotateY(${-tilt}deg)` : `rotateY(${tilt}deg)`
+  const rotate = side === 'bottom' ? `rotateX(${tilt}deg)` : side === 'top' ? `rotateX(${-tilt}deg)` : side === 'left' ? `rotateY(${tilt}deg)` : `rotateY(${-tilt}deg)`
   const scale = side === 'bottom' || side === 'top' ? `scaleY(${stretch})` : `scaleX(${stretch})`
   return { transform: `perspective(640px) ${rotate} ${scale}`, transformOrigin: ORIGIN[side] }
 }
@@ -65,6 +67,6 @@ export function deskStyleVars(s: DockSettings, _thickness: number, side: DockPos
       '--desk-opacity': String(s.deskOpacity),
       '--desk-depth': `${s.deskDepth}px`,
     },
-    plate: { ...deskTransform(s.deskDepth, side), opacity: s.deskOpacity },
+    plate: { ...deskTransform(s.deskDepth, side), opacity: s.deskOpacity, borderRadius: s.deskShape === 'pill' ? '999px' : s.deskShape === 'square' ? '6px' : undefined },
   }
 }
