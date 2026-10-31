@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { DockSettings } from '@/shared/types'
 import { isSettled, layoutRow, speedToMs, springFor, stepSpring, targetLifts, targetSizes } from '@/physics'
 import { deskStyleVars, hoverProfile } from '@/desk'
+import Shelf from './Shelf'
 import { padsFor, DESK_INSET } from '@/layout'
 
 const COLORS = ['#ff7a59', '#4da3ff', '#8be28b', '#f5c542', '#b57bff', '#ff6fa8']
@@ -53,7 +54,8 @@ export default function DockPreview({ settings, launchTick = 0, height = 190 }: 
   const liftMax = settings.magnification ? hover.liftMax * scale : 0
   const maxSize = iconSize + (iconSize * settings.maxScale - iconSize) * hover.sizeGain
   const pads = padsFor({ ...settings, position: 'bottom' })
-  const edge = Math.max(0, settings.deskEdge)
+  const shelfMode = settings.deskDepth > 0
+  const edge = shelfMode ? Math.max(0, settings.deskEdge) : 0
   const restThickness = iconSize + pads.crossEdge + pads.crossFar + edge
   const crossRoom = restThickness + (maxSize - iconSize) + liftMax + 26
 
@@ -93,7 +95,7 @@ export default function DockPreview({ settings, launchTick = 0, height = 190 }: 
   const biggest = Math.max(...current)
   const biggestLift = Math.max(0, ...lifts.current)
   const thickness = settings.shelfGrows ? Math.max(restThickness, biggest + biggestLift + pads.crossEdge + pads.crossFar + edge) : restThickness
-  const reflect = settings.deskStyle === 'mirror'
+  const reflect = settings.deskStyle === 'mirror' || settings.deskStyle === 'glass3d'
   const baseOffset = (reflect ? Math.round(iconSize * 0.4) : 0) + edge
   const desk = deskStyleVars(settings, thickness, 'bottom')
 
@@ -103,11 +105,16 @@ export default function DockPreview({ settings, launchTick = 0, height = 190 }: 
         className={`dock dock--bottom dock--desk-${settings.deskStyle}${reflect ? ' dock--reflect' : ''}`}
         style={{ ...desk.rootVars, '--label-size': `${settings.labelSize}px` } as React.CSSProperties}
       >
-        {edge > 0 && <div className="dock__desk dock__desk-body" style={{ position: 'absolute', left: row.start - pads.mainStart, width: row.length + pads.mainStart + pads.mainEnd, height: thickness - edge, bottom: DESK_INSET, ...desk.plate }} />}
-        <div className="dock__desk" style={{ position: 'absolute', left: row.start - pads.mainStart, width: row.length + pads.mainStart + pads.mainEnd, height: thickness - edge, bottom: edge + DESK_INSET, ...desk.plate }}>
-          <span className="dock__desk-tint" />
-          <span className="dock__desk-sheen" />
-        </div>
+        {shelfMode ? (
+          <div style={{ position: 'absolute', left: row.start - pads.mainStart, width: row.length + pads.mainStart + pads.mainEnd, height: thickness, bottom: DESK_INSET }}>
+            <Shelf length={row.length + pads.mainStart + pads.mainEnd} thickness={thickness} edge={edge} depth={settings.deskDepth} side="bottom" shape={settings.deskShape} opacity={settings.deskOpacity} />
+          </div>
+        ) : (
+          <div className="dock__desk" style={{ position: 'absolute', left: row.start - pads.mainStart, width: row.length + pads.mainStart + pads.mainEnd, height: thickness, bottom: DESK_INSET, ...desk.plate }}>
+            <span className="dock__desk-tint" />
+            <span className="dock__desk-sheen" />
+          </div>
+        )}
 
         {COLORS.map((color, i) => (
           <div

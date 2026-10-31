@@ -2,7 +2,8 @@ import { ReactNode, useEffect, useState } from 'react'
 import { invoke, useActiveTheme, useEvent, useRemote } from '@/api'
 import Icon, { IconName } from '@/icons'
 import DockPreview from '@/components/DockPreview'
-import { DESK_LABELS, DESK_PRESETS, deskTransform } from '@/desk'
+import Shelf from '@/components/Shelf'
+import { DESK_LABELS, DESK_PRESETS } from '@/desk'
 import {
   DESK_STYLES, DockItem, DockLayer, TweakInfo, DockSettings, PackInfo, ThemeDef, WidgetType,
   AnimationCurve, DeskShape, DeskStyle, FalloffCurve, HoverAnimation, IndicatorStyle, LaunchAnimation, ShowAnimation, SpeedPreset, StackSize, WindowAnimation, LabelMode,
@@ -192,12 +193,15 @@ function DockTab({ s, set }: { s: DockSettings; set: Update }) {
 const PAD_KEYS: ['deskPadTop' | 'deskPadBottom' | 'deskPadLeft' | 'deskPadRight', string][] = [['deskPadTop', 'Üst'], ['deskPadBottom', 'Alt'], ['deskPadLeft', 'Sol'], ['deskPadRight', 'Sağ']]
 
 function DeskCard({ style }: { style: DeskStyle }) {
-  const tilt = deskTransform(DESK_PRESETS[style].depth, 'bottom')
+  const preset = DESK_PRESETS[style]
   return (
     <div className={`st-desk dock dock--desk-${style} dock--bottom`} style={{ '--desk-depth': `${DESK_PRESETS[style].depth}px` } as React.CSSProperties}>
-      {DESK_PRESETS[style].edge > 0 && <div className="dock__desk dock__desk-body" style={{ position: 'absolute', left: '10%', right: '10%', bottom: 6, height: 26 - DESK_PRESETS[style].edge * 0.5, ...tilt }} />}
-      <div className="dock__desk" style={{ position: 'absolute', left: '10%', right: '10%', bottom: 6 + DESK_PRESETS[style].edge * 0.5, height: 26 - DESK_PRESETS[style].edge * 0.5, ...tilt }}>
-        <span className="dock__desk-sheen" />
+      <div style={{ position: 'absolute', left: '8%', right: '8%', bottom: 5, height: 34 }}>
+        {preset.depth > 0 ? (
+          <Shelf length={150} thickness={34} edge={Math.round(preset.edge * 0.5)} depth={preset.depth * 0.5} side="bottom" shape="rounded" opacity={1} />
+        ) : (
+          <div className="dock__desk" style={{ position: 'absolute', inset: '8px 0 0 0', borderRadius: 999 }}><span className="dock__desk-sheen" /></div>
+        )}
       </div>
 
       {[0, 1, 2].map((i) => <i key={i} className="st-desk__icon" style={{ left: `${26 + i * 18}%`, bottom: 14 + (i === 1 ? 4 : 0) }} />)}

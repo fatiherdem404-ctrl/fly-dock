@@ -60,13 +60,14 @@ export function deskTransform(depth: number, side: DockPosition): { transform?: 
   return { transform: `perspective(640px) ${rotate} ${scale}`, transformOrigin: ORIGIN[side] }
 }
 
-export function deskStyleVars(s: DockSettings, _thickness: number, side: DockPosition): { rootVars: Record<string, string>; plate: CSSProperties } {
+export function deskStyleVars(s: DockSettings, _thickness: number, _side: DockPosition): { rootVars: Record<string, string>; plate: CSSProperties } {
   return {
     rootVars: {
       '--desk-tint': s.deskColor || 'transparent',
       '--desk-opacity': String(s.deskOpacity),
       '--desk-depth': `${s.deskDepth}px`,
     },
-    plate: { ...deskTransform(s.deskDepth, side), opacity: s.deskOpacity, borderRadius: s.deskShape === 'pill' ? '999px' : s.deskShape === 'square' ? '6px' : undefined },
+    // a shelf (depth > 0) is drawn by the Shelf component; only the flat plate uses these
+    plate: { opacity: s.deskOpacity, borderRadius: s.deskShape === 'pill' ? '999px' : s.deskShape === 'square' ? '6px' : undefined },
   }
 }

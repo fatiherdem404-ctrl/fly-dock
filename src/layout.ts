@@ -118,14 +118,16 @@ export function dockGeometry(s: DockSettings, types: string[], flat: boolean, lo
   }
   overshoot = Math.ceil(overshoot) + 4
 
-  const reflect = s.deskStyle === 'mirror' && !flat
-  const edge = flat ? 0 : Math.max(0, s.deskEdge)
+  // a shelf (depth > 0) has a front face; glass and mirror shelves also reflect the icons standing on them
+  const shelf = s.deskDepth > 0 && !flat
+  const reflect = (s.deskStyle === 'mirror' || s.deskStyle === 'glass3d') && !flat
+  const edge = shelf ? Math.max(0, s.deskEdge) : 0
   const baseOffset = (reflect ? Math.round(iconSize * 0.4) : 0) + edge
   const restThickness = iconSize + pads.crossEdge + pads.crossFar + baseOffset
   const maxThickness = (s.shelfGrows ? maxIcon + liftMax : iconSize) + pads.crossEdge + pads.crossFar + baseOffset
   // The icons themselves stand on the edge-side padding; what pokes past the far side must fit too.
   const farExtent = baseOffset + pads.crossEdge + maxIcon + liftMax + pads.crossFar
-  const deskReach = s.deskDepth > 0 && !flat ? Math.ceil(s.deskDepth * 0.6 + 10) : 0
+  const deskReach = shelf ? 8 : 0 // the soft shadow under a shelf
   const vertical = s.position === 'left' || s.position === 'right'
   const labelW = labelWidth(s, longestLabel)
   // a label sits above a horizontal dock (needs height) and beside a vertical one (needs its width)

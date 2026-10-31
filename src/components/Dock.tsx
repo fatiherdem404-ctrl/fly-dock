@@ -5,6 +5,7 @@ import { isSettled, layoutRow, springFor, speedToMs, stepSpring, targetLifts, ta
 import { deskStyleVars, hoverProfile } from '@/desk'
 import { dockGeometry, fitToScreen, DESK_INSET } from '@/layout'
 import DockIcon from './DockIcon'
+import Shelf from './Shelf'
 
 interface DockProps {
   items: DockItem[]
@@ -39,7 +40,8 @@ export default function Dock({ items, settings: wanted, running, icons, launchin
   const hover = hoverProfile(settings)
   const geo = useMemo(() => dockGeometry(settings, types, flat, longestLabel), [settings, types, flat, longestLabel])
   const { pads, baseOffset, edge, liftMax, restThickness, maxThickness, restStart } = geo
-  const reflect = settings.deskStyle === 'mirror' && !flat
+  const shelfMode = settings.deskDepth > 0 && !flat
+  const reflect = (settings.deskStyle === 'mirror' || settings.deskStyle === 'glass3d') && !flat
   const rest = useMemo(
     () => ({ left: geo.restLeft, width: geo.restWidth, length: geo.restLength, separator: geo.separator }),
     [geo],
@@ -239,11 +241,16 @@ export default function Dock({ items, settings: wanted, running, icons, launchin
         invoke('menu:show', { kind: 'empty' })
       }}
     >
-      {edge > 0 && <div className="dock__desk dock__desk-body" style={{ ...edgeStyle(surfaceStart, DESK_INSET, surfaceLength, thickness - edge), ...desk.plate }} />}
-      <div className="dock__desk" style={{ ...edgeStyle(surfaceStart, edge + DESK_INSET, surfaceLength, thickness - edge), ...desk.plate }}>
-        <span className="dock__desk-tint" />
-        <span className="dock__desk-sheen" />
-      </div>
+      {shelfMode ? (
+        <div style={edgeStyle(surfaceStart, DESK_INSET, surfaceLength, thickness)}>
+          <Shelf length={surfaceLength} thickness={thickness} edge={edge} depth={settings.deskDepth} side={side} shape={settings.deskShape} opacity={settings.deskOpacity} />
+        </div>
+      ) : (
+        <div className="dock__desk" style={{ ...edgeStyle(surfaceStart, DESK_INSET, surfaceLength, thickness), ...desk.plate }}>
+          <span className="dock__desk-tint" />
+          <span className="dock__desk-sheen" />
+        </div>
+      )}
 
       {items.map((item, i) => {
         const size = current[i]
