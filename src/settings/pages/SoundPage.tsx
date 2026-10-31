@@ -12,7 +12,7 @@ export const SOUND_GROUPS: [SoundGroup, string, string][] = [
   ['click', 'Tıklama', 'Simgeye tıklayınca'],
   ['launch', 'Uygulama açılışı', 'Kapalı bir program başlatılınca'],
   ['dock', 'Dock', 'Simge bırakma, silme ve otomatik gizlenen dockun gelip gitmesi'],
-  ['windows', 'Dock pencereleri', 'Klasör, grup ve çark penceresinin cin efektiyle açılıp kapanması'],
+  ['windows', 'Dock pencereleri', 'Klasör, grup ve kontrol paneli penceresinin cin efektiyle açılıp kapanması'],
   ['menus', 'Menüler', 'Sağ tık menüsünün açılması ve seçim'],
   ['trash', 'Çöp kutusu', 'Dosya atma ve çöp kutusunu boşaltma'],
   ['dialogs', 'Onay pencereleri', 'Soru, onay, vazgeçme ve uyarı sesleri'],

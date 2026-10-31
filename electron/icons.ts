@@ -19,7 +19,7 @@ const roundIcon = (inner: string, from: string, to: string) =>
   )
 
 // A gear for the control-panel menu and the power symbol for the power menu, drawn as vectors.
-const WHEEL_ICON = roundIcon('<circle cx="32" cy="32" r="8"/><path d="M32 12v6M32 46v6M12 32h6M46 32h6M18 18l4 4M42 42l4 4M46 18l-4 4M22 42l-4 4"/>', '#5aa2ff', '#1f55d6')
+const WHEEL_ICON = roundIcon('<rect x="14" y="17" width="36" height="30" rx="4"/><path d="M14 27h36"/><path d="M22 36h10M22 42h16"/><circle cx="41" cy="36" r="2.6"/>', '#5aa2ff', '#1f55d6')
 const POWER_ICON = roundIcon('<path d="M32 15v17"/><path d="M21 22a16 16 0 1 0 22 0"/>', '#ff7a7a', '#d6285a')
 
 let trashFull = false

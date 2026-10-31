@@ -248,7 +248,7 @@ function showMenu(_e: Electron.IpcMainInvokeEvent, payload: { kind: 'empty' | 'i
     add('Program ekle…', 'plus', () => pickAndAdd(['openFile'], [{ name: 'Programlar', extensions: ['exe', 'lnk'] }]), { disabled: locked })
     add('Klasör ekle…', 'folder', () => pickAndAdd(['openDirectory']), { disabled: locked })
     add('Yeni grup', 'group', () => createGroup(), { disabled: locked })
-    add('Çark menüsü ekle', 'settings', () => addSpecial('wheel', 'Denetim'), { disabled: locked || getItems().some((i) => i.type === 'wheel') })
+    add('Kontrol paneli ekle', 'controlpanel', () => addSpecial('wheel', 'Kontrol paneli'), { disabled: locked || getItems().some((i) => i.type === 'wheel') })
     add('Güç menüsü ekle', 'power', () => addSpecial('power', 'Güç'), { disabled: locked || getItems().some((i) => i.type === 'power') })
     add('Başlat düğmesi ekle', 'play', () => addStartButton(), { disabled: locked || getItems().some((i) => i.type === 'start') })
     add('Ayraç ekle', 'minus', addSeparator, { disabled: locked })

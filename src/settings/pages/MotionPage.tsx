@@ -50,7 +50,7 @@ export function MotionTab({ s, set, preview }: { s: DockSettings; set: Update; p
           { id: 'scale', label: 'Ölçek', preview: <ShowPreview kind="scale" /> },
         ]} />
       </Card>
-      <Card icon="window" tab="Dock ve pencereler" title="Dock pencereleri" hint="Klasör, grup ve çark penceresinin açılış ve kapanış efekti">
+      <Card icon="window" tab="Dock ve pencereler" title="Dock pencereleri" hint="Klasör, grup ve kontrol paneli penceresinin açılış ve kapanış efekti">
         <Cards<WindowAnimation> size="s" value={s.windowAnimation} onChange={(windowAnimation) => set({ windowAnimation })} options={[
           { id: 'genie', label: 'Cin', hint: 'Simgeden akarak açılır, geri çekilir', preview: <WindowAnimPreview kind="genie" /> },
           { id: 'scale', label: 'Büyüme', preview: <WindowAnimPreview kind="scale" /> },

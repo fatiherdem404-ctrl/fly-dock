@@ -42,7 +42,7 @@ export default function WheelView() {
     </>
   )
   return (
-    <DockWindow title="Çark menüsü" icon="settings" toolbar={toolbar} footer={footer}>
+    <DockWindow title="Kontrol paneli" icon="controlpanel" toolbar={toolbar} footer={footer}>
         <div className="stack__scroll">
           {groups.length === 0 && data && <div className="stack__empty"><span>Eşleşen bir şey yok</span></div>}
           {groups.map(([category, entries]) => (

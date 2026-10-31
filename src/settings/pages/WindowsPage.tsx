@@ -21,7 +21,7 @@ export function WindowsTab({ s, set }: { s: DockSettings; set: Update }) {
           </>
         )}
       </Card>
-      <Card icon="location" tab="Pencereler" title="Açılış konumu" hint="Klasör, grup ve çark penceresi ekranın neresinde açılsın. Açılış efekti her durumda simgenin olduğu yerden başlar.">
+      <Card icon="location" tab="Pencereler" title="Açılış konumu" hint="Klasör, grup ve kontrol paneli penceresi ekranın neresinde açılsın. Açılış efekti her durumda simgenin olduğu yerden başlar.">
         <Cards<StackPlacement> size="s" value={s.stackPlacement} onChange={(stackPlacement) => set({ stackPlacement })} options={[
           { id: 'icon', label: 'Simgenin üstünde', hint: 'Tıkladığın simgeye yaslı', preview: <PlacementPreview place="icon" /> },
           { id: 'dock', label: 'Dock ortasında', hint: 'Dock’un kenarına yaslı', preview: <PlacementPreview place="dock" /> },

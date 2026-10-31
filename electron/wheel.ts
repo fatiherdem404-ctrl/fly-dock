@@ -1,4 +1,4 @@
-// The gear ("çark") menu: a fixed catalogue of Windows control panels, settings pages and admin tools.
+// The control panel (the old gear menu): a fixed catalogue of Windows control panels, settings pages and admin tools.
 // Only entries from this list can run, and the renderer only ever sends an entry id, never a command line.
 import { dialog, shell } from 'electron'
 import crypto from 'node:crypto'
