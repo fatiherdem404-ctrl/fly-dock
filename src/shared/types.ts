@@ -139,6 +139,18 @@ export interface DockSettings {
   stackWidth: number
   stackHeight: number
   separatorStyle: SeparatorStyle
+  /** Bar thickness in px; 0 = the look's own. */
+  sepThickness: number
+  /** Bar length as a percentage of the icon size. */
+  sepHeight: number
+  /** Bar colour; empty = automatic for the desk and theme. */
+  sepColor: string
+  sepRadius: number
+  /** Border on the left / right of the bar (px; 0 = none) and its colour (empty = automatic). */
+  sepBorderL: number
+  sepBorderR: number
+  sepBorderLColor: string
+  sepBorderRColor: string
   // labels
   labelMode: LabelMode
   labelSize: number
@@ -270,6 +282,14 @@ export const DEFAULT_SETTINGS: DockSettings = {
   stackWidth: 520,
   stackHeight: 420,
   separatorStyle: 'auto',
+  sepThickness: 0,
+  sepHeight: 70,
+  sepColor: '',
+  sepRadius: 2,
+  sepBorderL: 0,
+  sepBorderR: 0,
+  sepBorderLColor: '',
+  sepBorderRColor: '',
   labelMode: 'hover',
   labelSize: 12,
   labelFont: '',

@@ -107,6 +107,26 @@ export function separatorKind(s: Pick<DockSettings, 'separatorStyle' | 'deskStyl
   }
 }
 
+/**
+ * Size and look of the separator bar from the settings: its length along the dock, and the CSS variables the
+ * stylesheet reads (thickness, colour, roundness, left/right borders). Anything left at its default is not set,
+ * so the look chosen for the desk stays in charge.
+ */
+export function separatorStyle(s: DockSettings, slot: number): { length: number; vars: Record<string, string> } {
+  const vars: Record<string, string> = {}
+  const borders = Math.max(0, s.sepBorderL) + Math.max(0, s.sepBorderR)
+  // the bar must fit in its slot and be wide enough to show its borders
+  const wanted = s.sepThickness > 0 ? s.sepThickness : 0
+  if (wanted || borders) vars['--sep-w'] = `${Math.min(Math.max(wanted, borders + 1), Math.max(2, slot - 2))}px`
+  if (s.sepColor) vars['--sep-fill'] = s.sepColor
+  if (s.sepRadius !== 2) vars['--sep-r'] = `${s.sepRadius}px`
+  if (s.sepBorderL > 0) vars['--sep-bl'] = `${s.sepBorderL}px`
+  if (s.sepBorderR > 0) vars['--sep-br'] = `${s.sepBorderR}px`
+  if (s.sepBorderLColor) vars['--sep-blc'] = s.sepBorderLColor
+  if (s.sepBorderRColor) vars['--sep-brc'] = s.sepBorderRColor
+  return { length: (s.iconSize * Math.min(Math.max(s.sepHeight, 10), 100)) / 100, vars }
+}
+
 export function deskStyleVars(s: DockSettings, _thickness: number, _side: DockPosition, texture: DeskTexture | null = null): { rootVars: Record<string, string>; plate: CSSProperties } {
   return {
     rootVars: {

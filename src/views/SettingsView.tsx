@@ -173,6 +173,33 @@ function DockTab({ s, set }: { s: DockSettings; set: Update }) {
         </Choice>
       </Card>
 
+      <Card title="Ayraç ayrıntıları" hint="Seçtiğin görünümün üstüne uygulanır. Boş bıraktığın ayar rafa ve temaya göre otomatik kalır.">
+        <Row label="Kalınlık" hint="0 = görünümün kendi kalınlığı"><Slider value={s.sepThickness} min={0} max={16} format={(v) => (v === 0 ? 'otomatik' : `${v} px`)} onChange={(sepThickness) => set({ sepThickness })} /></Row>
+        <Row label="Yükseklik" hint="Simge boyutunun yüzdesi"><Slider value={s.sepHeight} min={20} max={100} unit="%" onChange={(sepHeight) => set({ sepHeight })} /></Row>
+        <Row label="Köşe yuvarlaklığı"><Slider value={s.sepRadius} min={0} max={8} unit=" px" onChange={(sepRadius) => set({ sepRadius })} /></Row>
+        <Row label="Renk" hint="Boşsa otomatik">
+          <div className="st-color">
+            <input type="color" value={/^#[0-9a-f]{6}$/i.test(s.sepColor) ? s.sepColor : '#cccccc'} onChange={(e) => set({ sepColor: e.target.value })} />
+            <button className="st-btn" onClick={() => set({ sepColor: '' })} disabled={!s.sepColor}>Otomatik</button>
+          </div>
+        </Row>
+        <Row label="Sol kenar" hint="0 = kenarlık yok"><Slider value={s.sepBorderL} min={0} max={6} unit=" px" onChange={(sepBorderL) => set({ sepBorderL })} /></Row>
+        <Row label="Sol kenar rengi">
+          <div className="st-color">
+            <input type="color" value={/^#[0-9a-f]{6}$/i.test(s.sepBorderLColor) ? s.sepBorderLColor : '#ffffff'} onChange={(e) => set({ sepBorderLColor: e.target.value })} />
+            <button className="st-btn" onClick={() => set({ sepBorderLColor: '' })} disabled={!s.sepBorderLColor}>Otomatik</button>
+          </div>
+        </Row>
+        <Row label="Sağ kenar"><Slider value={s.sepBorderR} min={0} max={6} unit=" px" onChange={(sepBorderR) => set({ sepBorderR })} /></Row>
+        <Row label="Sağ kenar rengi">
+          <div className="st-color">
+            <input type="color" value={/^#[0-9a-f]{6}$/i.test(s.sepBorderRColor) ? s.sepBorderRColor : '#000000'} onChange={(e) => set({ sepBorderRColor: e.target.value })} />
+            <button className="st-btn" onClick={() => set({ sepBorderRColor: '' })} disabled={!s.sepBorderRColor}>Otomatik</button>
+          </div>
+        </Row>
+        <Row label="Ayracı sıfırla"><button className="st-btn" onClick={() => set({ separatorStyle: 'auto', sepThickness: 0, sepHeight: 70, sepColor: '', sepRadius: 2, sepBorderL: 0, sepBorderR: 0, sepBorderLColor: '', sepBorderRColor: '' })}><Icon name="refresh" size={15} />Varsayılana dön</button></Row>
+      </Card>
+
       <Card title="Etiketler">
         <Row label="Simge adları"><Segmented<LabelMode> value={s.labelMode} onChange={(labelMode) => set({ labelMode })} options={[['hover', 'Üzerine gelince'], ['always', 'Hep'], ['never', 'Hiç']]} /></Row>
         {s.labelMode !== 'never' && (

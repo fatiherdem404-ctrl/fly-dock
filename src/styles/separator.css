@@ -16,20 +16,39 @@
 .dock--desk-wall { --sep-dark: rgba(40, 12, 6, 0.8); --sep-light: rgba(255, 190, 160, 0.45); --sep-main: rgba(40, 12, 6, 0.7); }
 .dock--desk-custom { --sep-dark: rgba(0, 0, 0, 0.7); --sep-light: rgba(255, 255, 255, 0.5); --sep-main: rgba(0, 0, 0, 0.55); }
 
-.dock__separator::after { content: ''; display: block; border-radius: 2px; flex: none; }
+/*
+ * The bar itself. Each look sets small defaults (--k-*); the settings can override thickness (--sep-w), colour
+ * (--sep-fill), roundness (--sep-r) and add a border on each side of the bar (--sep-bl / --sep-br and their colours).
+ * In a horizontal dock the bar is vertical (left and right borders); in a vertical dock it lies down, and the two
+ * borders become its top and bottom.
+ */
+.dock__separator[data-kind='line'] { --k-w: 2px; }
+.dock__separator[data-kind='groove'] { --k-w: 4px; --k-bg: linear-gradient(90deg, var(--sep-dark) 0 50%, var(--sep-light) 50% 100%); --k-bg-v: linear-gradient(180deg, var(--sep-dark) 0 50%, var(--sep-light) 50% 100%); }
+.dock__separator[data-kind='dots'] { --k-w: 3px; --k-r: 0px; --k-bg: repeating-linear-gradient(180deg, var(--sep-main) 0 3px, transparent 3px 8px); --k-bg-v: repeating-linear-gradient(90deg, var(--sep-main) 0 3px, transparent 3px 8px); }
+.dock__separator[data-kind='glow'] { --k-w: 3px; --k-shadow: 0 0 10px 1px var(--sep-glow, var(--accent)); }
+
+.dock__separator::after {
+  content: '';
+  display: block;
+  flex: none;
+  box-sizing: border-box;
+  border-radius: var(--sep-r, var(--k-r, 2px));
+  background: var(--sep-fill, var(--k-bg, var(--sep-main)));
+  box-shadow: var(--k-shadow, none);
+}
 .dock__separator[data-kind='none']::after { display: none; }
-
-/* along a horizontal dock the separator is a vertical bar, along a vertical dock a horizontal one */
-.dock__separator[data-kind='line'][data-horizontal='true']::after { width: 2px; height: 100%; background: var(--sep-main); }
-.dock__separator[data-kind='line'][data-horizontal='false']::after { height: 2px; width: 100%; background: var(--sep-main); }
-
-.dock__separator[data-kind='groove'][data-horizontal='true']::after { width: 4px; height: 100%; background: linear-gradient(90deg, var(--sep-dark) 0 50%, var(--sep-light) 50% 100%); }
-.dock__separator[data-kind='groove'][data-horizontal='false']::after { height: 4px; width: 100%; background: linear-gradient(180deg, var(--sep-dark) 0 50%, var(--sep-light) 50% 100%); }
-
-.dock__separator[data-kind='dots'][data-horizontal='true']::after { width: 3px; height: 100%; background: repeating-linear-gradient(180deg, var(--sep-main) 0 3px, transparent 3px 8px); border-radius: 0; }
-.dock__separator[data-kind='dots'][data-horizontal='false']::after { height: 3px; width: 100%; background: repeating-linear-gradient(90deg, var(--sep-main) 0 3px, transparent 3px 8px); border-radius: 0; }
-
-.dock__separator[data-kind='glow'][data-horizontal='true']::after { width: 3px; height: 100%; background: var(--sep-main); box-shadow: 0 0 10px 1px var(--sep-glow, var(--accent)); }
-.dock__separator[data-kind='glow'][data-horizontal='false']::after { height: 3px; width: 100%; background: var(--sep-main); box-shadow: 0 0 10px 1px var(--sep-glow, var(--accent)); }
+.dock__separator[data-horizontal='true']::after {
+  width: var(--sep-w, var(--k-w, 2px));
+  height: 100%;
+  border-left: var(--sep-bl, 0px) solid var(--sep-blc, var(--sep-light));
+  border-right: var(--sep-br, 0px) solid var(--sep-brc, var(--sep-dark));
+}
+.dock__separator[data-horizontal='false']::after {
+  height: var(--sep-w, var(--k-w, 2px));
+  width: 100%;
+  background: var(--sep-fill, var(--k-bg-v, var(--k-bg, var(--sep-main))));
+  border-top: var(--sep-bl, 0px) solid var(--sep-blc, var(--sep-light));
+  border-bottom: var(--sep-br, 0px) solid var(--sep-brc, var(--sep-dark));
+}
 .dock--desk-glass .dock__separator[data-kind='glow']::after,
 .dock--desk-matte .dock__separator[data-kind='glow']::after { box-shadow: 0 0 10px 1px var(--accent); }

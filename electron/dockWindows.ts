@@ -93,8 +93,13 @@ export function applyLayer() {
   const { layer } = getSettings()
   for (const { win } of docks.values()) {
     if (win.isDestroyed()) continue
-    if (layer === 'above') win.setAlwaysOnTop(true, 'screen-saver')
-    else win.setAlwaysOnTop(false)
+    if (layer === 'above') {
+      win.setAlwaysOnTop(true, 'screen-saver')
+      // a send-to-bottom still on its way from an earlier setting must not win: assert once more shortly after
+      setTimeout(() => {
+        if (!win.isDestroyed() && getSettings().layer === 'above') win.setAlwaysOnTop(true, 'screen-saver')
+      }, 200)
+    } else win.setAlwaysOnTop(false)
     if (layer === 'below') helper.toBottom(handleOf(win)).catch(() => {})
   }
 }

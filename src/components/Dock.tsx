@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { DockItem, DockSettings, RunningState } from '@/shared/types'
 import { invoke } from '@/api'
 import { isSettled, layoutRow, springFor, speedToMs, stepSpring, targetLifts, targetSizes } from '@/physics'
-import { deskStyleVars, hoverProfile, shelfRadii, separatorKind } from '@/desk'
+import { deskStyleVars, hoverProfile, shelfRadii, separatorKind, separatorStyle } from '@/desk'
 import { dockGeometry, fitToScreen, DESK_INSET } from '@/layout'
 import DockIcon from './DockIcon'
 import Shelf from './Shelf'
@@ -224,6 +224,7 @@ export default function Dock({ items, settings: wanted, running, icons, launchin
 
   const texture = useTexture(settings.deskStyle === 'custom' ? settings.deskTexFile : '')
   const desk = deskStyleVars(settings, thickness, side, texture)
+  const sep = separatorStyle(settings, iconSize * 0.35)
   void maxThickness
 
   return (
@@ -257,7 +258,7 @@ export default function Dock({ items, settings: wanted, running, icons, launchin
         const base = edgeStyle(rowStart + positions[i], pads.crossEdge + baseOffset + DESK_INSET + (lifts.current[i] ?? 0), size, size)
         if (item.type === 'separator') {
           return (
-            <div key={item.id} className="dock__separator" data-kind={separatorKind(settings)} data-horizontal={horizontal} style={{ ...base, [horizontal ? 'height' : 'width']: iconSize * 0.7 }}
+            <div key={item.id} className="dock__separator" data-kind={separatorKind(settings)} data-horizontal={horizontal} style={{ ...base, ...sep.vars, [horizontal ? 'height' : 'width']: sep.length } as React.CSSProperties}
               draggable={!locked} onDragStart={(e) => { e.dataTransfer.setData(DRAG_TYPE, item.id); setDragging(item.id) }}
               onDragEnd={(e) => { setDragging(null); if (outside(e)) invoke('items:remove', item.id) }}
               onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); invoke('menu:show', { kind: 'icon', itemId: item.id }) }}
