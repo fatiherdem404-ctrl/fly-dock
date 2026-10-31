@@ -399,7 +399,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   deskRadTL: 24,
   deskRadTR: 24,
   deskRadBL: 24,
-  deskRadBR: 60,
+  deskRadBR: 24,
   deskRadLinked: false,
   deskEdge: 0,
   deskTexScale: 100,
