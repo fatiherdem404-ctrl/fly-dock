@@ -21,6 +21,7 @@ import { showStack, showPanel, closeStack, readEntries } from './stackWindow'
 import { wheelEntries, runWheelEntry, setWheelState } from './wheel'
 import { showPowerMenu, closePowerMenu, runPowerAction } from './power'
 import { createTweakEngine, realRegistry, TWEAKS } from './tweaks'
+import { runElevated } from './elevated'
 import { store } from './store'
 import { popupMenu, menuItemsForRenderer, pickMenuItem, closeMenu, MenuSpec } from './contextMenu'
 import { initWidgets, addWidget, removeWidget, updateWidget, moveWidget, systemStats, weatherFor, nowPlaying, disposeWidgets } from './widgets'
@@ -47,7 +48,8 @@ function openSettings() {
     minWidth: 780,
     minHeight: 520,
     title: `${brand.name} — Ayarlar`,
-    show: !HEADLESS,
+    // tests keep the window alive but far off-screen: a hidden window gets no animation frames to capture
+    ...(HEADLESS ? { x: -OFFSCREEN, y: 0 } : {}),
     backgroundColor: '#14161c',
     autoHideMenuBar: true,
     icon: path.join(app.getAppPath(), brand.logo.icon),
@@ -107,6 +109,7 @@ function showStackAtCursor(item: DockItem) {
 const tweakEngine = createTweakEngine({
   registry: realRegistry,
   tweaks: TWEAKS,
+  elevated: runElevated,
   store: {
     get: () => ({ applied: store.get('tweaks')?.applied ?? {}, log: store.get('tweaks')?.log ?? [] }),
     set: (state) => store.set('tweaks', state),
@@ -255,6 +258,7 @@ function registerIpc() {
   handle('power:close', () => closePowerMenu())
   handle('tweaks:list', () => tweakEngine.list())
   handle('tweaks:set', (_e, id, enabled) => tweakEngine.set(id, enabled))
+  handle('tweaks:restore-point', () => tweakEngine.restorePoint())
   handle('tweaks:revert-all', () => tweakEngine.revertAll())
   handle('tweaks:log', () => tweakEngine.log())
   handle('tweaks:restart-explorer', () => restartExplorer())

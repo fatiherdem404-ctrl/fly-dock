@@ -36,6 +36,8 @@ export interface TweakInfo {
   enabled: boolean
   /** True when this app changed the setting and can put the old value back. */
   changedByUs: boolean
+  /** Needs administrator rights: Windows asks for confirmation (UAC) when it is switched. */
+  admin: boolean
 }
 
 export interface TweakLogEntry {
@@ -282,6 +284,7 @@ export interface InvokeMap {
   'power:close': { args: []; result: void }
   'tweaks:list': { args: []; result: TweakInfo[] }
   'tweaks:set': { args: [id: string, enabled: boolean]; result: { ok: boolean; message: string } }
+  'tweaks:restore-point': { args: []; result: { ok: boolean; message: string } }
   'tweaks:revert-all': { args: []; result: number }
   'tweaks:log': { args: []; result: TweakLogEntry[] }
   'tweaks:restart-explorer': { args: []; result: void }

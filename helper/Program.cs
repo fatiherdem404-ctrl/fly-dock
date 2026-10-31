@@ -116,8 +116,9 @@ internal static class Program
     }
 
     [STAThread]
-    static void Main()
+    static void Main(string[] args)
     {
+        if (args.Length > 0 && args[0] == "--elevated") Environment.Exit(Elevated.Run(args));
         Console.OutputEncoding = new System.Text.UTF8Encoding(false);
         var worker = new Thread(Worker) { IsBackground = true, Name = "worker" };
         worker.SetApartmentState(ApartmentState.STA);

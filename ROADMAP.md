@@ -97,7 +97,7 @@ Sınırlar: akrilik/Mica ayrı bir sistem penceresi olduğu için sabit durur (t
 | ✅ N.4 | Çark menüsü (madde 7): sabit katalog, arama, görünürlük ve sıralama, yalnızca listedeki komutlar | tamam |
 | ✅ N.5 | Güç menüsü (madde 6): tam ekran, kilitle/uyku/oturumu kapat/yeniden başlat/kapat, ikinci tıklama onayı. Karşılama animasyonu ve kilit ekranı görseli yok | kısmen |
 | ✅ N.6 | WI Tweaks çekirdeği (madde 10): 7 HKCU ayarı, eski değeri saklayıp geri yükler, günlük, hepsini geri al | tamam |
-| ⏳ | Tweaks: yönetici gerektirenler (kısayol oku, hazırda bekletme, hizmetler), geri yükleme noktası, ayrı yükseltilmiş yardımcı | bekliyor |
+| ✅ N.7 | Tweaks: yönetici gerektirenler (kısayol oku, hazırda bekletme), geri yükleme noktası, ayrı yükseltilmiş yardımcı (UAC Windows'tan gelir). Hizmetler (SysMain, telemetri) hâlâ yok | kısmen |
 | ⏳ | Tema paketine duvar kağıdı/imleç/ses şeması, `.theme` yöneticisi (madde 1) | v2 ile |
 | ⏳ | DWM efektleri, AppBar çubuğu ve tepsi ikonları (madde 3, 5) | bekliyor: sistem pencerelerine dokunma kararı |
 | ⛔ | Gelişmiş Tema Desteği / SecureUxTheme (madde 4) | kullanıcı onayı yok, sistem dosyalarını yamar |

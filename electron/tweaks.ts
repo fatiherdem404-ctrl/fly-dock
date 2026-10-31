@@ -9,6 +9,8 @@ import type { TweakInfo, TweakLogEntry } from '../src/shared/types'
 export type TweakSpec =
   | { kind: 'value'; key: string; name: string; type: 'REG_DWORD' | 'REG_SZ'; on: string; off: string }
   | { kind: 'key'; key: string }
+  /** Needs administrator rights: changed by the elevated helper, whose job list is fixed; `state` is only read. */
+  | { kind: 'admin'; job: string; state: { key: string; name: string; on: string | 'exists' } }
 
 export interface TweakDef {
   id: string
@@ -25,6 +27,8 @@ export interface TweakDef {
 
 const ADV = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced'
 
+const POWER = 'HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power'
+
 export const TWEAKS: TweakDef[] = [
   { id: 'file-extensions', name: 'Dosya uzantılarını göster', description: 'Gezgin, dosya adlarının sonundaki .exe, .txt gibi uzantıları gösterir.', category: 'Gezgin', risk: 'safe', effect: 'explorer', spec: { kind: 'value', key: ADV, name: 'HideFileExt', type: 'REG_DWORD', on: '0', off: '1' } },
   { id: 'hidden-files', name: 'Gizli dosyaları göster', description: 'Gizli işaretli dosya ve klasörler Gezgin\'de görünür.', category: 'Gezgin', risk: 'safe', effect: 'explorer', spec: { kind: 'value', key: ADV, name: 'Hidden', type: 'REG_DWORD', on: '1', off: '2' } },
@@ -33,6 +37,8 @@ export const TWEAKS: TweakDef[] = [
   { id: 'game-mode', name: 'Oyun Modu açık', description: 'Windows oyun çalışırken arka plan işlerini kısar.', category: 'Performans', risk: 'safe', effect: 'none', spec: { kind: 'value', key: 'HKCU\\Software\\Microsoft\\GameBar', name: 'AutoGameModeEnabled', type: 'REG_DWORD', on: '1', off: '0' } },
   { id: 'no-window-animations', name: 'Pencere küçültme animasyonunu kapat', description: 'Pencereler küçülürken ve büyürken animasyon oynatılmaz; sistem biraz daha hızlı hissedilir.', category: 'Performans', risk: 'safe', effect: 'signout', spec: { kind: 'value', key: 'HKCU\\Control Panel\\Desktop\\WindowMetrics', name: 'MinAnimate', type: 'REG_SZ', on: '0', off: '1' } },
   { id: 'no-startup-delay', name: 'Başlangıç gecikmesini kaldır', description: 'Windows açılışta başlangıç programlarını bekletmeden başlatır.', category: 'Başlangıç', risk: 'safe', effect: 'signout', spec: { kind: 'value', key: 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Serialize', name: 'StartupDelayInMSec', type: 'REG_DWORD', on: '0', off: '10000' } },
+  { id: 'no-shortcut-arrow', name: 'Kısayol okunu kaldır', description: 'Kısayol simgelerinin üstündeki küçük oku gizler. Yönetici onayı ister.', category: 'Görünüm', risk: 'caution', effect: 'explorer', spec: { kind: 'admin', job: 'shortcut-arrow', state: { key: 'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Icons', name: '29', on: 'exists' } } },
+  { id: 'no-hibernate', name: 'Hazırda bekletmeyi kapat', description: 'hiberfil.sys dosyasını siler ve diskte birkaç GB yer açar; hızlı başlatma da kapanır. Yönetici onayı ister.', category: 'Performans', risk: 'caution', effect: 'none', spec: { kind: 'admin', job: 'hibernate', state: { key: POWER, name: 'HibernateEnabled', on: '0' } } },
 ]
 
 // ---- registry access ----
@@ -62,10 +68,14 @@ function reg(args: string[]): Promise<{ code: number; out: string }> {
 const ensureHkcu = (key: string) => {
   if (!/^HKCU\\/i.test(key)) throw new Error('tweaks may only touch HKCU')
 }
+/** Reading is allowed from HKLM too (to show the state of an administrator tweak); writing never is. */
+const ensureReadable = (key: string) => {
+  if (!/^HK(CU|LM)\\/i.test(key)) throw new Error('unsupported registry hive')
+}
 
 export const realRegistry: Registry = {
   async query(key, name) {
-    ensureHkcu(key)
+    ensureReadable(key)
     const { code, out } = await reg(['query', key, '/v', name])
     if (code !== 0) return null
     const match = out.split(/\r?\n/).map((l) => l.match(/^\s+(.+?)\s{2,}(REG_\w+)\s*(.*)$/)).find((m) => m && m[1].toLowerCase() === name.toLowerCase())
@@ -75,7 +85,7 @@ export const realRegistry: Registry = {
     return { type: match[2], data }
   },
   async keyExists(key) {
-    ensureHkcu(key)
+    ensureReadable(key)
     return (await reg(['query', key])).code === 0
   },
   async write(key, name, type, data) {
@@ -113,8 +123,12 @@ export interface TweakStore {
   set(state: { applied: Record<string, Backup>; log: TweakLogEntry[] }): void
 }
 
-export function createTweakEngine(deps: { registry: Registry; tweaks: TweakDef[]; store: TweakStore; build?: number; now?: () => number }) {
+/** Runs one job of the elevated helper (the Windows confirmation prompt appears). */
+export type ElevatedRunner = (op: 'apply' | 'revert', job: string) => Promise<{ ok: boolean; message: string }>
+
+export function createTweakEngine(deps: { registry: Registry; tweaks: TweakDef[]; store: TweakStore; elevated?: ElevatedRunner; build?: number; now?: () => number }) {
   const { registry, tweaks, store } = deps
+  const elevated: ElevatedRunner = deps.elevated ?? (async () => ({ ok: false, message: 'administrator mode is not available' }))
   const build = deps.build ?? Number(os.release().split('.')[2])
   const now = deps.now ?? Date.now
 
@@ -122,6 +136,11 @@ export function createTweakEngine(deps: { registry: Registry; tweaks: TweakDef[]
 
   async function isOn(t: TweakDef): Promise<boolean> {
     try {
+      if (t.spec.kind === 'admin') {
+        const { key, name, on } = t.spec.state
+        const value = await registry.query(key, name)
+        return on === 'exists' ? value !== null : value?.data === on
+      }
       if (t.spec.kind === 'key') return await registry.keyExists(t.spec.key)
       const value = await registry.query(t.spec.key, t.spec.name)
       return value?.data === t.spec.on
@@ -139,7 +158,7 @@ export function createTweakEngine(deps: { registry: Registry; tweaks: TweakDef[]
     const state = store.get()
     const rows: TweakInfo[] = []
     for (const t of tweaks.filter(supported)) {
-      rows.push({ id: t.id, name: t.name, description: t.description, category: t.category, risk: t.risk, effect: t.effect, enabled: await isOn(t), changedByUs: t.id in state.applied })
+      rows.push({ id: t.id, name: t.name, description: t.description, category: t.category, risk: t.risk, effect: t.effect, enabled: await isOn(t), changedByUs: t.id in state.applied, admin: t.spec.kind === 'admin' })
     }
     return rows
   }
@@ -147,6 +166,14 @@ export function createTweakEngine(deps: { registry: Registry; tweaks: TweakDef[]
   async function turnOn(t: TweakDef) {
     const state = store.get()
     let backup: Backup
+    if (t.spec.kind === 'admin') {
+      if (await isOn(t)) return // already the way we want it: nothing of ours to undo later
+      const done = await elevated('apply', t.spec.job)
+      if (!done.ok || !(await isOn(t))) throw new Error(done.message === 'cancelled' ? 'cancelled' : 'not applied (confirmation declined or refused)')
+      store.set({ ...state, applied: { ...state.applied, [t.id]: { existed: false } } })
+      log(t.id, 'apply')
+      return
+    }
     if (t.spec.kind === 'key') {
       if (await registry.keyExists(t.spec.key)) return // already on: nothing of ours to undo later
       backup = { existed: false }
@@ -164,6 +191,16 @@ export function createTweakEngine(deps: { registry: Registry; tweaks: TweakDef[]
   async function turnOff(t: TweakDef) {
     const state = store.get()
     const backup = state.applied[t.id]
+    if (t.spec.kind === 'admin') {
+      // a value somebody else set (or Windows itself) is never ours to remove
+      if (!backup) throw new Error('this was already set before this app; it is left as it is')
+      const done = await elevated('revert', t.spec.job)
+      if (!done.ok || (await isOn(t))) throw new Error(done.message === 'cancelled' ? 'cancelled' : 'not reverted (confirmation declined or refused)')
+      const { [t.id]: _gone, ...rest } = state.applied
+      store.set({ ...state, applied: rest })
+      log(t.id, 'revert')
+      return
+    }
     if (t.spec.kind === 'key') {
       await registry.deleteKey(t.spec.key)
     } else if (backup?.existed && backup.type && backup.data !== undefined) {
@@ -199,5 +236,10 @@ export function createTweakEngine(deps: { registry: Registry; tweaks: TweakDef[]
     return count
   }
 
-  return { list, set, revertAll, log: () => store.get().log }
+  /** A system restore point before anything bigger is changed (needs the confirmation prompt, Windows limits it to one per day). */
+  async function restorePoint() {
+    return elevated('apply', 'restore-point')
+  }
+
+  return { list, set, revertAll, restorePoint, log: () => store.get().log }
 }

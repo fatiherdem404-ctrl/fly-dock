@@ -71,4 +71,64 @@ try {
 } finally {
   cleanup()
 }
+// ---- administrator tweaks: state is read, changes go through the elevated helper (faked here) ----
+{
+  const machine = new Map() // pretend HKLM
+  const fake = { ...realRegistry, query: async (key, name) => (machine.has(key + name) ? { type: 'REG_DWORD', data: machine.get(key + name) } : null) }
+  const adminTweaks = [
+    { id: 'arrow', name: 'Arrow', description: '', category: 't', risk: 'caution', effect: 'explorer', spec: { kind: 'admin', job: 'shortcut-arrow', state: { key: 'HKLM\\X', name: '29', on: 'exists' } } },
+    { id: 'hib', name: 'Hib', description: '', category: 't', risk: 'caution', effect: 'none', spec: { kind: 'admin', job: 'hibernate', state: { key: 'HKLM\\P', name: 'HibernateEnabled', on: '0' } } },
+  ]
+  const calls = []
+  let allow = true
+  const elevated = async (op, job) => {
+    calls.push(`${op}:${job}`)
+    if (!allow) return { ok: false, message: 'cancelled' }
+    if (job === 'shortcut-arrow') op === 'apply' ? machine.set('HKLM\\X29', 'x') : machine.delete('HKLM\\X29')
+    if (job === 'hibernate') machine.set('HKLM\\PHibernateEnabled', op === 'apply' ? '0' : '1')
+    return { ok: true, message: 'done' }
+  }
+  let st = { applied: {}, log: [] }
+  const admin = createTweakEngine({ registry: fake, tweaks: adminTweaks, store: { get: () => st, set: (s) => { st = s } }, elevated, build: 19045 })
+  const row = async (id) => (await admin.list()).find((x) => x.id === id)
+
+  assert.equal((await row('arrow')).admin, true, 'administrator tweaks are flagged so the UI can say a prompt will appear')
+  assert.equal((await admin.set('arrow', true)).ok, true)
+  assert.equal((await row('arrow')).enabled, true)
+  assert.equal((await admin.set('arrow', false)).ok, true)
+  assert.equal((await row('arrow')).enabled, false)
+
+  allow = false // the user dismisses the Windows prompt
+  assert.equal((await admin.set('arrow', true)).ok, false)
+  assert.equal((await row('arrow')).enabled, false, 'a declined prompt changes nothing')
+  assert.equal(Object.keys(st.applied).length, 0)
+  allow = true
+
+  machine.set('HKLM\\PHibernateEnabled', '0') // hibernation was already off
+  calls.length = 0
+  await admin.set('hib', true)
+  assert.deepEqual(calls, [], 'nothing is run (and nothing recorded) when the setting is already the wanted way')
+  assert.equal((await row('hib')).changedByUs, false)
+
+  // a setting that was already on before this app is never switched off by it
+  assert.equal((await admin.set('hib', false)).ok, false)
+  assert.equal(machine.get('HKLM\\PHibernateEnabled'), '0')
+}
+
+// ---- the helper itself: unknown jobs are refused and a normal (non-elevated) run cannot change HKLM ----
+{
+  const { existsSync } = await import('node:fs')
+  const exe = join(process.env.FLY_DOCK_HELPER_DIR ?? 'helper/bin', 'dock-helper.exe')
+  const elevatedNow = (() => { try { execFileSync('net.exe', ['session'], { stdio: 'ignore' }); return true } catch { return false } })()
+  if (!existsSync(exe)) console.log('tweaks: helper not built, skipping the helper exit-code checks')
+  else {
+    const code = (...args) => { try { execFileSync(exe, args, { stdio: 'ignore', timeout: 20000 }); return 0 } catch (e) { return e.status } }
+    assert.equal(code('--elevated', 'apply', 'rm-rf'), 2, 'unknown job')
+    assert.equal(code('--elevated', 'explode', 'hibernate'), 2, 'unknown operation')
+    assert.equal(code('--elevated', 'apply'), 2, 'missing argument')
+    if (!elevatedNow) assert.equal(code('--elevated', 'apply', 'shortcut-arrow'), 5, 'without administrator rights the registry is not touched')
+    else console.log('tweaks: running elevated, skipping the refusal check so the real registry is not changed')
+  }
+}
+
 console.log('tweaks: all checks passed')

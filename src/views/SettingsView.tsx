@@ -431,13 +431,13 @@ function TweaksTab() {
   const nameOf = (id: string) => tweaks?.find((t) => t.id === id)?.name ?? id
   return (
     <>
-      <Card title="Güvenli ayarlar" hint="Her ayar yalnızca kullanıcı kaydında (HKCU) değişir, yönetici izni gerekmez. Değiştirmeden önce eski değer saklanır; kapatınca tam o değer geri gelir.">
-        <Message text="Hizmetleri (SysMain, telemetri, Windows Search) kapatan ve yönetici izni isteyen ayarlar henüz yok. Defender, Windows Update, güvenlik duvarı ve kullanıcı hesaplarına hiç dokunulmaz." />
+      <Card title="Güvenli ayarlar" hint="Çoğu ayar yalnızca kullanıcı kaydında (HKCU) değişir. Değiştirmeden önce eski değer saklanır; kapatınca tam o değer geri gelir.">
+        <Message text="Yönetici yazan ayarlar yönetici onayı ister (Windows'un kendi onay penceresi açılır); uygulama kendisi hiçbir zaman yönetici çalışmaz. Hizmetleri (SysMain, telemetri, Windows Search) kapatan ayarlar henüz yok. Defender, Windows Update, güvenlik duvarı ve kullanıcı hesaplarına hiç dokunulmaz." />
         {categories.map((category) => (
           <div key={category}>
             <h4 className="st-subtitle">{category}</h4>
             {(tweaks ?? []).filter((t) => t.category === category).map((t) => (
-              <Row key={t.id} label={t.name} hint={`${t.description}${t.effect !== 'none' ? ' · ' + EFFECT_NOTE[t.effect] : ''}`}>
+              <Row key={t.id} label={t.admin ? `${t.name} · yönetici` : t.name} hint={`${t.description}${t.effect !== 'none' ? ' · ' + EFFECT_NOTE[t.effect] : ''}`}>
                 <Switch label={t.name} value={t.enabled} onChange={(on) => toggle(t, on)} />
               </Row>
             ))}
@@ -445,6 +445,7 @@ function TweaksTab() {
         ))}
         {notice && <Message text={notice} />}
         <div className="st-row-inline">
+          <button className="st-btn" onClick={() => invoke('tweaks:restore-point').then((r) => setNotice(r.ok ? 'Geri yükleme noktası oluşturuldu.' : r.message === 'cancelled' ? 'Onay verilmedi, nokta oluşturulmadı.' : `Oluşturulamadı: ${r.message} (Sistem Geri Yükleme kapalı olabilir, Windows günde bir noktaya izin verir)`))}><Icon name="lock" size={15} />Geri yükleme noktası oluştur</button>
           <button className="st-btn" onClick={() => invoke('tweaks:restart-explorer')}><Icon name="refresh" size={15} />Gezgin'i yeniden başlat</button>
           <button className="st-btn st-btn--danger" onClick={() => invoke('tweaks:revert-all').then(refresh)}><Icon name="refresh" size={15} />Hepsini eski haline döndür</button>
         </div>
