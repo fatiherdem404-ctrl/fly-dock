@@ -37,6 +37,22 @@ Bunlar yapay zekâ konsepti; amaç tasarım dilini almak, birebir kopyalamak de�
 - **Konseptteki masaüstü simgeleri ve duvar kağıdı:** bizim işimiz değil, kullanıcının masaüstü.
 - Konseptteki 3B ahşap dock'un gerçek derinlikli (fotogerçekçi) görünümü yapay zekâ çizimi; CSS perspektifiyle yaklaşık bir 3B verilir, birebir olmaz.
 
-## Karşılaştırma
+## Karşılaştırma (yeniden boyamadan sonra)
 
-Yeniden boyama sonrası yan yana ekran görüntüsü ve dürüst değerlendirme: aşağıda (çalışma sonunda eklenecek).
+Yan yana görüntü: [concepts/karsilastirma.png](concepts/karsilastirma.png). Solda konsept, sağda gerçek uygulama, aynı ölçekte; üstte 5 dock stili, altta ayarlar.
+
+**Yaklaştığımız yerler**
+- Hap biçimi, mavi parlak çerçeve, ahşap, mavi neon ve metal: beş dock varyantının hepsi artık aynı sırayla var ve aynı tür görünüyor.
+- Renk: lacivert zemin, tek vurgu mavisi, seçili menü satırı mavi dolgu, ince mavi kaydırıcı ve anahtar.
+- Ayarlar sol listesi, kart düzeni ve dock önizlemesi.
+- Başlat düğmesi dock'un solunda.
+
+**Hâlâ fark olanlar (dürüst liste)**
+- **Dokular:** Konseptte ahşap gerçek bir fotoğraf gibi, kenarlar oyma/bevel, metalde fırça izi ve çivi. Bizimki CSS gradyanı: aynı tür ama düz ve temiz. Gerçek doku için tema paketine resim eklemek gerekir.
+- **İkonlar:** Konseptte tüm ikonlar tek tasarım diliyle (parlak, renkli, yuvarlak) çizilmiş. Bizde Windows'un kendi ikonları var (hesap makinesi gri kutu, Not Defteri eski). Bunu simge paketleri çözer; hazır bir paket henüz yok.
+- **Boyut oranı:** Konseptte çubuk ince, ikonlar çubuğa göre küçük. Bizde varsayılan boşluklar daha geniş; "Raf boşlukları" ile ayarlanabilir ama varsayılanı konsepte çekmedim.
+- **Ayarlar yoğunluğu:** Konsept bir sayfada 4 ayar gösteriyor ve altta büyük bir önizleme, "Kaydet" düğmesi var. Bizde yüzlerce ayar var, sayfa daha yoğun; "Kaydet" yok, değişiklikler anında uygulanıyor.
+- **Yazı tipi:** Konsept geniş, geometrik bir yazı tipi kullanıyor; biz Segoe UI Variable kullanıyoruz (yazı tipi indirmek izin gerektirir).
+- **Parıltı ve derinlik:** Konseptteki neon halkanın yumuşak dış ışıması ve ahşabın gölgeli oyuğu daha dramatik; bizde hafif.
+
+Sonuç: yapı, renk ve biçim konsepte yakın; "dağlar kadar fark" büyük ölçüde doku, ikon seti ve cilanın farkı. Bunlar kod değil içerik işi (doku ve ikon paketi).

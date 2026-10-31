@@ -19,7 +19,7 @@ const win = (p) => p.replaceAll('/', String.fromCharCode(92))
 const windir = process.env.SystemRoot ?? 'C:/Windows'
 const app = (name, p) => ({ id: name, type: 'app', targetPath: win(p), label: name })
 writeFileSync(join(profile, 'config.json'), JSON.stringify({
-  items: [app('notepad', `${windir}/System32/notepad.exe`), app('calc', `${windir}/System32/calc.exe`), app('explorer', `${windir}/explorer.exe`), { id: 'folder', type: 'folder', targetPath: win(`${windir}/Fonts`), label: 'Fonts' }, { id: 'trash', type: 'trash' }],
+  items: [{ id: 'start', type: 'start', label: 'Başlat' }, app('notepad', `${windir}/System32/notepad.exe`), app('calc', `${windir}/System32/calc.exe`), app('explorer', `${windir}/explorer.exe`), { id: 'folder', type: 'folder', targetPath: win(`${windir}/Fonts`), label: 'Fonts' }, { id: 'trash', type: 'trash' }],
   settings,
   widgets: [],
 }))
