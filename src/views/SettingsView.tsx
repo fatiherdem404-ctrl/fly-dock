@@ -201,7 +201,7 @@ function DeskCard({ style }: { style: DeskStyle }) {
     <div className={`st-desk dock dock--desk-${style} dock--bottom`} style={{ '--desk-depth': `${DESK_PRESETS[style].depth}px` } as React.CSSProperties}>
       <div style={{ position: 'absolute', left: '8%', right: '8%', bottom: 5, height: 34 }}>
         {preset.depth > 0 ? (
-          <Shelf length={150} thickness={34} edge={Math.round(preset.edge * 0.5)} depth={preset.depth * 0.5} side="bottom" radii={{ tl: DESK_RADII[style][0], tr: DESK_RADII[style][0], bl: DESK_RADII[style][1], br: DESK_RADII[style][1] }} opacity={1} />
+          <Shelf length={116} thickness={34} edge={Math.round(preset.edge * 0.5)} depth={preset.depth * 0.5} side="bottom" radii={{ tl: DESK_RADII[style][0], tr: DESK_RADII[style][0], bl: DESK_RADII[style][1], br: DESK_RADII[style][1] }} opacity={1} />
         ) : (
           <div className="dock__desk" style={{ position: 'absolute', inset: '8px 0 0 0', borderRadius: 999 }}><span className="dock__desk-sheen" /></div>
         )}
@@ -566,6 +566,23 @@ export default function SettingsView() {
   const [settings, setSettings] = useState<DockSettings | null>(null)
   const [info] = useRemote('app:info', [])
   const [launchTick, setLaunchTick] = useState(0)
+  const [showPreview, setShowPreview] = useState(() => {
+    try {
+      return localStorage.getItem('settings.preview') !== 'off'
+    } catch {
+      return true
+    }
+  })
+  const togglePreview = () => {
+    setShowPreview((on) => {
+      try {
+        localStorage.setItem('settings.preview', on ? 'off' : 'on')
+      } catch {
+        /* private window: the choice just is not remembered */
+      }
+      return !on
+    })
+  }
   useEffect(() => {
     invoke('settings:get').then(setSettings)
   }, [])
@@ -595,9 +612,11 @@ export default function SettingsView() {
       </nav>
       <main className="st-main">
         {PREVIEW_TABS.includes(tab) && (
-          <div className="st-preview">
-            <DockPreview settings={settings} launchTick={launchTick} />
-            <span className="st-preview__tag">Canlı önizleme</span>
+          <div className={`st-preview${showPreview ? '' : ' st-preview--off'}`}>
+            {showPreview && <DockPreview settings={settings} launchTick={launchTick} />}
+            <button className="st-preview__tag" onClick={togglePreview} aria-pressed={showPreview}>
+              <Icon name={showPreview ? 'eyeOff' : 'play'} size={13} />{showPreview ? 'Önizlemeyi gizle' : 'Canlı önizlemeyi göster'}
+            </button>
           </div>
         )}
         <div className="st-page" key={tab}>

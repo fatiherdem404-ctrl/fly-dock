@@ -63,6 +63,8 @@ try {
   await view.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false })
   const tab = arg('tab')
   if (tab) await view.evaluate(`document.querySelectorAll('.st-tab')[${Number(tab)}]?.click()`)
+  const click = arg('click')
+  if (click) await view.evaluate(`document.querySelector(${JSON.stringify(click)})?.click()`)
   await sleep(Number(arg('wait') ?? 900))
   const shot = await view.send('Page.captureScreenshot', { format: 'png' })
   writeFileSync(out, Buffer.from(shot.result.data, 'base64'))

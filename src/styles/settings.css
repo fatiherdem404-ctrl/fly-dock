@@ -64,6 +64,10 @@ html[data-view='settings'] body {
     linear-gradient(120deg, #3a5ea8, #7a4fb0 45%, #d1795a);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
+.st-preview--off { box-shadow: none; background: transparent; border-bottom: 0; height: 44px; }
+.st-preview__tag { border: 0; color: #fff; font: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background 160ms; }
+.st-preview__tag:hover { background: rgba(0, 0, 0, 0.62) !important; }
+.st-preview--off .st-preview__tag { background: var(--fill) !important; color: var(--panel-text); border: 1px solid var(--line); }
 .st-preview__tag {
   position: absolute; top: var(--s-3); left: var(--s-4); padding: 3px 10px; border-radius: 999px;
   background: rgba(0, 0, 0, 0.4); color: #fff; font-size: 11px; letter-spacing: 0.04em; backdrop-filter: blur(6px);

@@ -10,45 +10,74 @@ export interface Radii {
 
 type Pt = [number, number]
 
-/** A closed path through `points` with every corner rounded by its own radius (clamped to what the edges allow). */
-export function roundedPolygon(points: Pt[], radii: number[]): string {
-  const n = points.length
-  const entry: Pt[] = []
-  const exit: Pt[] = []
-  points.forEach((v, i) => {
-    const prev = points[(i + n - 1) % n]
-    const next = points[(i + 1) % n]
-    const toPrev: Pt = [prev[0] - v[0], prev[1] - v[1]]
-    const toNext: Pt = [next[0] - v[0], next[1] - v[1]]
-    const lp = Math.hypot(...toPrev) || 1
-    const ln = Math.hypot(...toNext) || 1
-    const d = Math.max(0, Math.min(radii[i], lp / 2, ln / 2))
-    entry.push([v[0] + (toPrev[0] / lp) * d, v[1] + (toPrev[1] / lp) * d])
-    exit.push([v[0] + (toNext[0] / ln) * d, v[1] + (toNext[1] / ln) * d])
-  })
-  const f = (p: Pt) => `${p[0].toFixed(2)} ${p[1].toFixed(2)}`
-  let d = `M ${f(exit[0])}`
-  for (let i = 1; i < n; i++) d += ` L ${f(entry[i])} Q ${f(points[i])} ${f(exit[i])}`
-  d += ` L ${f(entry[0])} Q ${f(points[0])} ${f(exit[0])} Z`
-  return d
+const len = (p: Pt, q: Pt) => Math.hypot(q[0] - p[0], q[1] - p[1])
+const toward = (p: Pt, q: Pt, d: number): Pt => {
+  const l = len(p, q) || 1
+  return [p[0] + ((q[0] - p[0]) / l) * d, p[1] + ((q[1] - p[1]) / l) * d]
+}
+
+/** Point `d` px along a polyline, and how many of its vertices (after the first) were walked past. */
+function walk(chain: Pt[], d: number): { point: Pt; passed: number } {
+  let left = d
+  for (let i = 0; i < chain.length - 1; i++) {
+    const l = len(chain[i], chain[i + 1])
+    if (left <= l) return { point: toward(chain[i], chain[i + 1], left), passed: i }
+    left -= l
+  }
+  return { point: chain[chain.length - 1], passed: chain.length - 2 }
 }
 
 /**
  * Outline of the whole shelf seen from the front: the sloping top (narrower at the back) and the front face under it,
- * one silhouette, so a rounded bottom corner cuts the thickness too.
+ * one silhouette, so a rounded bottom corner cuts the thickness too. A bottom radius bigger than the front face is
+ * thick keeps going up along the sloping side, so the slider always has a visible effect.
  */
 export function shelfPath(width: number, topHeight: number, edge: number, taper: number, r: Radii): string {
   const h = topHeight + edge
   const t = Math.min(taper, width / 2 - 2)
-  const points: Pt[] = [
-    [t, 0], // back left
-    [width - t, 0], // back right
-    [width, topHeight], // front right, where the slope meets the front face
-    [width, h], // bottom right
-    [0, h], // bottom left
-    [0, topHeight], // front left
-  ]
-  return roundedPolygon(points, [r.tl, r.tr, edge > 0 ? 1.5 : r.br, r.br, r.bl, edge > 0 ? 1.5 : r.bl])
+  const f = (p: Pt) => `${p[0].toFixed(2)} ${p[1].toFixed(2)}`
+  const backL: Pt = [t, 0]
+  const backR: Pt = [width - t, 0]
+  const frontTopR: Pt = [width, topHeight]
+  const frontTopL: Pt = [0, topHeight]
+  const botR: Pt = [width, h]
+  const botL: Pt = [0, h]
+  const hasFace = edge > 0.5
+
+  // right and left sides, walked upward from the bottom corner
+  const sideR = hasFace ? [botR, frontTopR, backR] : [botR, backR]
+  const sideL = hasFace ? [botL, frontTopL, backL] : [botL, backL]
+  const slant = len(backR, hasFace ? frontTopR : botR)
+  const maxUp = (chain: Pt[]) => (chain.length === 3 ? len(chain[0], chain[1]) + slant * 0.55 : slant * 0.55)
+  const bottomLen = width
+  const rbr = Math.max(0, Math.min(r.br, maxUp(sideR), bottomLen / 2))
+  const rbl = Math.max(0, Math.min(r.bl, maxUp(sideL), bottomLen / 2))
+  const upR = walk(sideR, rbr)
+  const upL = walk(sideL, rbl)
+  const consumedR = hasFace && upR.passed >= 1 // the corner between slope and front face was rounded away
+  const consumedL = hasFace && upL.passed >= 1
+
+  // back corners: limited by the top edge and by what is left of the sloping side
+  const topLen = len(backL, backR)
+  const slantLeftR = Math.max(0, slant - (consumedR ? rbr - edge : 0))
+  const slantLeftL = Math.max(0, slant - (consumedL ? rbl - edge : 0))
+  const rtr = Math.max(0, Math.min(r.tr, topLen / 2, slantLeftR / 2))
+  const rtl = Math.max(0, Math.min(r.tl, topLen / 2, slantLeftL / 2))
+  const small = hasFace ? Math.min(1.5, edge / 2) : 0
+
+  let d = `M ${f(toward(backL, backR, rtl))} L ${f(toward(backR, backL, rtr))}`
+  const afterBackR = toward(backR, hasFace ? frontTopR : botR, rtr)
+  d += ` Q ${f(backR)} ${f(afterBackR)}`
+  if (hasFace && !consumedR) {
+    d += ` L ${f(toward(frontTopR, backR, small))} Q ${f(frontTopR)} ${f(toward(frontTopR, botR, small))}`
+  }
+  d += ` L ${f(upR.point)} Q ${f(botR)} ${f(toward(botR, botL, rbr))}`
+  d += ` L ${f(toward(botL, botR, rbl))} Q ${f(botL)} ${f(upL.point)}`
+  if (hasFace && !consumedL) {
+    d += ` L ${f(toward(frontTopL, botL, small))} Q ${f(frontTopL)} ${f(toward(frontTopL, backL, small))}`
+  }
+  d += ` L ${f(toward(backL, hasFace ? frontTopL : botL, rtl))} Q ${f(backL)} ${f(toward(backL, backR, rtl))} Z`
+  return d
 }
 
 export const shelfTaper = (depth: number, plateHeight: number, length: number) => Math.max(0, Math.min(depth * 0.9, plateHeight * 1.3, length * 0.25))
