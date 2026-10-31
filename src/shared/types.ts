@@ -450,6 +450,7 @@ export interface InvokeMap {
   'builder:create': { args: [name: string, author: string, map: Record<string, string>]; result: { ok: boolean; message: string; pack?: PackInfo } }
   'confirm:answer': { args: [id: string, answer: boolean, text?: string]; result: void }
   'entry:menu': { args: [request: EntryMenuRequest]; result: void }
+  'panel:capture': { args: [on: boolean]; result: void }
   'panel:blurred': { args: []; result: boolean }
   'themes:create': { args: [name: string, author: string, vars: ThemeVars]; result: { ok: boolean; message: string; pack?: PackInfo } }
   'themes:list': { args: []; result: PackInfo[] }

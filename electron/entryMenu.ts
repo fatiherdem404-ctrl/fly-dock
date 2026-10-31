@@ -6,7 +6,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { popupMenu, MenuSpec } from './contextMenu'
 import { askConfirm, askInput } from './confirm'
-import { closeStack, readEntries } from './stackWindow'
+import { closeStack, readEntries, focusStack } from './stackWindow'
 import { getItems } from './store'
 import { addPaths, removeFromGroup, replaceInGroup } from './items'
 import { broadcast } from './ipc'
@@ -46,6 +46,7 @@ async function rename(itemId: string, target: string) {
   }
   if (getItems().find((i) => i.id === itemId)?.type === 'group') replaceInGroup(itemId, target, next)
   broadcast('stack:changed', null)
+  focusStack()
 }
 
 async function remove(itemId: string, target: string) {
@@ -60,6 +61,7 @@ async function remove(itemId: string, target: string) {
   }
   if (getItems().find((i) => i.id === itemId)?.type === 'group') removeFromGroup(itemId, target)
   broadcast('stack:changed', null)
+  focusStack()
 }
 
 export function showEntryMenu(request: EntryMenuRequest) {

@@ -10,9 +10,6 @@ import type { DockItem, StackEntry } from '../src/shared/types'
 
 let stackWindow: BrowserWindow | null = null
 
-/** Transparent room around the window so its soft shadow fades out instead of being cut off at the edge. */
-const PAD = 26
-
 const SIZES = { small: [360, 300], medium: [520, 420] } as const
 
 /** Name, kind, size and date of one path; a missing target is still listed so it can be removed. */
@@ -60,6 +57,11 @@ export function dialogJustClosed(): boolean {
 
 export function stackIsFocused(): boolean {
   return !!stackWindow && !stackWindow.isDestroyed() && stackWindow.isFocused()
+}
+
+/** The window takes the mouse only while the pointer is over the panel; elsewhere clicks pass through to what is below. */
+export function setStackCapture(on: boolean) {
+  if (stackWindow && !stackWindow.isDestroyed()) stackWindow.setIgnoreMouseEvents(!on, { forward: true })
 }
 
 export function focusStack() {
@@ -120,14 +122,19 @@ export function showPanel(route: string, anchor: { x: number; y: number }, title
   x = Math.round(x)
   y = Math.round(y)
 
+  // The window covers the whole display and is click-through except over the panel (see Panel.tsx): the panel can
+  // then fly out of and back into the dock icon, be dragged and resized, and its shadow is never cut off.
+  const area = display.bounds
   const win = new BrowserWindow({
-    x: x - PAD - OFFSCREEN, y: y - PAD, width: width + PAD * 2, height: height + PAD * 2,
+    x: area.x - OFFSCREEN, y: area.y, width: area.width, height: area.height,
     frame: false, transparent: true, hasShadow: false, resizable: false, skipTaskbar: true, alwaysOnTop: true,
     show: false, webPreferences: baseWebPreferences(),
   })
   stackWindow = win
   win.setAlwaysOnTop(true, 'screen-saver')
-  loadRoute(win, `${route}?ox=${Math.round(anchor.x - x + PAD)}&oy=${Math.round(anchor.y - y + PAD)}&t=${encodeURIComponent(title)}`)
+  win.setIgnoreMouseEvents(true, { forward: true })
+  const rel = (n: number, origin: number) => Math.round(n - origin)
+  loadRoute(win, `${route}?px=${rel(x, area.x)}&py=${rel(y, area.y)}&pw=${width}&ph=${height}&ox=${rel(anchor.x, area.x)}&oy=${rel(anchor.y, area.y)}&t=${encodeURIComponent(title)}`)
   win.once('ready-to-show', () => {
     win.show()
     win.focus()

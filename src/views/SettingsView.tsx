@@ -344,6 +344,28 @@ function DeskCard({ style }: { style: DeskStyle }) {
   )
 }
 
+/** Right under the style list: a custom desk needs a picture, so ask for it where the style was chosen. */
+function CustomTexturePrompt({ s, set }: { s: DockSettings; set: Update }) {
+  const texture = useTexture(s.deskStyle === 'custom' ? s.deskTexFile : '')
+  const [message, setMessage] = useState<string | null>(null)
+  const pick = async () => {
+    const result = await invoke('texture:pick')
+    if (result.message === 'cancelled') return
+    if (!result.ok || !result.file) return setMessage(result.message)
+    if (s.deskTexFile && s.deskTexFile !== result.file) forgetTexture(s.deskTexFile)
+    setMessage(null)
+    set({ deskTexFile: result.file })
+  }
+  return (
+    <div className="st-custom-pick">
+      <button className="st-btn st-btn--accent" onClick={pick}><Icon name="image" size={15} />{s.deskTexFile ? 'Başka resim seç…' : 'Raf için resim seç…'}</button>
+      {texture && <img className="st-texthumb" src={texture.url} alt="" />}
+      <span className="st-muted">{s.deskTexFile ? 'Boyut, kaydırma ve dönüş için Doku sekmesine bak.' : 'Özel doku bir resim ister; seçene kadar raf düz gri görünür.'}</span>
+      {message && <Message text={message} error />}
+    </div>
+  )
+}
+
 function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
   return (
     <Pages id="desk">
@@ -355,6 +377,7 @@ function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
         >
           {(id) => <DeskCard style={id} />}
         </Choice>
+        {s.deskStyle === 'custom' && <CustomTexturePrompt s={s} set={set} />}
       </Card>
       <Card title="Görünüm">
         <Row label="Renk tonu" hint="Boşsa temanın rengi kullanılır">

@@ -1,13 +1,14 @@
 import { ReactNode } from 'react'
 import Icon, { IconName } from '@/icons'
-import Panel, { usePanelClose } from './Panel'
+import Panel, { usePanelClose, usePanelDrag } from './Panel'
 import type { DockSettings } from '@/shared/types'
 
 function Frame({ title, icon, toolbar, children }: { title: string; icon: IconName; toolbar?: ReactNode; children: ReactNode }) {
   const close = usePanelClose()
+  const startDrag = usePanelDrag()
   return (
     <div className="dw">
-      <header className="dw__head">
+      <header className="dw__head" onPointerDown={startDrag}>
         <span className="dw__icon"><Icon name={icon} size={16} /></span>
         <h2 title={title}>{title}</h2>
         <button className="dw__close" aria-label="Kapat" title="Kapat (Esc)" onClick={close}><Icon name="cross" size={15} /></button>
