@@ -13,7 +13,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p electron/tsconfig.json",
     "helper:build": "node scripts/build-helper.mjs",
-    "test": "node tests/packs.test.mjs && node tests/physics.test.mjs && node tests/tweaks.test.mjs && node tests/textures.test.mjs",
+    "test": "node tests/packs.test.mjs && node tests/physics.test.mjs && node tests/tweaks.test.mjs && node tests/textures.test.mjs && node tests/toys.test.mjs",
     "e2e": "node scripts/e2e.mjs",
     "perf": "node scripts/perf-dock.mjs",
     "brand:check": "node scripts/check-brand.mjs",

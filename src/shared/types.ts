@@ -244,6 +244,29 @@ export interface DockSettings {
   wallpaperPauseBattery: boolean
   /** Folders whose pictures show up in the icon picker. */
   iconFolders: string[]
+  // desktop toys
+  toyPet: boolean
+  toyPetKind: 'cat' | 'dog' | 'rabbit'
+  toyPetName: string
+  /** The pet runs to the pointer when it is near the floor. */
+  toyPetChase: boolean
+  toyPetSize: number
+  toyBasket: boolean
+  toyFootball: boolean
+  toyTennis: boolean
+  toySound: boolean
+}
+
+export const DEFAULT_TOY_SCORES: ToyScores = { basket: 0, football: 0, tennisBest: 0 }
+
+/** Best results of the toy games, kept between runs. */
+export interface ToyScores {
+  /** Baskets made. */
+  basket: number
+  /** Goals scored. */
+  football: number
+  /** Longest tennis rally. */
+  tennisBest: number
 }
 
 export type WidgetType = 'clock' | 'analog' | 'calendar' | 'weather' | 'system' | 'media' | 'battery' | 'note'
@@ -382,6 +405,7 @@ export interface Persisted {
   widgets: WidgetInstance[]
   settingsWindow?: SettingsWindowState
   wheel?: { hidden: string[]; order: string[]; custom?: { id: string; name: string; path: string }[]; icons?: Record<string, string> }
+  toyScores?: ToyScores
   tweaks?: { applied: Record<string, { existed: boolean; type?: string; data?: string }>; log: TweakLogEntry[] }
 }
 
@@ -473,6 +497,15 @@ export const DEFAULT_SETTINGS: DockSettings = {
   wallpaperPauseFullscreen: true,
   wallpaperPauseBattery: true,
   iconFolders: [],
+  toyPet: false,
+  toyPetKind: 'cat',
+  toyPetName: 'Pamuk',
+  toyPetChase: true,
+  toyPetSize: 72,
+  toyBasket: false,
+  toyFootball: false,
+  toyTennis: false,
+  toySound: true,
 }
 
 // ---- IPC contract: one table drives the preload bridge, the main-process handlers and the renderer calls ----
@@ -545,6 +578,8 @@ export interface InvokeMap {
   'window:control': { args: [action: 'minimize' | 'maximize' | 'close']; result: void }
   'window:is-maximized': { args: []; result: boolean }
   'panel:capture': { args: [on: boolean]; result: void }
+  'toys:capture': { args: [on: boolean]; result: void }
+  'toys:scores': { args: [patch?: Partial<ToyScores>]; result: ToyScores }
   'panel:blurred': { args: []; result: boolean }
   'themes:create': { args: [name: string, author: string, vars: ThemeVars, withDesk: boolean, withWallpaper: boolean]; result: { ok: boolean; message: string; pack?: PackInfo } }
   'themes:list': { args: []; result: PackInfo[] }

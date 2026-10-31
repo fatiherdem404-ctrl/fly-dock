@@ -107,6 +107,8 @@ try {
   if (!target) throw new Error(`no page matching ${route}`)
   const view = target === page ? dock : await connect(target)
   await view.send('Runtime.enable')
+  // --console prints what the page logs and any exception it throws
+  if (arg('console')) view.ws.addEventListener('message', (m) => { const d = JSON.parse(m.data); if (d.method === 'Runtime.exceptionThrown' || (d.method === 'Runtime.consoleAPICalled' && ['error', 'warning'].includes(d.params.type))) console.log('PAGE', JSON.stringify(d.params).slice(0, 700)) })
   await view.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false })
   const tab = arg('tab')
   if (tab) await view.evaluate(`document.querySelectorAll('.st-tab')[${Number(tab)}]?.click()`)

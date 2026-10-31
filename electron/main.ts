@@ -32,6 +32,7 @@ import { runElevated } from './elevated'
 import { pickTexture, readTexture, removeTexture, textureBytes, storeTexture } from './textures'
 import { store } from './store'
 import { listPlaces, addPlace, placeIcon } from './places'
+import { initToys, disposeToys, syncToys, setToysCapture, setToysFullscreen, toyScores } from './toys'
 import { popupMenu, menuItemsForRenderer, pickMenuItem, closeMenu, MenuSpec } from './contextMenu'
 import { initWidgets, addWidget, removeWidget, updateWidget, moveWidget, systemStats, weatherFor, nowPlaying, disposeWidgets } from './widgets'
 import type { DockItem, DockSettings, StackEntry } from '../src/shared/types'
@@ -207,6 +208,7 @@ function applySettings(request: Partial<DockSettings>): DockSettings {
   }
   const layoutChanged = (['position', 'monitor', 'autoHide', 'edgeOffset', 'alignment'] as const).some((k) => k in partial && before[k] !== next[k])
   if (layoutChanged) syncDocks()
+  if (Object.keys(partial).some((k) => k.startsWith('toy'))) syncToys()
   if (partial.layer !== undefined) applyLayer()
   if (partial.showRunningApps !== undefined) broadcastItems()
   broadcast('settings:changed', next)
@@ -385,6 +387,8 @@ function registerIpc() {
   handle('confirm:answer', (_e, id, answer, text) => answerConfirm(id, answer, text))
   handle('entry:menu', (_e, request) => showEntryMenu(request))
   handle('panel:capture', (_e, on) => setStackCapture(on === true))
+  handle('toys:capture', (_e, on) => setToysCapture(on === true))
+  handle('toys:scores', (_e, patch) => toyScores(patch))
   handle('panel:blurred', async () => {
     // a menu or question opened from the window takes the focus and gives it back; wait for that before judging
     await new Promise((r) => setTimeout(r, 200))
@@ -523,6 +527,7 @@ if (!app.requestSingleInstanceLock()) {
       if (getSettings().layer === 'below') applyLayer() // another window may have been raised past the dock
       setFullscreenHidden(getSettings().hideInFullscreen && snap.fullscreen)
       setFullscreenPaused(snap.fullscreen)
+      setToysFullscreen(snap.fullscreen)
     })
     helper.on('trash', (info: { items: number }) => {
       setTrashState(info.items)
@@ -532,6 +537,7 @@ if (!app.requestSingleInstanceLock()) {
 
     initDockWindows()
     initWallpaper()
+    initToys()
     // screenshot runs ask for the confirmation window so it can be looked at
     if (HEADLESS && process.env.FLY_DOCK_TEST_CONFIRM === 'input') setTimeout(() => void askInput({ title: 'Yeniden adlandır', message: 'Yeni adı yaz.', confirmLabel: 'Adlandır', value: 'rapor-2026.docx' }), 1500)
     else if (HEADLESS && process.env.FLY_DOCK_TEST_CONFIRM) setTimeout(() => void askConfirm({ title: 'Çöp kutusu boşaltılsın mı?', message: 'İçindeki her şey kalıcı olarak silinir. Bu geri alınamaz.', confirmLabel: 'Boşalt', danger: true }), 1500)
@@ -550,6 +556,7 @@ if (!app.requestSingleInstanceLock()) {
     globalShortcut.unregisterAll()
     disposeDockWindows()
     disposeWallpaper()
+    disposeToys()
     disposeWidgets()
     helper.stop()
   })

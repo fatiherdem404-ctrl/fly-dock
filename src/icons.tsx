@@ -28,6 +28,7 @@ const PATHS: Record<string, ReactNode> = {
   maximize: <rect x="5" y="5" width="14" height="14" rx="1.5" />,
   restore: (<><rect x="4" y="8" width="12" height="12" rx="1.5" /><path d="M8 8V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2" /></>),
   controlpanel: (<><rect x="3" y="4" width="18" height="15" rx="2" /><path d="M3 9h18" /><path d="M7 13h5M7 16h8" /><circle cx="16.5" cy="13" r="1.5" /></>),
+  toys: (<><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c3.2 2.6 3.2 14.4 0 17M12 3.5c-3.2 2.6-3.2 14.4 0 17" /></>),
   plus: <path d="M12 5v14M5 12h14" />,
   minus: <path d="M5 12h14" />,
   eyeOff: (<><path d="M3 3l18 18" /><path d="M10.6 6.2A9 9 0 0 1 22 12a14 14 0 0 1-3 3.6M6.5 7.5A14 14 0 0 0 2 12s3.5 7 10 7a9 9 0 0 0 3.5-.7" /></>),

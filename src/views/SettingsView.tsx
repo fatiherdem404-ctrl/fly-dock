@@ -17,6 +17,7 @@ import { SoundTab } from '@/settings/pages/SoundPage'
 import { ItemsTab } from '@/settings/pages/ItemsPage'
 import { WheelTab } from '@/settings/pages/WheelPage'
 import { WidgetsTab } from '@/settings/pages/WidgetsPage'
+import { ToysTab } from '@/settings/pages/ToysPage'
 import { TweaksTab } from '@/settings/pages/TweaksPage'
 import { GeneralTab } from '@/settings/pages/GeneralPage'
 
@@ -134,6 +135,7 @@ export default function SettingsView() {
             {tab === 'wallpaper' && <WallpaperTab s={settings} set={set} />}
             {tab === 'sound' && <SoundTab s={settings} set={set} />}
             {tab === 'widgets' && <WidgetsTab />}
+            {tab === 'toys' && <ToysTab s={settings} set={set} />}
             {tab === 'general' && <GeneralTab s={settings} set={set} />}
           </div>
         </main>

@@ -1,6 +1,6 @@
 import type { IconName } from '@/icons'
 
-export type Tab = 'dock' | 'desk' | 'theme' | 'wallpaper' | 'icons' | 'motion' | 'windows' | 'sound' | 'items' | 'wheel' | 'widgets' | 'tweaks' | 'general'
+export type Tab = 'dock' | 'desk' | 'theme' | 'wallpaper' | 'icons' | 'motion' | 'windows' | 'sound' | 'items' | 'wheel' | 'widgets' | 'toys' | 'tweaks' | 'general'
 
 export interface TabInfo {
   id: Tab
@@ -22,6 +22,7 @@ export const TAB_INFO: Record<Tab, TabInfo> = {
   items: { id: 'items', label: 'Öğeler', icon: 'items', blurb: 'Dock’taki programlar ve kısayolları' },
   wheel: { id: 'wheel', label: 'Kontrol paneli', icon: 'controlpanel', blurb: 'Windows ayarlarına ve araçlarına hızlı erişim listesi' },
   widgets: { id: 'widgets', label: 'Widget’lar', icon: 'widgets', blurb: 'Saat, takvim, hava durumu ve daha fazlası; temana uyumlu' },
+  toys: { id: 'toys', label: 'Oyuncaklar', icon: 'toys', blurb: 'Evcil hayvan, basketbol, futbol ve tenis' },
   tweaks: { id: 'tweaks', label: 'Tweaks', icon: 'tools', blurb: 'Güvenli, geri alınabilir Windows ayarları' },
   general: { id: 'general', label: 'Genel', icon: 'general', blurb: 'Başlangıç, yedek ve hakkında' },
 }
@@ -29,7 +30,7 @@ export const TAB_INFO: Record<Tab, TabInfo> = {
 export const NAV_GROUPS: { title: string; tabs: Tab[] }[] = [
   { title: 'Görünüm', tabs: ['dock', 'desk', 'theme', 'wallpaper', 'icons'] },
   { title: 'Davranış', tabs: ['motion', 'windows', 'sound'] },
-  { title: 'İçerik', tabs: ['items', 'wheel', 'widgets'] },
+  { title: 'İçerik', tabs: ['items', 'wheel', 'widgets', 'toys'] },
   { title: 'Sistem', tabs: ['tweaks', 'general'] },
 ]
 
@@ -88,6 +89,8 @@ export const SEARCH_INDEX: SearchEntry[] = [
   e('Dock’taki öğeler, kısayollar', 'items', undefined, 'hotkey'),
   e('Kontrol paneli girdileri', 'wheel', undefined, 'denetim masası çark ekle araçlar'),
   e('Widget ekle (analog saat, takvim, hava, not…)', 'widgets', 'Ekle', 'saat hava pil sistem medya not'),
+  e('Evcil hayvan (kedi, köpek, tavşan)', 'toys', 'Evcil hayvan', 'pet oyuncak peşimden'),
+  e('Basketbol, futbol, tenis', 'toys', 'Oyunlar', 'oyun top pota gol seri skor'),
   e('Windows tweak’leri', 'tweaks', undefined, 'gizli dosya uzantı klasik menü'),
   e('Windows ile başlat', 'general', undefined, 'startup login'),
   e('Yedekle ve geri yükle', 'general', undefined, 'backup'),

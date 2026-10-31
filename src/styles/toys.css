@@ -1,0 +1,73 @@
+/* Desktop toys: the see-through window the pet and the balls live in, and the pet's poses. */
+html[data-view='toys'], html[data-view='toys'] body, html[data-view='toys'] #root { background: transparent; overflow: hidden; margin: 0; }
+.toys { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+.toys__canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* ---- the pet ---- */
+.pet { position: absolute; left: 0; top: 0; user-select: none; will-change: transform; }
+.pet .pet-svg { width: 100%; height: 100%; overflow: visible; display: block; }
+.pet[data-dir='-1'] .pet-svg { transform: scaleX(-1); }
+.pet__name { position: absolute; left: 50%; top: -22px; transform: translateX(-50%); padding: 2px 9px; border-radius: 999px; font: 600 12px/1.4 'Segoe UI', system-ui, sans-serif; color: #fff; background: rgba(20, 24, 36, 0.78); white-space: nowrap; opacity: 0; transition: opacity 160ms; pointer-events: none; }
+.pet[data-state='happy'] .pet__name, .pet[data-state='held'] .pet__name, .pet[data-hover='true'] .pet__name { opacity: 1; }
+.pet__hearts { position: absolute; left: 50%; top: -6px; width: 0; height: 0; pointer-events: none; }
+.pet__hearts i { position: absolute; font-style: normal; font-size: 16px; color: #ff5d8f; opacity: 0; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); }
+.pet[data-state='happy'] .pet__hearts i { animation: pet-heart 1.4s ease-out infinite; }
+.pet[data-state='happy'] .pet__hearts i:nth-child(2) { animation-delay: 0.35s; margin-left: 14px; }
+.pet[data-state='happy'] .pet__hearts i:nth-child(3) { animation-delay: 0.7s; margin-left: -14px; }
+@keyframes pet-heart { 0% { opacity: 0; transform: translateY(0) scale(0.6); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-46px) scale(1.15); } }
+.pet__zzz { position: absolute; right: -4px; top: -16px; font: 700 14px/1 'Segoe UI', sans-serif; color: #cfe3ff; opacity: 0; pointer-events: none; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45); }
+.pet[data-state='sleep'] .pet__zzz { animation: pet-zzz 2.4s ease-in-out infinite; }
+@keyframes pet-zzz { 0% { opacity: 0; transform: translate(0, 6px) scale(0.7); } 40% { opacity: 1; } 100% { opacity: 0; transform: translate(10px, -20px) scale(1.2); } }
+
+.pet-svg .p-leg { transform-box: fill-box; transform-origin: 50% 8%; }
+.pet-svg .p-tail, .pet-svg .p-ear { transform-box: fill-box; transform-origin: 90% 90%; }
+.pet-svg .p-ear { transform-origin: 50% 90%; }
+.pet-svg .p-body, .pet-svg .p-head { transform-box: view-box; transform-origin: 40px 90px; }
+.pet-svg .p-eye-closed { display: none; }
+.pet-svg .p-eye-open { transform-box: fill-box; transform-origin: 50% 50%; animation: pet-blink 4.5s infinite; }
+@keyframes pet-blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.1); } }
+
+/* standing still: slow tail sway */
+.pet .p-tail { animation: pet-tail 2.6s ease-in-out infinite; }
+@keyframes pet-tail { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(8deg); } }
+
+/* walking and running */
+.pet[data-state='walk'] .p-leg--f1, .pet[data-state='walk'] .p-leg--b2 { animation: pet-leg 0.7s ease-in-out infinite; }
+.pet[data-state='walk'] .p-leg--f2, .pet[data-state='walk'] .p-leg--b1 { animation: pet-leg 0.7s ease-in-out infinite reverse; }
+.pet[data-state='run'] .p-leg--f1, .pet[data-state='run'] .p-leg--b2 { animation: pet-leg 0.3s ease-in-out infinite; }
+.pet[data-state='run'] .p-leg--f2, .pet[data-state='run'] .p-leg--b1 { animation: pet-leg 0.3s ease-in-out infinite reverse; }
+.pet[data-state='walk'] .p-body, .pet[data-state='walk'] .p-head { animation: pet-bob 0.35s ease-in-out infinite; }
+.pet[data-state='run'] .p-body, .pet[data-state='run'] .p-head { animation: pet-bob 0.3s ease-in-out infinite; }
+.pet[data-state='run'] .p-tail { animation: pet-tail 0.3s ease-in-out infinite; }
+@keyframes pet-leg { 0%, 100% { transform: rotate(-22deg); } 50% { transform: rotate(22deg); } }
+@keyframes pet-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+
+/* sitting */
+.pet[data-state='sit'] .p-body { transform: rotate(-24deg); }
+.pet[data-state='sit'] .p-head { transform: translate(-7px, -3px) rotate(-6deg); }
+.pet[data-state='sit'] .p-leg--b1, .pet[data-state='sit'] .p-leg--b2 { transform: rotate(-75deg) translate(2px, 4px); }
+
+/* sleeping: curled up, eyes shut, slow breathing */
+.pet[data-state='sleep'] .p-eye-open { display: none; }
+.pet[data-state='sleep'] .p-eye-closed, .pet[data-state='happy'] .p-eye-closed { display: block; }
+.pet[data-state='happy'] .p-eye-open { display: none; }
+.pet[data-state='sleep'] .p-head { transform: translate(-12px, 12px) rotate(24deg); }
+.pet[data-state='sleep'] .p-body { animation: pet-breathe 3s ease-in-out infinite; }
+.pet[data-state='sleep'] .p-leg { transform: rotate(80deg) translate(0, 8px); }
+.pet[data-state='sleep'] .p-tail { animation: none; transform: rotate(-30deg); }
+@keyframes pet-breathe { 0%, 100% { transform: scaleY(0.88); } 50% { transform: scaleY(0.94); } }
+
+/* petted: happy wiggle */
+.pet[data-state='happy'] .p-tail { animation: pet-tail 0.22s ease-in-out infinite; }
+.pet[data-state='happy'] .p-head { animation: pet-nuzzle 0.5s ease-in-out infinite; }
+@keyframes pet-nuzzle { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(5deg); } }
+
+/* picked up, or falling: legs dangle */
+.pet[data-state='held'] .p-leg, .pet[data-state='fall'] .p-leg { animation: pet-dangle 0.45s ease-in-out infinite alternate; }
+.pet[data-state='held'] .p-leg--f2, .pet[data-state='held'] .p-leg--b1, .pet[data-state='fall'] .p-leg--f2, .pet[data-state='fall'] .p-leg--b1 { animation-direction: alternate-reverse; }
+.pet[data-state='held'] .p-ear, .pet[data-state='fall'] .p-ear { animation: pet-dangle 0.3s ease-in-out infinite alternate; }
+@keyframes pet-dangle { from { transform: rotate(-16deg); } to { transform: rotate(16deg); } }
+
+/* the settings page shows the pet standing still */
+.st-petpic { width: 76px; height: 76px; }
+.st-petpic .pet-svg { width: 100%; height: 100%; }

@@ -195,6 +195,62 @@ try {
     assert.equal(typeof (await invoke('places:icon', 'network')), 'string', 'it has a picture')
   })
 
+  await check('toys: the pet and the balls live in a click-through window, balls can be kicked and thrown', async () => {
+    await invoke('settings:update', { toyPet: true, toyTennis: true, toyBasket: true })
+    const page = await until(async () => (await pages()).find((p) => p.url.includes('#/toys')), 'toy window')
+    const conn = await connect(page)
+    await until(async () => conn.call("!!window.__toys && !!window.__toys.balls.tennis && !!window.__toys.pet"), 'toys are created')
+    assert.equal(await conn.call("document.querySelector('.pet') !== null && document.querySelector('.pet').style.display !== 'none'"), true, 'the pet is drawn')
+    await sleep(1500)
+    // a fast pointer sweeping through the tennis ball hits it
+    const kicked = await conn.call(`(() => {
+      const b = window.__toys.balls.tennis
+      const fire = (x, y) => window.dispatchEvent(new MouseEvent('mousemove', { clientX: x, clientY: y }))
+      const y = b.y
+      for (let i = 0; i <= 30; i++) fire(b.x - 120 + i * 4, y)
+      return true
+    })()`)
+    assert.equal(kicked, true)
+    // events fired in the same tick have no time between them, so check through a slower sweep
+    const hit = await conn.call(`new Promise((resolve) => {
+      const b = window.__toys.balls.tennis
+      const fire = (x, y) => window.dispatchEvent(new MouseEvent('mousemove', { clientX: x, clientY: y }))
+      const x0 = b.x - 90
+      const y = b.y
+      let i = 0
+      const timer = setInterval(() => {
+        fire(x0 + i * 9, y)
+        if (++i > 14) { clearInterval(timer); setTimeout(() => resolve(Math.abs(window.__toys.balls.tennis.vx) > 200 || window.__toys.rally > 0), 100) }
+      }, 8)
+    })`)
+    assert.equal(hit, true, 'the ball flew off after being hit')
+    // grab and throw the basketball
+    const thrown = await conn.call(`new Promise((resolve) => {
+      const b = window.__toys.balls.basket
+      const fire = (type, x, y) => window.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, button: 0 }))
+      fire('mousemove', b.x, b.y)
+      fire('mousedown', b.x, b.y)
+      const grabbed = b.grabbed
+      let i = 0
+      const timer = setInterval(() => {
+        fire('mousemove', b.x - 20 - i * 25, b.y - 40 - i * 20)
+        if (++i > 5) {
+          clearInterval(timer)
+          fire('mouseup', 0, 0)
+          setTimeout(() => resolve({ grabbed, released: !b.grabbed, moving: Math.hypot(b.vx, b.vy) > 100 || b.y < window.innerHeight - 200 }), 60)
+        }
+      }, 10)
+    })`)
+    assert.equal(thrown.grabbed, true, 'a click on the ball picks it up')
+    assert.equal(thrown.released && thrown.moving, true, 'letting go throws it')
+    const scores = await invoke('toys:scores', { basket: 3 })
+    assert.equal(scores.basket, 3, 'scores are stored')
+    await invoke('toys:scores', { basket: 0 })
+    conn.ws.close()
+    await invoke('settings:update', { toyPet: false, toyTennis: false, toyBasket: false })
+    await until(async () => !(await pages()).some((p) => p.url.includes('#/toys')), 'toy window closes when all toys are off')
+  })
+
   await check('the power menu is a full-screen overlay and asks twice before ending the session', async () => {
     await invoke('items:activate', 'power1')
     const page = await until(async () => (await pages()).find((p) => p.url.includes('#/power')), 'power window')

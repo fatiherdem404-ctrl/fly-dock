@@ -10,11 +10,13 @@ import PowerView from './views/PowerView'
 import ConfirmView from './views/ConfirmView'
 import IconPickView from './views/IconPickView'
 import WallpaperView from './views/WallpaperView'
+import ToysView from './views/ToysView'
 import './styles/base.css'
 import './styles/dock.css'
 import './styles/windows.css'
 import './styles/panels.css'
 import './styles/widgets.css'
+import './styles/toys.css'
 import './styles/settings.css'
 import './styles/settings-preview.css'
 import './styles/desk-front.css'
@@ -38,6 +40,8 @@ function Root() {
       return <WheelView />
     case 'wallpaper':
       return <WallpaperView />
+    case 'toys':
+      return <ToysView />
     case 'iconpick':
       return <IconPickView />
     case 'confirm':

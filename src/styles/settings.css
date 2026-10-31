@@ -342,3 +342,13 @@ html[data-view='settings'] ::-webkit-scrollbar-thumb:hover { background: color-m
 .st-place img, .st-place span { width: 48px; height: 48px; object-fit: contain; }
 .st-place b { font-size: 12.5px; font-weight: 600; }
 .st-place small { font-size: 11px; color: var(--muted, inherit); opacity: 0.75; }
+
+/* toys */
+.st-toygame { display: flex; gap: 16px; align-items: center; margin-bottom: 6px; }
+.st-toygame__pic { flex: none; width: 190px; height: 84px; }
+.st-toypic { width: 100%; height: 100%; display: block; }
+.st-toygame .st-prose { margin: 0; }
+.st-scores { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 8px; }
+.st-scores div { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--fill); }
+.st-scores b { font-size: 26px; }
+.st-scores small { font-size: 11.5px; opacity: 0.75; text-align: center; }
