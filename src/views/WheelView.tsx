@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { invoke } from '@/api'
-import Icon, { IconName } from '@/icons'
+import Icon from '@/icons'
+import WheelGlyph from '@/components/WheelGlyph'
 import Panel from '@/components/Panel'
 import type { WheelEntry } from '@/shared/types'
 
@@ -39,7 +40,7 @@ export default function WheelView() {
               <div className="stack__grid">
                 {entries.map((e) => (
                   <button key={e.id} className="stack__entry" title={e.name} onClick={() => invoke('wheel:run', e.id)}>
-                    <span className="wheel__icon"><Icon name={e.icon as IconName} size={26} /></span>
+                    <span className={`wheel__icon${e.iconFile || e.path ? ' wheel__icon--plain' : ''}`}><WheelGlyph entry={e} size={e.iconFile || e.path ? 44 : 26} /></span>
                     <span>{e.name}</span>
                   </button>
                 ))}

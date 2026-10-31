@@ -1,6 +1,9 @@
 // The gear ("çark") menu: a fixed catalogue of Windows control panels, settings pages and admin tools.
 // Only entries from this list can run, and the renderer only ever sends an entry id, never a command line.
-import { shell } from 'electron'
+import { dialog, shell } from 'electron'
+import crypto from 'node:crypto'
+import path from 'node:path'
+import { pickTexture } from './textures'
 import { spawn } from 'node:child_process'
 import { store } from './store'
 import type { WheelEntry } from '../src/shared/types'
@@ -43,21 +46,37 @@ export const CATALOG: CatalogEntry[] = [
 
 const DEFAULT_HIDDEN = ['computer', 'events', 'storage']
 
+interface CustomEntry {
+  id: string
+  name: string
+  path: string
+}
+
 export interface WheelState {
   hidden: string[]
   order: string[]
+  custom: CustomEntry[]
+  icons: Record<string, string>
 }
+
+const ICON_FILE = /^[0-9a-f]{16}.(png|jpg|webp)$/
 
 export function wheelState(): WheelState {
   const saved = store.get('wheel') as Partial<WheelState> | undefined
-  return { hidden: saved?.hidden ?? DEFAULT_HIDDEN, order: saved?.order ?? CATALOG.map((e) => e.id) }
+  const custom = saved?.custom ?? []
+  const all = [...CATALOG.map((e) => e.id), ...custom.map((c) => c.id)]
+  const order = [...(saved?.order ?? []).filter((id) => all.includes(id)), ...all.filter((id) => !(saved?.order ?? []).includes(id))]
+  return { hidden: saved?.hidden ?? DEFAULT_HIDDEN, order, custom, icons: saved?.icons ?? {} }
 }
 
-export function setWheelState(next: WheelState): WheelState {
-  const known = new Set(CATALOG.map((e) => e.id))
-  const state = {
+/** Order and visibility from the settings page; the entries themselves (custom ones, icons) change through their own calls. */
+export function setWheelState(next: { hidden: string[]; order: string[] }): WheelState {
+  const current = wheelState()
+  const known = new Set(current.order)
+  const state: WheelState = {
+    ...current,
     hidden: next.hidden.filter((id) => known.has(id)),
-    order: [...next.order.filter((id) => known.has(id)), ...CATALOG.map((e) => e.id).filter((id) => !next.order.includes(id))],
+    order: [...next.order.filter((id) => known.has(id)), ...current.order.filter((id) => !next.order.includes(id))],
   }
   store.set('wheel', state)
   return state
@@ -65,10 +84,44 @@ export function setWheelState(next: WheelState): WheelState {
 
 /** Every entry in the user's order, with a flag for the ones they switched off. */
 export function wheelEntries(): { entries: WheelEntry[]; hidden: string[] } {
-  const { hidden, order } = wheelState()
-  const byId = new Map(CATALOG.map((e) => [e.id, e]))
-  const entries = order.map((id) => byId.get(id)).filter((e): e is CatalogEntry => !!e).map(({ launch: _launch, ...view }) => view)
+  const { hidden, order, custom, icons } = wheelState()
+  const byId = new Map<string, WheelEntry>(CATALOG.map(({ launch: _launch, ...view }) => [view.id, view]))
+  for (const c of custom) byId.set(c.id, { id: c.id, name: c.name, category: 'Eklediklerim', icon: 'folder', path: c.path })
+  const entries = order.map((id) => byId.get(id)).filter((e): e is WheelEntry => !!e).map((e) => (icons[e.id] ? { ...e, iconFile: icons[e.id] } : e))
   return { entries, hidden }
+}
+
+/** Adds a file, program or folder the user picks in the system dialog. Only paths chosen there are ever stored. */
+export async function addWheelEntry(kind: 'file' | 'folder'): Promise<boolean> {
+  const result = await dialog.showOpenDialog({ properties: [kind === 'folder' ? 'openDirectory' : 'openFile'] })
+  if (result.canceled || !result.filePaths[0]) return false
+  const target = result.filePaths[0]
+  const state = wheelState()
+  const entry: CustomEntry = { id: `c-${crypto.randomBytes(5).toString('hex')}`, name: path.basename(target, path.extname(target)) || target, path: target }
+  store.set('wheel', { ...state, custom: [...state.custom, entry], order: [...state.order, entry.id] })
+  return true
+}
+
+export function removeWheelEntry(id: string) {
+  const state = wheelState()
+  if (!state.custom.some((c) => c.id === id)) return
+  const { [id]: _gone, ...icons } = state.icons
+  store.set('wheel', { ...state, custom: state.custom.filter((c) => c.id !== id), order: state.order.filter((o) => o !== id), hidden: state.hidden.filter((h) => h !== id), icons })
+}
+
+/** Gives an entry its own picture (picked in a dialog when `file` is a name, cleared when null). */
+export async function setWheelIcon(id: string, clear: boolean): Promise<{ ok: boolean; message: string }> {
+  const state = wheelState()
+  if (!state.order.includes(id)) return { ok: false, message: 'unknown entry' }
+  if (clear) {
+    const { [id]: _gone, ...icons } = state.icons
+    store.set('wheel', { ...state, icons })
+    return { ok: true, message: 'cleared' }
+  }
+  const picked = await pickTexture()
+  if (!picked.ok || !picked.file || !ICON_FILE.test(picked.file)) return { ok: false, message: picked.message }
+  store.set('wheel', { ...state, icons: { ...state.icons, [id]: picked.file } })
+  return { ok: true, message: picked.file }
 }
 
 function spawnDetached(file: string, args: string[]) {
@@ -81,6 +134,8 @@ function spawnDetached(file: string, args: string[]) {
 
 /** Runs a catalogue entry by id. Unknown ids do nothing. */
 export async function runWheelEntry(id: string): Promise<boolean> {
+  const own = wheelState().custom.find((c) => c.id === id)
+  if (own) return (await shell.openPath(own.path)) === ''
   const found = CATALOG.find((e) => e.id === id)
   if (!found) return false
   const { launch } = found

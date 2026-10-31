@@ -18,7 +18,7 @@ import {
   importPackDialog, exportPackDialog, listThemes, listInstalled, builtinThemeInfos, getTheme, removePack, clearPackCaches,
 } from './packs'
 import { showStack, showPanel, closeStack, readEntries } from './stackWindow'
-import { wheelEntries, runWheelEntry, setWheelState } from './wheel'
+import { wheelEntries, runWheelEntry, setWheelState, addWheelEntry, removeWheelEntry, setWheelIcon } from './wheel'
 import { showPowerMenu, closePowerMenu, runPowerAction } from './power'
 import { createTweakEngine, realRegistry, TWEAKS } from './tweaks'
 import { runElevated } from './elevated'
@@ -255,6 +255,12 @@ function registerIpc() {
     if (ok) closeStack()
     return ok
   })
+  handle('wheel:add', async (_e, kind) => ((await addWheelEntry(kind)) ? wheelEntries() : null))
+  handle('wheel:remove', (_e, id) => {
+    removeWheelEntry(id)
+    return wheelEntries()
+  })
+  handle('wheel:icon', async (_e, id, file) => ({ ...(await setWheelIcon(id, file === null)), data: wheelEntries() }))
   handle('wheel:set', (_e, state) => {
     setWheelState(state)
     return wheelEntries()

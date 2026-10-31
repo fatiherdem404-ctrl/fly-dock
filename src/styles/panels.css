@@ -41,3 +41,5 @@ html[data-view='power'] { background: transparent; overflow: hidden; }
 .power__btn--danger:hover, .power__btn--armed { border-color: #ff5a6e; box-shadow: 0 14px 34px rgba(255, 70, 90, 0.35); }
 .power__btn--armed { background: linear-gradient(180deg, rgba(150, 30, 50, 0.6), rgba(60, 10, 25, 0.7)); }
 .power__hint { margin-top: 36px; font-size: 12px; opacity: 0.45; }
+.wheel__icon--plain { background: none; box-shadow: none; }
+.wheel-glyph { object-fit: contain; }

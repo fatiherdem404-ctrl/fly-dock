@@ -21,6 +21,10 @@ export interface WheelEntry {
   name: string
   category: string
   icon: string
+  /** Added by the user: opens this file or folder. */
+  path?: string
+  /** Picture chosen by the user (a stored image name); replaces the built-in glyph. */
+  iconFile?: string
 }
 
 export type PowerAction = 'lock' | 'sleep' | 'restart' | 'shutdown' | 'logout'
@@ -240,7 +244,7 @@ export interface Persisted {
   items: DockItem[]
   settings: DockSettings
   widgets: WidgetInstance[]
-  wheel?: { hidden: string[]; order: string[] }
+  wheel?: { hidden: string[]; order: string[]; custom?: { id: string; name: string; path: string }[]; icons?: Record<string, string> }
   tweaks?: { applied: Record<string, { existed: boolean; type?: string; data?: string }>; log: TweakLogEntry[] }
 }
 
@@ -343,6 +347,9 @@ export interface InvokeMap {
   'stack:list': { args: [id: string]; result: StackEntry[] }
   'wheel:list': { args: []; result: { entries: WheelEntry[]; hidden: string[] } }
   'wheel:run': { args: [id: string]; result: boolean }
+  'wheel:add': { args: [kind: 'file' | 'folder']; result: { entries: WheelEntry[]; hidden: string[] } | null }
+  'wheel:remove': { args: [id: string]; result: { entries: WheelEntry[]; hidden: string[] } }
+  'wheel:icon': { args: [id: string, file: string | null]; result: { ok: boolean; message: string; data?: { entries: WheelEntry[]; hidden: string[] } } }
   'wheel:set': { args: [state: { hidden: string[]; order: string[] }]; result: { entries: WheelEntry[]; hidden: string[] } }
   'power:run': { args: [action: PowerAction]; result: { ok: boolean; message: string } }
   'power:close': { args: []; result: void }

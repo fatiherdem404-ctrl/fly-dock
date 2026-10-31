@@ -230,3 +230,4 @@ html[data-view='settings'] ::-webkit-scrollbar-thumb:hover { background: color-m
 .st-subpage { animation: st-in 240ms var(--ease) both; }
 .st-desk__row { position: absolute; left: 8%; right: 8%; display: flex; justify-content: center; gap: 10px; }
 .st-desk__icon { position: static !important; }
+.st-wheel-icon:has(img) { background: none; box-shadow: none; }
