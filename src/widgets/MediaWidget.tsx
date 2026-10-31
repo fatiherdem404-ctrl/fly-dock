@@ -1,6 +1,19 @@
 import { useEffect, useState } from 'react'
 import { invoke } from '@/api'
 
+const PREV = <path d="M7 5v14M19 5l-9 7 9 7z" />
+const NEXT = <path d="M17 5v14M5 5l9 7-9 7z" />
+const PLAY = <path d="M8 5l11 7-11 7z" />
+
+function Btn({ label, onClick, big, children }: { label: string; onClick: () => void; big?: boolean; children: React.ReactNode }) {
+  return (
+    <button className={big ? 'wg-media__btn wg-media__btn--big' : 'wg-media__btn'} aria-label={label} onClick={onClick}>
+      <svg viewBox="0 0 24 24" aria-hidden="true">{children}</svg>
+    </button>
+  )
+}
+
+/** What the media player is playing (read from its window title) and previous / play-pause / next. */
 export default function MediaWidget() {
   const [playing, setPlaying] = useState<{ app: string; title: string } | null>(null)
   useEffect(() => {
@@ -10,15 +23,18 @@ export default function MediaWidget() {
     return () => clearInterval(timer)
   }, [])
   return (
-    <div className="widget__media">
-      <div className="widget__track">
-        <div className="widget__big widget__ellipsis">{playing?.title || (playing ? playing.app : 'Çalan bir şey yok')}</div>
-        <div className="widget__muted">{playing ? playing.app : 'Spotify, VLC ve benzeri oynatıcılar'}</div>
+    <div className="wg-media">
+      <div className="wg-media__art" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v12" /><circle cx="6.5" cy="18" r="2.5" /><circle cx="16.5" cy="16" r="2.5" /></svg>
       </div>
-      <div className="widget__buttons">
-        <button onClick={() => invoke('widgets:media', 'prev')} aria-label="Önceki">⏮</button>
-        <button onClick={() => invoke('widgets:media', 'playpause')} aria-label="Oynat / duraklat">⏯</button>
-        <button onClick={() => invoke('widgets:media', 'next')} aria-label="Sonraki">⏭</button>
+      <div className="wg-media__text">
+        <b>{playing?.title || (playing ? playing.app : 'Çalan bir şey yok')}</b>
+        <span>{playing ? playing.app : 'Spotify, VLC ve benzeri oynatıcılar'}</span>
+      </div>
+      <div className="wg-media__buttons">
+        <Btn label="Önceki" onClick={() => invoke('widgets:media', 'prev')}>{PREV}</Btn>
+        <Btn label="Oynat / duraklat" big onClick={() => invoke('widgets:media', 'playpause')}>{PLAY}</Btn>
+        <Btn label="Sonraki" onClick={() => invoke('widgets:media', 'next')}>{NEXT}</Btn>
       </div>
     </div>
   )

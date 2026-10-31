@@ -167,3 +167,15 @@
 .st-desk__tip { position: absolute; left: 50%; bottom: calc(100% + 5px); transform: translateX(-50%); padding: 1px 7px; border-radius: 6px; background: var(--tooltip-bg, rgba(10, 16, 34, 0.92)); color: var(--tooltip-text, #fff); font-size: 9px; font-style: normal; white-space: nowrap; border: 1px solid var(--surface-border, rgba(255, 255, 255, 0.2)); }
 .pv-scene__shelf { left: 0; right: 0; bottom: 4%; }
 .pv-scene__shelf .st-desk { height: 62px; overflow: visible; }
+
+/* widget gallery and the list of added widgets */
+.st-widgetgrid { display: grid; gap: var(--s-4); grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); margin-top: var(--s-3); }
+.st-widgetcard { display: flex; flex-direction: column; gap: 8px; padding: 8px 8px 10px; border-radius: 14px; background: var(--fill); }
+.st-widgetcard__row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 4px; }
+.st-widgetcard__row b { display: block; font-size: 14px; }
+.st-widgetcard__row small { display: block; color: var(--panel-muted); font-size: 12px; margin-top: 1px; }
+.st-widgetlist { display: flex; flex-direction: column; gap: var(--s-4); }
+.st-widgetitem { display: grid; grid-template-columns: minmax(200px, 300px) 1fr; gap: var(--s-4); padding: var(--s-3); border-radius: 14px; background: var(--fill); align-items: start; }
+.st-widgetitem__title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 2px; }
+.st-widgetitem__title b { font-size: 15px; }
+@media (max-width: 760px) { .st-widgetitem { grid-template-columns: 1fr; } }

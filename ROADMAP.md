@@ -134,3 +134,8 @@ Sınırlar: akrilik/Mica ayrı bir sistem penceresi olduğu için sabit durur (t
 - Duyarlı yerleşim: dar pencerede sol menü simgelere iner, kartlar tek sütuna düşer.
 - `src/settings/`: ortak parçalar (`ui.tsx`), önizlemeler (`previews.tsx`), arama dizini (`nav.ts`), her sayfa ayrı dosya (`pages/`).
 - Önizlemeli seçimler: animasyonlar, ayraç, etiket, dock katmanı, pencere boyutu ve konumu, raf stilleri, hız eğrileri, ses stilleri; tema kartları masaüstünün küçük hâli (arka plan + raf + etiket + ayar paneli); duvar kâğıdı kartları canlı küçük resimlerle.
+
+## Widget'lar yenilendi (2026-10-31)
+- 8 tür: dijital saat, analog saat (SVG), takvim (ay ya da gün kartı, hafta numaraları, ay gezme), hava durumu (çizilmiş simgeler), sistem (CPU/RAM/disk halkaları), medya, pil, not (masaüstüne yapışan kâğıt, yazı kaydedilir).
+- Stil: cam / düz / vurgu / çıplak; hepsi seçili temanın renklerini kullanır, tema değişince widget'lar da değişir. Boyut %60-%200 (pencere de ölçeklenir).
+- Ayarlar › Widget'lar: "Ekle" sekmesinde her widget gerçek ve canlı önizlemeyle, stil seçilerek eklenir; "Eklenenler" sekmesinde stil, boyut ve ayrıntılar (saniye, 12 saat, rakamlar, şehir…) düzenlenir.

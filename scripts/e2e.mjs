@@ -240,11 +240,29 @@ try {
     const widget = list.find((w) => w.type === 'clock')
     const page = await until(async () => (await pages()).find((p) => p.url.includes(`#/widget/${widget.id}`)), 'widget window')
     const conn = await connect(page)
-    const text = await until(async () => conn.call(`document.querySelector('.widget__big')?.textContent`), 'clock text')
+    const text = await until(async () => conn.call(`document.querySelector('.wg-clock__time')?.textContent`), 'clock text')
     assert.match(text, /\d{2}:\d{2}/)
     conn.ws.close()
     const after = await invoke('widgets:remove', widget.id)
     assert.ok(!after.some((w) => w.id === widget.id))
+  })
+
+  await check('every widget kind renders, scales its window and follows its style', async () => {
+    for (const type of ['analog', 'calendar', 'weather', 'system', 'media', 'battery', 'note']) {
+      const list = await invoke('widgets:add', type)
+      const widget = list[list.length - 1]
+      assert.equal(widget.type, type)
+      const page = await until(async () => (await pages()).find((p) => p.url.includes(`#/widget/${widget.id}`)), `${type} window`)
+      const conn = await connect(page)
+      await until(async () => conn.call(`!!document.querySelector('.widget--${type}')`), `${type} card`)
+      const before = await conn.call('[window.innerWidth, window.innerHeight]')
+      await invoke('widgets:update', widget.id, { style: 'accent', scale: 1.5 })
+      await until(async () => conn.call(`document.querySelector('.widget').classList.contains('widget--accent')`), 'style applied')
+      const after = await until(async () => { const s = await conn.call('[window.innerWidth, window.innerHeight]'); return s[0] > before[0] ? s : null }, 'window grows with the scale')
+      assert.ok(after[0] > before[0] * 1.3 && after[1] > before[1] * 1.3, `${type} grows (${before} -> ${after})`)
+      conn.ws.close()
+      await invoke('widgets:remove', widget.id)
+    }
   })
 
   await check('system stats are real numbers', async () => {

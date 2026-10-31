@@ -239,7 +239,7 @@ export interface DockSettings {
   iconFolders: string[]
 }
 
-export type WidgetType = 'clock' | 'weather' | 'system' | 'media' | 'calendar'
+export type WidgetType = 'clock' | 'analog' | 'calendar' | 'weather' | 'system' | 'media' | 'battery' | 'note'
 
 export interface WidgetInstance {
   id: string

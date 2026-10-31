@@ -9,27 +9,12 @@ import { baseWebPreferences, loadRoute, OFFSCREEN } from './windows'
 import { broadcast } from './ipc'
 import { currentSnapshot } from './items'
 import type { InvokeMap, WidgetInstance, WidgetType } from '../src/shared/types'
-
-const SIZES: Record<WidgetType, { width: number; height: number }> = {
-  clock: { width: 240, height: 116 },
-  weather: { width: 240, height: 116 },
-  system: { width: 240, height: 132 },
-  media: { width: 280, height: 124 },
-  calendar: { width: 280, height: 268 },
-}
-
-const DEFAULT_OPTIONS: Record<WidgetType, WidgetInstance['options']> = {
-  clock: { seconds: false, hour12: false },
-  weather: { city: 'Istanbul' },
-  system: {},
-  media: {},
-  calendar: {},
-}
+import { DEFAULT_WIDGET_OPTIONS, widgetWindowSize } from '../src/shared/widgets'
 
 const windows = new Map<string, BrowserWindow>()
 
 function createWindow(widget: WidgetInstance) {
-  const size = SIZES[widget.type]
+  const size = widgetWindowSize(widget.type, widget.options)
   const win = new BrowserWindow({
     ...size,
     x: Math.round(widget.x) - OFFSCREEN,
@@ -40,7 +25,8 @@ function createWindow(widget: WidgetInstance) {
     hasShadow: false,
     resizable: false,
     skipTaskbar: true,
-    focusable: false,
+    // a note has to take the keyboard; every other widget never takes the focus
+    focusable: widget.type === 'note',
     alwaysOnTop: false,
     webPreferences: baseWebPreferences(),
   })
@@ -72,9 +58,9 @@ export function addWidget(type: WidgetType): WidgetInstance[] {
   const widget: WidgetInstance = {
     id: crypto.randomUUID(),
     type,
-    x: area.x + area.width - SIZES[type].width - 24,
+    x: area.x + area.width - widgetWindowSize(type, DEFAULT_WIDGET_OPTIONS[type]).width - 24,
     y: area.y + 24 + existing.length * 28,
-    options: { ...DEFAULT_OPTIONS[type] },
+    options: { ...DEFAULT_WIDGET_OPTIONS[type] },
   }
   createWindow(widget)
   return publish([...existing, widget])
@@ -87,7 +73,16 @@ export function removeWidget(id: string): WidgetInstance[] {
 }
 
 export function updateWidget(id: string, options: WidgetInstance['options']): WidgetInstance[] {
-  return publish(getWidgets().map((w) => (w.id === id ? { ...w, options: { ...w.options, ...options } } : w)))
+  const next = getWidgets().map((w) => (w.id === id ? { ...w, options: { ...w.options, ...options } } : w))
+  const changed = next.find((w) => w.id === id)
+  const win = windows.get(id)
+  // a new scale or view changes the window's size; it grows from its top-left corner
+  if (changed && win && !win.isDestroyed()) {
+    const size = widgetWindowSize(changed.type, changed.options)
+    const [width, height] = win.getSize()
+    if (width !== size.width || height !== size.height) win.setSize(size.width, size.height)
+  }
+  return publish(next)
 }
 
 export function moveWidget(id: string, x: number, y: number) {

@@ -21,7 +21,7 @@ export const TAB_INFO: Record<Tab, TabInfo> = {
   sound: { id: 'sound', label: 'Sesler', icon: 'sound', blurb: 'Tıklama, açılış ve pencere sesleri' },
   items: { id: 'items', label: 'Öğeler', icon: 'items', blurb: 'Dock’taki programlar ve kısayolları' },
   wheel: { id: 'wheel', label: 'Çark menüsü', icon: 'settings', blurb: 'Hızlı erişim listesi ve kendi eklediklerin' },
-  widgets: { id: 'widgets', label: 'Widget’lar', icon: 'widgets', blurb: 'Masaüstünde duran küçük pencereler' },
+  widgets: { id: 'widgets', label: 'Widget’lar', icon: 'widgets', blurb: 'Saat, takvim, hava durumu ve daha fazlası; temana uyumlu' },
   tweaks: { id: 'tweaks', label: 'Tweaks', icon: 'tools', blurb: 'Güvenli, geri alınabilir Windows ayarları' },
   general: { id: 'general', label: 'Genel', icon: 'general', blurb: 'Başlangıç, yedek ve hakkında' },
 }
@@ -87,7 +87,7 @@ export const SEARCH_INDEX: SearchEntry[] = [
   e('Sesleri dene', 'sound', 'Dene', 'test'),
   e('Dock’taki öğeler, kısayollar', 'items', undefined, 'hotkey'),
   e('Çark menüsü girdileri', 'wheel', undefined, 'denetim masası ekle'),
-  e('Widget ekle, kaldır', 'widgets', undefined, 'saat hava'),
+  e('Widget ekle (analog saat, takvim, hava, not…)', 'widgets', 'Ekle', 'saat hava pil sistem medya not'),
   e('Windows tweak’leri', 'tweaks', undefined, 'gizli dosya uzantı klasik menü'),
   e('Windows ile başlat', 'general', undefined, 'startup login'),
   e('Yedekle ve geri yükle', 'general', undefined, 'backup'),

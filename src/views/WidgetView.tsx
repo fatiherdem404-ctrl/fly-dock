@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react'
 import { invoke, useActiveTheme, useEvent } from '@/api'
 import type { DockSettings, WidgetInstance } from '@/shared/types'
-import ClockWidget from '@/widgets/ClockWidget'
-import WeatherWidget from '@/widgets/WeatherWidget'
-import SystemWidget from '@/widgets/SystemWidget'
-import MediaWidget from '@/widgets/MediaWidget'
-import CalendarWidget from '@/widgets/CalendarWidget'
+import { WidgetFrame } from '@/widgets/frame'
 
+/** One desktop widget window: the widget's card, painted with the active theme. */
 export default function WidgetView({ widgetId }: { widgetId: string }) {
   const [widget, setWidget] = useState<WidgetInstance | null>(null)
   const [settings, setSettings] = useState<DockSettings | null>(null)
@@ -21,14 +18,5 @@ export default function WidgetView({ widgetId }: { widgetId: string }) {
   useActiveTheme(settings?.theme)
 
   if (!widget) return null
-  const body = (() => {
-    switch (widget.type) {
-      case 'clock': return <ClockWidget options={widget.options} />
-      case 'weather': return <WeatherWidget options={widget.options} />
-      case 'system': return <SystemWidget />
-      case 'media': return <MediaWidget />
-      case 'calendar': return <CalendarWidget />
-    }
-  })()
-  return <div className="widget">{body}</div>
+  return <WidgetFrame type={widget.type} options={widget.options} onOption={(key, value) => invoke('widgets:update', widget.id, { [key]: value })} />
 }

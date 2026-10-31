@@ -56,9 +56,10 @@ const win = (p) => p.replaceAll('/', String.fromCharCode(92))
 const windir = process.env.SystemRoot ?? 'C:/Windows'
 const app = (name, p) => ({ id: name, type: 'app', targetPath: win(p), label: name })
 writeFileSync(join(profile, 'config.json'), JSON.stringify({
+  schemaVersion: 8,
   items: [{ id: 'start', type: 'start', label: 'Başlat' }, app('notepad', `${windir}/System32/notepad.exe`), app('calc', `${windir}/System32/calc.exe`), app('explorer', `${windir}/explorer.exe`), { id: 'sep1', type: 'separator' }, { id: 'folder', type: 'folder', targetPath: win(arg('folder') ?? `${windir}/Fonts`), label: 'Fonts' }, { id: 'wheel1', type: 'wheel', label: 'Denetim' }, { id: 'power1', type: 'power', label: 'Güç' }, { id: 'trash', type: 'trash' }],
   settings,
-  widgets: [],
+  widgets: (arg('widgets') ?? '').split(',').filter(Boolean).map((type, i) => ({ id: `w-${type}`, type, x: 40 + i * 20, y: 40 + i * 20, options: Object.fromEntries((arg('wopts') ?? '').split(',').filter(Boolean).map((p) => p.split('=')).map(([k, v]) => [k, v === 'true' ? true : v === 'false' ? false : Number.isNaN(Number(v)) ? v : Number(v)])) })),
 }))
 
 const port = 9500 + Math.floor(Math.random() * 400)

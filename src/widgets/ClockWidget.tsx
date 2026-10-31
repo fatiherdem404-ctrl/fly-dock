@@ -1,24 +1,34 @@
 import { useEffect, useState } from 'react'
-import type { WidgetInstance } from '@/shared/types'
+import type { WidgetOptions } from '@/shared/widgets'
 
-export default function ClockWidget({ options }: { options: WidgetInstance['options'] }) {
+/** The date and time, refreshed every second (or every few seconds when the seconds are hidden). */
+export function useNow(everyMs: number): Date {
   const [now, setNow] = useState(new Date())
   useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), options.seconds ? 1000 : 5000)
+    const timer = setInterval(() => setNow(new Date()), everyMs)
     return () => clearInterval(timer)
-  }, [options.seconds])
+  }, [everyMs])
+  return now
+}
 
-  const time = now.toLocaleTimeString('tr-TR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: options.seconds ? '2-digit' : undefined,
-    hour12: !!options.hour12,
-  })
-  const date = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' })
+/** Digital clock: big hours and minutes with a blinking colon, optional seconds, 12-hour mode and the date. */
+export default function ClockWidget({ options }: { options: WidgetOptions }) {
+  const seconds = !!options.seconds
+  const now = useNow(seconds ? 1000 : 2000)
+  const hour12 = !!options.hour12
+  const h = hour12 ? now.getHours() % 12 || 12 : now.getHours()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const date = now.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })
   return (
-    <div className="widget__clock">
-      <div className="widget__big">{time}</div>
-      <div className="widget__muted">{date}</div>
+    <div className="wg-clock">
+      <div className="wg-clock__time">
+        <b>{pad(h)}</b>
+        <i className="wg-colon" style={{ opacity: seconds && now.getSeconds() % 2 ? 0.25 : 1 }}>:</i>
+        <b>{pad(now.getMinutes())}</b>
+        {seconds && <small>{pad(now.getSeconds())}</small>}
+        {hour12 && <em>{now.getHours() < 12 ? 'ÖÖ' : 'ÖS'}</em>}
+      </div>
+      {options.date !== false && <div className="wg-clock__date">{date}</div>}
     </div>
   )
 }

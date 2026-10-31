@@ -1,127 +1,155 @@
+/*
+ * Desktop widgets. Every widget is a card of a fixed design size drawn from the active theme's colours; the style
+ * (glass, solid, accent, minimal) only changes which of those colours are used. The window around the card holds its
+ * shadow, and the card scales as a whole (see WidgetFrame).
+ */
 .widget {
-  position: absolute;
-  inset: 6px;
-  padding: 14px 16px;
-  border-radius: calc(var(--radius) - 2px);
+  --wc: var(--tooltip-text);
+  --wm: color-mix(in srgb, var(--tooltip-text) 62%, transparent);
+  --wl: color-mix(in srgb, var(--tooltip-text) 16%, transparent);
+  --wa: var(--accent);
+  position: relative;
+  box-sizing: border-box;
+  border-radius: calc(var(--radius) * 0.9);
   background: var(--surface);
   border: 1px solid var(--surface-border);
   box-shadow: var(--shadow);
-  color: var(--tooltip-text);
-  -webkit-app-region: drag;
+  color: var(--wc);
+  font-family: var(--font);
   overflow: hidden;
+  user-select: none;
 }
+html[data-view='widget'] .widget { position: absolute; left: 6px; top: 6px; }
 
-.widget button {
-  -webkit-app-region: no-drag;
+.widget--solid { --wc: var(--panel-text); --wm: var(--panel-muted); --wl: color-mix(in srgb, var(--panel-text) 14%, transparent); background: var(--panel-bg); }
+.widget--accent {
+  --wc: #fff; --wm: rgba(255, 255, 255, 0.78); --wl: rgba(255, 255, 255, 0.28); --wa: #fff;
+  background: linear-gradient(150deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #000));
+  border-color: rgba(255, 255, 255, 0.28);
 }
+.widget--minimal {
+  --wc: #fff; --wm: rgba(255, 255, 255, 0.8); --wl: rgba(255, 255, 255, 0.35); --wa: #fff;
+  background: transparent; border-color: transparent; box-shadow: none; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55), 0 0 2px rgba(0, 0, 0, 0.5);
+}
+.widget__inner { position: relative; -webkit-app-region: drag; }
+.widget button, .widget textarea { -webkit-app-region: no-drag; }
+.widget svg { display: block; }
 
-.widget__big {
-  font-size: 36px;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  line-height: 1.1;
-}
-.widget__muted {
-  font-size: 12px;
-  opacity: 0.7;
-  margin-top: 3px;
-}
-.widget__title {
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: capitalize;
-  margin-bottom: 8px;
-}
-.widget__ellipsis {
-  font-size: 15px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 230px;
-}
+/* ---- digital clock ---- */
+.wg-clock { height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 0 22px; }
+.wg-clock__time { display: flex; align-items: baseline; gap: 2px; font-variant-numeric: tabular-nums; line-height: 1; }
+.wg-clock__time b { font-size: 64px; font-weight: 300; letter-spacing: -0.03em; }
+.wg-colon { font-style: normal; font-size: 56px; font-weight: 300; transform: translateY(-4px); transition: opacity 200ms; }
+.wg-clock__time small { font-size: 26px; margin-left: 8px; color: var(--wa); font-weight: 500; }
+.wg-clock__time em { font-style: normal; font-size: 15px; margin-left: 8px; color: var(--wm); align-self: flex-start; margin-top: 10px; }
+.wg-clock__date { margin-top: 8px; font-size: 14px; color: var(--wm); text-transform: capitalize; }
 
-.widget__weather {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.widget__icon {
-  font-size: 40px;
-}
+/* ---- analog clock ---- */
+.wg-analog { width: 100%; height: 100%; padding: 6px; box-sizing: border-box; }
+.wg-analog__face { fill: color-mix(in srgb, var(--wc) 5%, transparent); stroke: var(--wl); stroke-width: 1.5; }
+.widget--minimal .wg-analog__face { fill: rgba(0, 0, 0, 0.22); }
+.wg-tick { stroke: var(--wm); stroke-width: 1; stroke-linecap: round; }
+.wg-tick--major { stroke: var(--wc); stroke-width: 2.4; }
+.wg-analog__num { fill: var(--wc); font-size: 17px; font-weight: 500; font-family: var(--font); text-shadow: none; }
+.wg-hand { stroke-linecap: round; }
+.wg-hand--hour { stroke: var(--wc); stroke-width: 5.5; }
+.wg-hand--min { stroke: var(--wc); stroke-width: 3.4; }
+.wg-hand--sec { stroke: var(--wa); stroke-width: 1.7; }
+.wg-analog__cap { fill: var(--wa); stroke: var(--wc); stroke-width: 1.5; }
+.widget--accent .wg-hand--sec { stroke: #ffd166; }
+.widget--accent .wg-analog__cap { fill: #ffd166; }
 
-.widget__system {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  justify-content: center;
-  height: 100%;
-}
-.widget__row {
-  display: grid;
-  grid-template-columns: 36px 1fr 40px;
-  align-items: center;
-  gap: 10px;
-  font-size: 12px;
-}
-.widget__bar {
-  height: 5px;
-  background: var(--surface-border);
-  border-radius: 3px;
-  overflow: hidden;
-}
-.widget__bar div {
-  height: 100%;
-  background: linear-gradient(90deg, #2f7bff, #6cc8ff);
-  box-shadow: 0 0 8px rgba(47, 123, 255, 0.6);
-  border-radius: 3px;
-  transition: width 400ms ease;
-}
-.widget__value {
-  text-align: right;
-  opacity: 0.8;
-}
+/* ---- calendar ---- */
+.wg-cal { height: 100%; padding: 16px 16px 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; }
+.wg-cal__head { display: flex; align-items: center; justify-content: space-between; }
+.wg-cal__head b { font-size: 22px; font-weight: 600; text-transform: capitalize; }
+.wg-cal__head span { margin-left: 8px; font-size: 14px; color: var(--wm); }
+.wg-cal__nav { display: flex; gap: 2px; }
+.wg-cal__nav button { display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 8px; background: transparent; color: var(--wc); cursor: pointer; }
+.wg-cal__nav button:hover { background: var(--wl); }
+.wg-cal__nav i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--wm); }
+.wg-cal__nav .is-now i { background: var(--wa); border-color: var(--wa); }
+.wg-cal__grid { flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 1fr; gap: 2px; text-align: center; font-size: 13px; }
+.wg-cal__grid--weeks { grid-template-columns: 22px repeat(7, 1fr); }
+.wg-cal__dow { font-size: 11px; color: var(--wm); align-self: center; text-transform: uppercase; letter-spacing: 0.04em; }
+.wg-cal__wk { align-self: center; font-size: 10.5px; color: var(--wm); opacity: 0.8; }
+.wg-cal__day { display: grid; place-items: center; border-radius: 50%; font-variant-numeric: tabular-nums; }
+.wg-cal__day.is-out { color: var(--wm); opacity: 0.35; }
+.wg-cal__day.is-weekend:not(.is-out) { color: var(--wm); }
+.wg-cal__day.is-today { background: var(--wa); color: var(--surface, #000); font-weight: 700; box-shadow: 0 2px 8px color-mix(in srgb, var(--wa) 50%, transparent); }
+.widget--accent .wg-cal__day.is-today { color: var(--accent); }
+.widget--glass .wg-cal__day.is-today, .widget--solid .wg-cal__day.is-today, .widget--minimal .wg-cal__day.is-today { color: #fff; }
+.wg-day { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.wg-day__week { font-size: 14px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--wa); }
+.wg-day__num { font-size: 84px; font-weight: 300; line-height: 1; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.wg-day__month { font-size: 14px; color: var(--wm); text-transform: capitalize; }
 
-.widget__media {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
-}
-.widget__buttons {
-  display: flex;
-  gap: 8px;
-}
-.widget__buttons button {
-  flex: 1;
-  height: 30px;
-  border: 1px solid var(--surface-border);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  color: inherit;
-  font-size: 14px;
-  cursor: pointer;
-}
-.widget__buttons button:hover {
-  background: rgba(255, 255, 255, 0.18);
-}
+/* ---- weather ---- */
+.wg-wx { height: 100%; display: flex; align-items: center; gap: 12px; padding: 0 20px; }
+.wg-wx--note { flex-direction: column; justify-content: center; align-items: flex-start; gap: 4px; font-size: 14px; color: var(--wm); }
+.wg-wx--note small { font-size: 12px; opacity: 0.8; }
+.wg-wx__icon { width: 78px; height: 78px; flex: none; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25)); }
+.wg-wx__info { min-width: 0; }
+.wg-wx__temp { font-size: 50px; font-weight: 300; line-height: 1; letter-spacing: -0.03em; }
+.wg-wx__temp sup { font-size: 20px; margin-left: 2px; vertical-align: top; position: relative; top: 6px; color: var(--wm); }
+.wg-wx__text { margin-top: 4px; font-size: 15px; font-weight: 500; }
+.wg-wx__meta { margin-top: 2px; font-size: 12px; color: var(--wm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.widget__grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-  text-align: center;
-  font-size: 12px;
-}
-.widget__grid span {
-  padding: 4px 0;
-  border-radius: 6px;
-}
-.widget__dow {
-  opacity: 0.55;
-  font-size: 11px;
-}
-.widget__today {
-  background: var(--accent);
-  color: #fff;
-  font-weight: 600;
-}
+/* ---- rings (system, battery) ---- */
+.wg-ring__track { fill: none; stroke: var(--wl); stroke-width: 7; }
+.wg-ring__bar { fill: none; stroke: var(--wa); stroke-width: 7; stroke-linecap: round; transition: stroke-dasharray 500ms ease; }
+.wg-ring__bar--1 { stroke: color-mix(in srgb, var(--wa) 65%, #7cf5c1); }
+.wg-ring__bar--2 { stroke: color-mix(in srgb, var(--wa) 55%, #ffb36b); }
+.wg-ring__bar--low { stroke: #ff5a5f; }
+.wg-ring__bar--ok { stroke: #4cd27a; }
+.widget--accent .wg-ring__bar { stroke: #fff; }
+.widget--accent .wg-ring__bar--1 { stroke: #bdf5dc; }
+.widget--accent .wg-ring__bar--2 { stroke: #ffe0b8; }
+
+.wg-sys { height: 100%; display: flex; align-items: center; justify-content: space-around; padding: 0 14px; }
+.wg-ring { position: relative; width: 74px; display: flex; flex-direction: column; align-items: center; }
+.wg-ring svg { width: 74px; height: 74px; }
+.wg-ring b { position: absolute; top: 24px; left: 0; right: 0; text-align: center; font-size: 19px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.wg-ring b small { font-size: 10px; font-weight: 500; color: var(--wm); margin-left: 1px; }
+.wg-ring span { margin-top: 2px; font-size: 12px; color: var(--wm); letter-spacing: 0.04em; }
+
+/* ---- media ---- */
+.wg-media { height: 100%; display: grid; grid-template-columns: 56px 1fr; grid-template-rows: 1fr auto; gap: 8px 14px; padding: 16px 18px 14px; box-sizing: border-box; }
+.wg-media__art { grid-row: 1; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(145deg, var(--wa), color-mix(in srgb, var(--wa) 45%, #000)); align-self: center; }
+.widget--accent .wg-media__art { background: rgba(255, 255, 255, 0.2); }
+.wg-media__art svg { width: 28px; height: 28px; fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.wg-media__text { grid-row: 1; align-self: center; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.wg-media__text b { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wg-media__text span { font-size: 12px; color: var(--wm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wg-media__buttons { grid-column: 1 / -1; display: flex; justify-content: center; align-items: center; gap: 18px; }
+.wg-media__btn { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; color: var(--wc); cursor: pointer; transition: background 140ms, transform 140ms; }
+.wg-media__btn:hover { background: var(--wl); transform: scale(1.08); }
+.wg-media__btn--big { width: 40px; height: 40px; background: var(--wa); color: #fff; }
+.widget--accent .wg-media__btn--big { color: var(--accent); background: #fff; }
+.wg-media__btn--big:hover { background: color-mix(in srgb, var(--wa) 85%, #fff); }
+.wg-media__btn svg { width: 18px; height: 18px; fill: currentColor; stroke: currentColor; stroke-width: 1.4; stroke-linejoin: round; }
+
+/* ---- battery ---- */
+.wg-bat { height: 100%; display: flex; align-items: center; gap: 12px; padding: 0 14px; }
+.wg-bat__ring { position: relative; width: 76px; height: 76px; flex: none; }
+.wg-bat__ring svg { width: 76px; height: 76px; }
+.wg-bat__ring b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.wg-bat__ring b small { font-size: 11px; font-weight: 500; color: var(--wm); margin-left: 1px; align-self: end; margin-bottom: 26px; }
+.wg-bat__text { min-width: 0; display: flex; flex-direction: column; gap: 3px; position: relative; }
+.wg-bat__text b { font-size: 14px; font-weight: 600; white-space: nowrap; }
+.wg-bat__text span { font-size: 11.5px; color: var(--wm); line-height: 1.3; }
+.wg-bat__bolt { display: none; margin-top: 4px; }
+.wg-bat__bolt.is-on { display: block; }
+.wg-bat__bolt svg { width: 18px; height: 18px; fill: #ffd23d; stroke: none; filter: drop-shadow(0 0 6px rgba(255, 210, 61, 0.6)); }
+
+/* ---- sticky note ---- */
+.wg-note { height: 100%; display: flex; flex-direction: column; }
+.wg-note__bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--wm); }
+.wg-note__bar i { width: 8px; height: 8px; border-radius: 50%; background: var(--wa); }
+.wg-note textarea { flex: 1; resize: none; border: 0; outline: 0; background: transparent; color: var(--wc); font: inherit; font-size: 15px; line-height: 1.5; padding: 2px 16px 14px; user-select: text; }
+.wg-note textarea::placeholder { color: var(--wm); }
+
+/* ---- previews of widgets inside the settings ---- */
+.wgt-stage { position: relative; display: grid; place-items: center; width: 100%; height: 230px; padding: 0; box-sizing: border-box; border-radius: 10px; background: linear-gradient(135deg, #3a5ea8, #7a4fb0 55%, #d1795a); overflow: hidden; }
+.wgt-stage__inner { position: relative; display: block; pointer-events: none; }
+.wgt-stage .widget { position: absolute; left: 0; top: 0; }

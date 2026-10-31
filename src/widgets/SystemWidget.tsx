@@ -3,16 +3,23 @@ import { invoke } from '@/api'
 
 type Stats = { cpu: number; ram: number; disk: number; diskLabel: string }
 
-function Row({ label, value }: { label: string; value: number }) {
+const R = 24
+const C = 2 * Math.PI * R
+
+function Ring({ label, value, tone }: { label: string; value: number; tone: 0 | 1 | 2 }) {
   return (
-    <div className="widget__row">
+    <div className="wg-ring">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r={R} className="wg-ring__track" />
+        <circle cx="32" cy="32" r={R} className={`wg-ring__bar wg-ring__bar--${tone}`} strokeDasharray={`${(Math.min(value, 100) / 100) * C} ${C}`} transform="rotate(-90 32 32)" />
+      </svg>
+      <b>{value}<small>%</small></b>
       <span>{label}</span>
-      <div className="widget__bar"><div style={{ width: `${value}%` }} /></div>
-      <span className="widget__value">{value}%</span>
     </div>
   )
 }
 
+/** CPU, memory and disk as three rings. */
 export default function SystemWidget() {
   const [stats, setStats] = useState<Stats>({ cpu: 0, ram: 0, disk: 0, diskLabel: 'C:' })
   useEffect(() => {
@@ -22,10 +29,10 @@ export default function SystemWidget() {
     return () => clearInterval(timer)
   }, [])
   return (
-    <div className="widget__system">
-      <Row label="CPU" value={stats.cpu} />
-      <Row label="RAM" value={stats.ram} />
-      <Row label={stats.diskLabel} value={stats.disk} />
+    <div className="wg-sys">
+      <Ring label="CPU" value={stats.cpu} tone={0} />
+      <Ring label="RAM" value={stats.ram} tone={1} />
+      <Ring label={stats.diskLabel} value={stats.disk} tone={2} />
     </div>
   )
 }
