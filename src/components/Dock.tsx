@@ -265,8 +265,10 @@ export default function Dock({ items, settings: wanted, running, icons, launchin
         const size = current[i]
         const base = edgeStyle(rowStart + positions[i], pads.crossEdge + baseOffset + DESK_INSET + (lifts.current[i] ?? 0), size, size)
         if (item.type === 'separator') {
+          // a 2-4 px bar drawn at a fractional position shimmers as the row moves; whole pixels keep it steady
+          const crisp = edgeStyle(Math.round(rowStart + positions[i]), Math.round(pads.crossEdge + baseOffset + DESK_INSET + (lifts.current[i] ?? 0)), Math.round(size), Math.round(size))
           return (
-            <div key={item.id} className="dock__separator" data-kind={separatorKind(settings)} data-horizontal={horizontal} style={{ ...base, ...sep.vars, [horizontal ? 'height' : 'width']: sep.length } as React.CSSProperties}
+            <div key={item.id} className="dock__separator" data-kind={separatorKind(settings)} data-horizontal={horizontal} style={{ ...crisp, ...sep.vars, [horizontal ? 'height' : 'width']: sep.length } as React.CSSProperties}
               draggable={!locked} onDragStart={(e) => { e.dataTransfer.setData(DRAG_TYPE, item.id); setDragging(item.id) }}
               onDragEnd={(e) => { setDragging(null); if (outside(e)) { playSound('remove'); invoke('items:remove', item.id) } }}
               onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); invoke('menu:show', { kind: 'icon', itemId: item.id }) }}

@@ -138,7 +138,7 @@ export function separatorStyle(s: DockSettings, slot: number): { length: number;
   if (s.sepBorderR > 0) vars['--sep-br'] = `${s.sepBorderR}px`
   if (s.sepBorderLColor) vars['--sep-blc'] = s.sepBorderLColor
   if (s.sepBorderRColor) vars['--sep-brc'] = s.sepBorderRColor
-  return { length: (s.iconSize * Math.min(Math.max(s.sepHeight, 10), 100)) / 100, vars }
+  return { length: Math.round((s.iconSize * Math.min(Math.max(s.sepHeight, 10), 100)) / 100), vars }
 }
 
 export function deskStyleVars(s: DockSettings, _thickness: number, _side: DockPosition, texture: DeskTexture | null = null): { rootVars: Record<string, string>; plate: CSSProperties } {
