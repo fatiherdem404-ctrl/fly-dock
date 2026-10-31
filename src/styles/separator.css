@@ -4,6 +4,7 @@
  * variables each desk style defines, so a light theme gets a dark line and a dark theme gets a light one.
  */
 .dock { --sep-main: color-mix(in srgb, var(--tooltip-text) 58%, transparent); --sep-dark: rgba(0, 0, 0, 0.45); --sep-light: rgba(255, 255, 255, 0.5); --sep-glow: transparent; }
+.dock--desk-macos { --sep-main: rgba(255, 255, 255, 0.5); --sep-dark: rgba(0, 0, 0, 0.12); --sep-light: rgba(255, 255, 255, 0.45); }
 .dock--desk-glass3d { --sep-main: rgba(40, 60, 100, 0.55); --sep-dark: rgba(40, 60, 100, 0.5); --sep-light: rgba(255, 255, 255, 0.9); }
 .dock--desk-wood { --sep-dark: rgba(40, 20, 6, 0.75); --sep-light: rgba(255, 224, 170, 0.5); --sep-main: rgba(40, 20, 6, 0.7); }
 .dock--desk-metal { --sep-dark: rgba(50, 56, 66, 0.7); --sep-light: rgba(255, 255, 255, 0.9); --sep-main: rgba(50, 56, 66, 0.65); }

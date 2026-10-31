@@ -18,6 +18,7 @@ export const DESK_LABELS: Record<DeskStyle, string> = {
   none: 'Rafsız (boş)',
   glass: 'Koyu cam',
   azure: 'Mavi çerçeve',
+  macos: 'macOS tarzı (düz)',
   glass3d: '3B cam raf',
   wood: 'Ahşap',
   birch: 'Açık ahşap',
@@ -39,6 +40,7 @@ export const DESK_PRESETS: Record<DeskStyle, { depth: number; opacity: number; e
   none: { depth: 0, opacity: 1, edge: 0, scale: 100 },
   glass: { depth: 0, opacity: 1, edge: 0, scale: 100 },
   azure: { depth: 0, opacity: 1, edge: 0, scale: 100 },
+  macos: { depth: 0, opacity: 1, edge: 0, scale: 100 },
   glass3d: { depth: 34, opacity: 0.95, edge: 8, scale: 100 },
   wood: { depth: 26, opacity: 1, edge: 10, scale: 100 },
   birch: { depth: 26, opacity: 1, edge: 10, scale: 100 },
@@ -88,7 +90,7 @@ export function shelfRadii(s: Pick<DockSettings, 'deskRadTL' | 'deskRadTR' | 'de
 
 /** Looks of the desk by style: the radii that suit the material (pill glass, a squarer wooden shelf). */
 export const DESK_RADII: Record<DeskStyle, [number, number]> = {
-  none: [0, 0], glass: [60, 60], azure: [60, 60], neon: [60, 60],
+  none: [0, 0], glass: [60, 60], azure: [60, 60], macos: [24, 24], neon: [60, 60],
   glass3d: [14, 5], wood: [10, 4], birch: [10, 4], walnut: [10, 4], metal: [10, 4], marble: [10, 4], blackmarble: [10, 4], concrete: [8, 3], crystal: [14, 5], matte: [10, 4], mirror: [14, 5], wall: [8, 3], custom: [10, 4],
 }
 

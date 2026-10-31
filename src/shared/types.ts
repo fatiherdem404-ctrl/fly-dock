@@ -113,9 +113,9 @@ export type StackPlacement = 'icon' | 'dock' | 'center' | 'cursor'
 export type StackSize = 'small' | 'medium' | 'full' | 'custom'
 /** Where the dock sits relative to other windows: always on top, as a normal window, or below all of them. */
 export type DockLayer = 'above' | 'normal' | 'below'
-export type DeskStyle = 'none' | 'glass' | 'azure' | 'glass3d' | 'wood' | 'birch' | 'walnut' | 'metal' | 'marble' | 'blackmarble' | 'concrete' | 'neon' | 'crystal' | 'matte' | 'mirror' | 'wall' | 'custom'
+export type DeskStyle = 'none' | 'glass' | 'azure' | 'macos' | 'glass3d' | 'wood' | 'birch' | 'walnut' | 'metal' | 'marble' | 'blackmarble' | 'concrete' | 'neon' | 'crystal' | 'matte' | 'mirror' | 'wall' | 'custom'
 
-export const DESK_STYLES: DeskStyle[] = ['none', 'glass', 'azure', 'glass3d', 'wood', 'birch', 'walnut', 'metal', 'neon', 'marble', 'blackmarble', 'concrete', 'crystal', 'matte', 'mirror', 'wall', 'custom']
+export const DESK_STYLES: DeskStyle[] = ['none', 'glass', 'azure', 'macos', 'glass3d', 'wood', 'birch', 'walnut', 'metal', 'neon', 'marble', 'blackmarble', 'concrete', 'crystal', 'matte', 'mirror', 'wall', 'custom']
 export type TextureMode = 'tile' | 'fit'
 
 export interface DockSettings {
