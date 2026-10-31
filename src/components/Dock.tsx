@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { DockItem, DockSettings, RunningState } from '@/shared/types'
 import { invoke } from '@/api'
 import { isSettled, layoutRow, springFor, speedToMs, stepSpring, targetLifts, targetSizes } from '@/physics'
-import { deskStyleVars, hoverProfile } from '@/desk'
+import { deskStyleVars, hoverProfile, shelfRadii } from '@/desk'
 import { dockGeometry, fitToScreen, DESK_INSET } from '@/layout'
 import DockIcon from './DockIcon'
 import Shelf from './Shelf'
@@ -243,7 +243,7 @@ export default function Dock({ items, settings: wanted, running, icons, launchin
     >
       {shelfMode ? (
         <div style={edgeStyle(surfaceStart, DESK_INSET, surfaceLength, thickness)}>
-          <Shelf length={surfaceLength} thickness={thickness} edge={edge} depth={settings.deskDepth} side={side} shape={settings.deskShape} opacity={settings.deskOpacity} />
+          <Shelf length={surfaceLength} thickness={thickness} edge={edge} depth={settings.deskDepth} side={side} radii={shelfRadii(settings, side)} opacity={settings.deskOpacity} />
         </div>
       ) : (
         <div className="dock__desk" style={{ ...edgeStyle(surfaceStart, DESK_INSET, surfaceLength, thickness), ...desk.plate }}>

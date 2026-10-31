@@ -67,7 +67,6 @@ export type SpeedPreset = 'fast' | 'medium' | 'slow' | 'custom'
 export type FalloffCurve = 'cosine' | 'gaussian' | 'linear' | 'sharp'
 export type LabelMode = 'hover' | 'always' | 'never'
 export type StackSize = 'small' | 'medium' | 'full' | 'custom'
-export type DeskShape = 'pill' | 'rounded' | 'square'
 /** Where the dock sits relative to other windows: always on top, as a normal window, or below all of them. */
 export type DockLayer = 'above' | 'normal' | 'below'
 export type DeskStyle = 'glass' | 'azure' | 'glass3d' | 'wood' | 'metal' | 'marble' | 'neon' | 'crystal' | 'matte' | 'mirror' | 'wall'
@@ -101,7 +100,13 @@ export interface DockSettings {
   deskDepth: number
   /** Whether the desk gets thicker with the magnified icons. */
   shelfGrows: boolean
-  deskShape: DeskShape
+  /** Corner radii of the desk as seen on screen (px); big values give the pill shape. */
+  deskRadTL: number
+  deskRadTR: number
+  deskRadBL: number
+  deskRadBR: number
+  /** Moving one radius slider moves all four. */
+  deskRadLinked: boolean
   /** Thickness of the desk's front face on the screen-edge side, the "lip" a 3D shelf stands on (px). */
   deskEdge: number
   /** Space between the icons and the desk edges, per screen side (px). */
@@ -209,7 +214,7 @@ export interface Persisted {
   tweaks?: { applied: Record<string, { existed: boolean; type?: string; data?: string }>; log: TweakLogEntry[] }
 }
 
-export const SCHEMA_VERSION = 6
+export const SCHEMA_VERSION = 7
 
 export const DEFAULT_SETTINGS: DockSettings = {
   position: 'bottom',
@@ -227,7 +232,11 @@ export const DEFAULT_SETTINGS: DockSettings = {
   deskOpacity: 1,
   deskDepth: 0,
   shelfGrows: true,
-  deskShape: 'pill',
+  deskRadTL: 60,
+  deskRadTR: 60,
+  deskRadBL: 60,
+  deskRadBR: 60,
+  deskRadLinked: false,
   deskEdge: 0,
   deskPadTop: 10,
   deskPadBottom: 10,

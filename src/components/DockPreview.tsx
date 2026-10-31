@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { DockSettings } from '@/shared/types'
 import { isSettled, layoutRow, speedToMs, springFor, stepSpring, targetLifts, targetSizes } from '@/physics'
-import { deskStyleVars, hoverProfile } from '@/desk'
+import { deskStyleVars, hoverProfile, shelfRadii } from '@/desk'
 import Shelf from './Shelf'
 import { padsFor, DESK_INSET } from '@/layout'
 
@@ -107,7 +107,7 @@ export default function DockPreview({ settings, launchTick = 0, height = 190 }: 
       >
         {shelfMode ? (
           <div style={{ position: 'absolute', left: row.start - pads.mainStart, width: row.length + pads.mainStart + pads.mainEnd, height: thickness, bottom: DESK_INSET }}>
-            <Shelf length={row.length + pads.mainStart + pads.mainEnd} thickness={thickness} edge={edge} depth={settings.deskDepth} side="bottom" shape={settings.deskShape} opacity={settings.deskOpacity} />
+            <Shelf length={row.length + pads.mainStart + pads.mainEnd} thickness={thickness} edge={edge} depth={settings.deskDepth} side="bottom" radii={shelfRadii(settings, 'bottom')} opacity={settings.deskOpacity} />
           </div>
         ) : (
           <div className="dock__desk" style={{ position: 'absolute', left: row.start - pads.mainStart, width: row.length + pads.mainStart + pads.mainEnd, height: thickness, bottom: DESK_INSET, ...desk.plate }}>

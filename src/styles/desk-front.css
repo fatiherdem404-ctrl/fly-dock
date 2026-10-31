@@ -9,7 +9,8 @@
 }
 .dock__shelf-lines { position: absolute; left: 0; top: 0; overflow: visible; }
 .dock__shelf-outline { stroke: var(--edge-line, rgba(255, 255, 255, 0.45)); stroke-width: 1.1; stroke-linejoin: round; }
-.dock__shelf-front-edge { stroke: rgba(255, 255, 255, 0.7); stroke-width: 1.2; stroke-linecap: round; }
+.dock__shelf-front-edge { stroke: rgba(255, 255, 255, 0.4); stroke-width: 1; }
+.dock__shelf-clip { position: absolute; left: 0; top: 0; }
 .dock--desk-glass { --edge-top: rgba(70, 100, 170, 0.8); --edge-bottom: rgba(10, 18, 40, 0.95); --edge-line: rgba(140, 180, 255, 0.5); }
 .dock--desk-azure { --edge-top: rgba(70, 120, 220, 0.9); --edge-bottom: rgba(10, 20, 55, 0.95); --edge-line: rgba(140, 190, 255, 0.85); }
 .dock--desk-glass3d { --edge-top: rgba(205, 225, 255, 0.78); --edge-bottom: rgba(120, 150, 205, 0.55); --edge-line: rgba(255, 255, 255, 0.75); }

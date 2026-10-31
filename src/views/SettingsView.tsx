@@ -3,10 +3,10 @@ import { invoke, useActiveTheme, useEvent, useRemote } from '@/api'
 import Icon, { IconName } from '@/icons'
 import DockPreview from '@/components/DockPreview'
 import Shelf from '@/components/Shelf'
-import { DESK_LABELS, DESK_PRESETS } from '@/desk'
+import { DESK_LABELS, DESK_PRESETS, DESK_RADII } from '@/desk'
 import {
   DESK_STYLES, DockItem, DockLayer, TweakInfo, DockSettings, PackInfo, ThemeDef, WidgetType,
-  AnimationCurve, DeskShape, DeskStyle, FalloffCurve, HoverAnimation, IndicatorStyle, LaunchAnimation, ShowAnimation, SpeedPreset, StackSize, WindowAnimation, LabelMode,
+  AnimationCurve, DeskStyle, FalloffCurve, HoverAnimation, IndicatorStyle, LaunchAnimation, ShowAnimation, SpeedPreset, StackSize, WindowAnimation, LabelMode,
 } from '@/shared/types'
 
 type Tab = 'dock' | 'desk' | 'motion' | 'windows' | 'theme' | 'icons' | 'items' | 'wheel' | 'tweaks' | 'widgets' | 'general'
@@ -190,6 +190,9 @@ function DockTab({ s, set }: { s: DockSettings; set: Update }) {
 
 // ---- Desk ----
 
+const RADIUS_KEYS: ['deskRadTL' | 'deskRadTR' | 'deskRadBL' | 'deskRadBR', string][] = [['deskRadTL', 'Sol üst'], ['deskRadTR', 'Sağ üst'], ['deskRadBL', 'Sol alt'], ['deskRadBR', 'Sağ alt']]
+const allRadii = (v: number) => ({ deskRadTL: v, deskRadTR: v, deskRadBL: v, deskRadBR: v })
+
 const PAD_KEYS: ['deskPadTop' | 'deskPadBottom' | 'deskPadLeft' | 'deskPadRight', string][] = [['deskPadTop', 'Üst'], ['deskPadBottom', 'Alt'], ['deskPadLeft', 'Sol'], ['deskPadRight', 'Sağ']]
 
 function DeskCard({ style }: { style: DeskStyle }) {
@@ -198,7 +201,7 @@ function DeskCard({ style }: { style: DeskStyle }) {
     <div className={`st-desk dock dock--desk-${style} dock--bottom`} style={{ '--desk-depth': `${DESK_PRESETS[style].depth}px` } as React.CSSProperties}>
       <div style={{ position: 'absolute', left: '8%', right: '8%', bottom: 5, height: 34 }}>
         {preset.depth > 0 ? (
-          <Shelf length={150} thickness={34} edge={Math.round(preset.edge * 0.5)} depth={preset.depth * 0.5} side="bottom" shape="rounded" opacity={1} />
+          <Shelf length={150} thickness={34} edge={Math.round(preset.edge * 0.5)} depth={preset.depth * 0.5} side="bottom" radii={{ tl: DESK_RADII[style][0], tr: DESK_RADII[style][0], bl: DESK_RADII[style][1], br: DESK_RADII[style][1] }} opacity={1} />
         ) : (
           <div className="dock__desk" style={{ position: 'absolute', inset: '8px 0 0 0', borderRadius: 999 }}><span className="dock__desk-sheen" /></div>
         )}
@@ -216,7 +219,7 @@ function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
       <Card title="Raf stili" hint="Simgelerin üzerinde durduğu zemin. Seçince o stilin en iyi derinliği ve saydamlığı uygulanır, sonra ayrıca değiştirebilirsin.">
         <Choice<DeskStyle>
           value={s.deskStyle}
-          onChange={(deskStyle) => set({ deskStyle, deskDepth: DESK_PRESETS[deskStyle].depth, deskOpacity: DESK_PRESETS[deskStyle].opacity, deskEdge: DESK_PRESETS[deskStyle].edge })}
+          onChange={(deskStyle) => set({ deskStyle, deskDepth: DESK_PRESETS[deskStyle].depth, deskOpacity: DESK_PRESETS[deskStyle].opacity, deskEdge: DESK_PRESETS[deskStyle].edge, deskRadTL: DESK_RADII[deskStyle][0], deskRadTR: DESK_RADII[deskStyle][0], deskRadBL: DESK_RADII[deskStyle][1], deskRadBR: DESK_RADII[deskStyle][1] })}
           options={DESK_STYLES.map((d): [DeskStyle, string] => [d, DESK_LABELS[d]])}
         >
           {(id) => <DeskCard style={id} />}
@@ -232,7 +235,6 @@ function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
         <Row label="Saydamlık"><Slider value={s.deskOpacity} min={0.2} max={1} step={0.05} format={(v) => `%${Math.round(v * 100)}`} onChange={(deskOpacity) => set({ deskOpacity })} /></Row>
         <Row label="Alt kalınlığı" hint="Rafın ekran kenarına bakan ön yüzü; 3B rafların altındaki kalınlık"><Slider value={s.deskEdge} min={0} max={30} unit=" px" onChange={(deskEdge) => set({ deskEdge })} /></Row>
         <Row label="3B derinlik" hint="0 = düz; yükseldikçe raf perspektifle yatar"><Slider value={s.deskDepth} min={0} max={60} unit=" px" onChange={(deskDepth) => set({ deskDepth })} /></Row>
-        <Row label="Raf şekli" hint="Hap, konsepttekiyle aynı: uçları tam yuvarlak"><Segmented<DeskShape> value={s.deskShape} onChange={(deskShape) => set({ deskShape })} options={[['pill', 'Hap'], ['rounded', 'Yuvarlak köşe'], ['square', 'Kare']]} /></Row>
         <Row label="Raf simgelerle büyüsün" hint="Kapalıyken simgeler raftan taşar (macOS gibi)"><Switch label="Raf büyümesi" value={s.shelfGrows} onChange={(shelfGrows) => set({ shelfGrows })} /></Row>
       </Card>
       <Card title="Sistem camı (deneysel)" hint="Windows 11'in gerçek bulanıklığı. Ayrı bir pencere olduğu için hareketli olamaz: raf sabit durur, simgeler üstünde büyür.">
@@ -240,6 +242,21 @@ function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
           <Select value={s.material} onChange={(material) => set({ material })} options={[['none', 'Kapalı (tema rafı)'], ['acrylic', 'Akrilik'], ['mica', 'Mica']]} />
         </Row>
         {supported === false && <Message text="Bu Windows sürümü sistem camını desteklemiyor (Windows 11 22H2 gerekir)." error />}
+      </Card>
+      <Card title="Köşe yuvarlaklığı" hint="Rafın dört köşesi ayrı ayrı. Alt köşeler yuvarlanınca ön yüzün kalınlığı da o köşeyle birlikte yuvarlanır.">
+        <Row label="Hazır şekiller">
+          <div className="st-row-inline" style={{ margin: 0 }}>
+            <button className="st-btn" onClick={() => set(allRadii(60))}>Hap</button>
+            <button className="st-btn" onClick={() => set(allRadii(14))}>Yuvarlak</button>
+            <button className="st-btn" onClick={() => set(allRadii(2))}>Kare</button>
+          </div>
+        </Row>
+        <Row label="Hepsini bağla" hint="Bir kaydırıcıyı oynatınca dördü birlikte değişir"><Switch label="Köşeleri bağla" value={s.deskRadLinked} onChange={(deskRadLinked) => set(deskRadLinked ? { deskRadLinked, ...allRadii(s.deskRadTL) } : { deskRadLinked })} /></Row>
+        {RADIUS_KEYS.map(([key, label]) => (
+          <Row key={key} label={label}>
+            <Slider value={s[key]} min={0} max={60} unit=" px" onChange={(v) => set(s.deskRadLinked ? allRadii(v) : { [key]: v })} />
+          </Row>
+        ))}
       </Card>
       <Card title="Raf boşlukları" hint="Rafın kenarları ile simgeler arasındaki boşluk, ekranın dört yanı için ayrı. Pencere bu boşluklara göre kendiliğinden büyür.">
         <Row label="Hepsini bağla" hint="Bir kaydırıcıyı oynatınca dördü birlikte değişir"><Switch label="Hepsini bağla" value={s.deskPadLinked} onChange={(deskPadLinked) => set(deskPadLinked ? { deskPadLinked, deskPadTop: s.deskPadTop, deskPadBottom: s.deskPadTop, deskPadLeft: s.deskPadTop, deskPadRight: s.deskPadTop } : { deskPadLinked })} /></Row>

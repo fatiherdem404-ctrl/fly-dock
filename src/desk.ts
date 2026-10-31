@@ -60,6 +60,26 @@ export function deskTransform(depth: number, side: DockPosition): { transform?: 
   return { transform: `perspective(640px) ${rotate} ${scale}`, transformOrigin: ORIGIN[side] }
 }
 
+/**
+ * The four screen corners as the shelf sees them. The shelf is drawn with its front (screen-edge) side at the bottom
+ * and then turned for the chosen edge, so each screen corner lands on a different shelf corner.
+ */
+export function shelfRadii(s: Pick<DockSettings, 'deskRadTL' | 'deskRadTR' | 'deskRadBL' | 'deskRadBR'>, side: DockPosition) {
+  const { deskRadTL: tl, deskRadTR: tr, deskRadBL: bl, deskRadBR: br } = s
+  switch (side) {
+    case 'top': return { tl: bl, tr: br, bl: tl, br: tr } // flipped: the front is at the top of the screen
+    case 'left': return { tl: tr, tr: br, bl: tl, br: bl } // turned clockwise: the front is the left edge
+    case 'right': return { tl: bl, tr: tl, bl: br, br: tr } // turned counter-clockwise: the front is the right edge
+    default: return { tl, tr, bl, br }
+  }
+}
+
+/** Looks of the desk by style: the radii that suit the material (pill glass, a squarer wooden shelf). */
+export const DESK_RADII: Record<DeskStyle, [number, number]> = {
+  glass: [60, 60], azure: [60, 60], neon: [60, 60],
+  glass3d: [14, 5], wood: [10, 4], metal: [10, 4], marble: [10, 4], crystal: [14, 5], matte: [10, 4], mirror: [14, 5], wall: [8, 3],
+}
+
 export function deskStyleVars(s: DockSettings, _thickness: number, _side: DockPosition): { rootVars: Record<string, string>; plate: CSSProperties } {
   return {
     rootVars: {
@@ -68,6 +88,6 @@ export function deskStyleVars(s: DockSettings, _thickness: number, _side: DockPo
       '--desk-depth': `${s.deskDepth}px`,
     },
     // a shelf (depth > 0) is drawn by the Shelf component; only the flat plate uses these
-    plate: { opacity: s.deskOpacity, borderRadius: s.deskShape === 'pill' ? '999px' : s.deskShape === 'square' ? '6px' : undefined },
+    plate: { opacity: s.deskOpacity, borderRadius: `${s.deskRadTL}px ${s.deskRadTR}px ${s.deskRadBR}px ${s.deskRadBL}px` },
   }
 }

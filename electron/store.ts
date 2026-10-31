@@ -43,6 +43,15 @@ function migrate() {
       store.set('settings', { ...rest, deskPadTop: shelfPadding, deskPadBottom: shelfPadding, deskPadLeft: 14, deskPadRight: 14 } as unknown as DockSettings)
     }
   }
+  if (version < 7) {
+    // deskShape (pill / rounded / square) became four corner radii.
+    const old = store.get('settings') as unknown as { deskShape?: string }
+    if (old.deskShape !== undefined) {
+      const { deskShape, ...rest } = old
+      const r = deskShape === 'square' ? 2 : deskShape === 'rounded' ? 14 : 60
+      store.set('settings', { ...rest, deskRadTL: r, deskRadTR: r, deskRadBL: r, deskRadBR: r } as unknown as DockSettings)
+    }
+  }
   // Fill settings added since the file was written.
   store.set('settings', { ...DEFAULT_SETTINGS, ...store.get('settings') })
   store.set('schemaVersion', SCHEMA_VERSION)
