@@ -23,6 +23,7 @@ const PATHS: Record<string, ReactNode> = {
   edit: (<><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="M13.5 6.5l4 4" /></>),
   copy: (<><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></>),
   cross: <path d="M6 6l12 12M18 6L6 18" />,
+  search: (<><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" /></>),
   plus: <path d="M12 5v14M5 12h14" />,
   minus: <path d="M5 12h14" />,
   eyeOff: (<><path d="M3 3l18 18" /><path d="M10.6 6.2A9 9 0 0 1 22 12a14 14 0 0 1-3 3.6M6.5 7.5A14 14 0 0 0 2 12s3.5 7 10 7a9 9 0 0 0 3.5-.7" /></>),

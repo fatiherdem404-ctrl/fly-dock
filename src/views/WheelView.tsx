@@ -27,15 +27,22 @@ export default function WheelView() {
 
   const toolbar = (
     <label className="dw__search">
-      <Icon name="settings" size={15} />
+      <Icon name="search" size={14} />
       <input ref={input} value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Ara…" spellCheck={false}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && groups[0]) invoke('wheel:run', groups[0][1][0].id)
         }} />
     </label>
   )
+  const shown = groups.reduce((n, [, list]) => n + list.length, 0)
+  const footer = data && (
+    <>
+      <span>{query.trim() ? `${shown} sonuç` : `${shown} araç`}</span>
+      <span>Enter: ilkini aç · Sağ tık: seçenekler</span>
+    </>
+  )
   return (
-    <DockWindow title="Çark menüsü" icon="settings" toolbar={toolbar}>
+    <DockWindow title="Çark menüsü" icon="settings" toolbar={toolbar} footer={footer}>
         <div className="stack__scroll">
           {groups.length === 0 && data && <div className="stack__empty"><span>Eşleşen bir şey yok</span></div>}
           {groups.map(([category, entries]) => (
