@@ -12,7 +12,7 @@ import {
 } from './items'
 import { iconForItem, setTrashState } from './icons'
 import { shellIcon } from './iconService'
-import { initDockWindows, syncDocks, setLayout, materialSupported, refreshShelfTint, applyLayer, dockIsOnTop, isDockHidden, setFullscreenHidden, toggleDockVisibility, disposeDockWindows } from './dockWindows'
+import { initDockWindows, syncDocks, setLayout, applyLayer, dockIsOnTop, isDockHidden, setFullscreenHidden, toggleDockVisibility, disposeDockWindows } from './dockWindows'
 import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN } from './windows'
 import {
   importPackDialog, exportPackDialog, listThemes, listInstalled, builtinThemeInfos, getTheme, removePack, clearPackCaches,
@@ -128,10 +128,9 @@ function applySettings(partial: Partial<DockSettings>): DockSettings {
   if (partial.launchAtLogin !== undefined) launchAtLogin(next.launchAtLogin)
   if (partial.toggleHotkey !== undefined) registerHotkeys()
   if (partial.iconPack !== undefined) clearPackCaches()
-  const layoutChanged = (['position', 'monitor', 'material', 'autoHide', 'edgeOffset', 'alignment'] as const).some((k) => k in partial && before[k] !== next[k])
+  const layoutChanged = (['position', 'monitor', 'autoHide', 'edgeOffset', 'alignment'] as const).some((k) => k in partial && before[k] !== next[k])
   if (layoutChanged) syncDocks()
   if (partial.layer !== undefined) applyLayer()
-  if (partial.theme !== undefined) refreshShelfTint()
   if (partial.showRunningApps !== undefined) broadcastItems()
   broadcast('settings:changed', next)
   return next
@@ -275,7 +274,6 @@ function registerIpc() {
     const result = await importPackDialog()
     if (result.ok) {
       clearPackCaches()
-      refreshShelfTint()
       broadcast('themes:changed', null)
     }
     return result
@@ -311,7 +309,7 @@ function registerIpc() {
     const url = target === 'support' ? brand.kofiUrl : target === 'repo' ? brand.repoUrl : brand.issuesUrl
     return shell.openExternal(url)
   })
-  handle('app:info', () => ({ name: brand.name, version: app.getVersion(), tagline: brand.tagline.tr, kofiUrl: brand.kofiUrl, materialSupported, loginSupported: app.isPackaged, loginEnabled: loginEnabled() }))
+  handle('app:info', () => ({ name: brand.name, version: app.getVersion(), tagline: brand.tagline.tr, kofiUrl: brand.kofiUrl, loginSupported: app.isPackaged, loginEnabled: loginEnabled() }))
   handle('backup:export', exportBackup)
   handle('backup:import', importBackup)
   handle('app:quit', () => app.quit())

@@ -57,7 +57,6 @@ export interface MenuItemView {
 
 export type DockPosition = 'bottom' | 'top' | 'left' | 'right'
 export type AnimationCurve = 'linear' | 'spring' | 'bounce' | 'ease'
-export type DockMaterial = 'none' | 'acrylic' | 'mica'
 export type HoverAnimation = 'zoom' | 'lift' | 'wave'
 export type LaunchAnimation = 'bounce' | 'hop' | 'pulse' | 'none'
 export type IndicatorStyle = 'dot' | 'bar' | 'glow' | 'ring'
@@ -116,7 +115,6 @@ export interface DockSettings {
   deskPadRight: number
   /** Moving one padding slider moves all four. */
   deskPadLinked: boolean
-  material: DockMaterial
   // animation
   animationCurve: AnimationCurve
   speed: SpeedPreset
@@ -214,7 +212,7 @@ export interface Persisted {
   tweaks?: { applied: Record<string, { existed: boolean; type?: string; data?: string }>; log: TweakLogEntry[] }
 }
 
-export const SCHEMA_VERSION = 7
+export const SCHEMA_VERSION = 8
 
 export const DEFAULT_SETTINGS: DockSettings = {
   position: 'bottom',
@@ -243,7 +241,6 @@ export const DEFAULT_SETTINGS: DockSettings = {
   deskPadLeft: 16,
   deskPadRight: 16,
   deskPadLinked: false,
-  material: 'none',
   animationCurve: 'spring',
   speed: 'medium',
   speedMs: 350,
@@ -290,7 +287,7 @@ export interface InvokeMap {
   'trash:get': { args: []; result: { items: number } }
   'trash:drop': { args: [paths: string[]]; result: void }
   'menu:show': { args: [payload: { kind: 'empty' | 'icon'; itemId?: string }]; result: void }
-  'dock:layout': { args: [layout: { main: number; cross: number; shelfMain: number; shelfCross: number }]; result: void }
+  'dock:layout': { args: [layout: { main: number; cross: number }]; result: void }
   'dock:state': { args: []; result: { hidden: boolean; onTop: boolean } }
   'stack:list': { args: [id: string]; result: StackEntry[] }
   'wheel:list': { args: []; result: { entries: WheelEntry[]; hidden: string[] } }
@@ -328,7 +325,7 @@ export interface InvokeMap {
   'widgets:now-playing': { args: []; result: { app: string; title: string } | null }
   'app:open-settings': { args: []; result: void }
   'app:open-external': { args: [target: 'support' | 'repo' | 'issues']; result: void }
-  'app:info': { args: []; result: { name: string; version: string; tagline: string; kofiUrl: string; materialSupported: boolean; loginSupported: boolean; loginEnabled: boolean } }
+  'app:info': { args: []; result: { name: string; version: string; tagline: string; kofiUrl: string; loginSupported: boolean; loginEnabled: boolean } }
   'backup:export': { args: []; result: { ok: boolean; message: string } }
   'backup:import': { args: []; result: { ok: boolean; message: string } }
   'app:quit': { args: []; result: void }

@@ -25,4 +25,3 @@
 .dock--desk-matte { --edge-top: #2b2b32; --edge-bottom: #050507; --edge-line: rgba(255, 255, 255, 0.25); }
 .dock--desk-mirror { --edge-top: #2d3548; --edge-bottom: #06080e; --edge-line: rgba(255, 255, 255, 0.45); }
 .dock--desk-wall { --edge-top: #a54b34; --edge-bottom: #5a2418; --edge-line: rgba(255, 200, 170, 0.5); }
-.dock--flat .dock__shelf { display: none; }

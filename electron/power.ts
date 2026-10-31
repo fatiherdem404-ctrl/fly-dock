@@ -3,8 +3,7 @@
 import { BrowserWindow, screen } from 'electron'
 import { execFile } from 'node:child_process'
 import { helper } from './helper'
-import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN } from './windows'
-import { materialSupported } from './dockWindows'
+import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN, blurSupported } from './windows'
 import type { PowerAction } from '../src/shared/types'
 
 let overlay: BrowserWindow | null = null
@@ -22,12 +21,12 @@ export function showPowerMenu() {
     x: x - OFFSCREEN, y, width, height,
     frame: false, resizable: false, skipTaskbar: true, alwaysOnTop: true, show: false, hasShadow: false,
     // real blur of whatever is behind, where Windows 11 offers it; otherwise a dark scrim drawn by the page
-    ...(materialSupported ? { backgroundMaterial: 'acrylic' as const, backgroundColor: '#00000000' } : { transparent: true }),
+    ...(blurSupported ? { backgroundMaterial: 'acrylic' as const, backgroundColor: '#00000000' } : { transparent: true }),
     webPreferences: baseWebPreferences(),
   })
   overlay = win
   win.setAlwaysOnTop(true, 'screen-saver')
-  loadRoute(win, `/power?blur=${materialSupported ? 1 : 0}`)
+  loadRoute(win, `/power?blur=${blurSupported ? 1 : 0}`)
   win.once('ready-to-show', () => {
     win.show()
     win.focus()

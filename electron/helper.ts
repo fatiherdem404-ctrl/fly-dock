@@ -157,9 +157,6 @@ class Helper extends EventEmitter {
   startMenu() {
     return this.call<boolean>('startMenu')
   }
-  roundCorners(hwnd: number) {
-    return this.call<boolean>('roundCorners', { hwnd })
-  }
   mediaKey(key: 'playpause' | 'next' | 'prev' | 'stop') {
     return this.call('mediaKey', { key })
   }

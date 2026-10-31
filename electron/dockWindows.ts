@@ -1,34 +1,25 @@
 // One dock window per target display. The window has a fixed size for a given layout (items + settings) so
 // magnification never resizes it; auto-hide and fullscreen hiding only flip click-through and visibility.
 import { BrowserWindow, Display, screen } from 'electron'
-import os from 'node:os'
 import { getSettings } from './store'
-import { getTheme } from './packs'
 import { overlayWindow, loadRoute, OFFSCREEN } from './windows'
 import { broadcast } from './ipc'
 import { helper } from './helper'
 import type { DockPosition } from '../src/shared/types'
-
-// backgroundMaterial needs Windows 11 22H2 (build 22621) or newer.
-export const materialSupported = Number(os.release().split('.')[2]) >= 22621
-const activeMaterial = () => (materialSupported ? getSettings().material : 'none')
 
 const EDGE_BAND = 4
 
 interface Layout {
   main: number
   cross: number
-  shelfMain: number
-  shelfCross: number
 }
 
 interface DockWin {
   displayId: number
   win: BrowserWindow
-  shelf: BrowserWindow | null
 }
 
-let layout: Layout = { main: 400, cross: 140, shelfMain: 300, shelfCross: 70 }
+let layout: Layout = { main: 400, cross: 140 }
 const docks = new Map<number, DockWin>()
 let autoHidden = false
 let fullscreenHidden = false
@@ -66,16 +57,6 @@ function rect(display: Display, position: DockPosition, main: number, cross: num
   }
 }
 
-/** The static system-drawn shelf: centred on the dock window along the edge, flush with the same edge. */
-function shelfRect(dockRect: Rect, position: DockPosition): Rect {
-  const horizontal = position === 'bottom' || position === 'top'
-  const main = Math.min(layout.shelfMain, horizontal ? dockRect.width : dockRect.height)
-  const cross = layout.shelfCross
-  const x = horizontal ? dockRect.x + (dockRect.width - main) / 2 : position === 'left' ? dockRect.x : dockRect.x + dockRect.width - cross
-  const y = horizontal ? (position === 'top' ? dockRect.y : dockRect.y + dockRect.height - cross) : dockRect.y + (dockRect.height - main) / 2
-  return { x: Math.round(x), y: Math.round(y), width: Math.round(horizontal ? main : cross), height: Math.round(horizontal ? cross : main) }
-}
-
 function applyBounds(dock: DockWin) {
   const display = screen.getAllDisplays().find((d) => d.id === dock.displayId)
   if (!display || dock.win.isDestroyed()) return
@@ -83,49 +64,12 @@ function applyBounds(dock: DockWin) {
   const dockRect = rect(display, position, layout.main, layout.cross)
   dockRect.x -= OFFSCREEN
   dock.win.setBounds(dockRect)
-  if (dock.shelf && !dock.shelf.isDestroyed()) {
-    dock.shelf.setBounds(shelfRect(dockRect, position))
-    if (getSettings().layer === 'above') dock.win.moveTop()
-  }
-}
-
-/** Theme surface colour as #AARRGGBB. Set natively on the shelf window so it resizes in lockstep with the material. */
-function shelfTint(): string {
-  const css = getTheme(getSettings().theme)?.vars.surface ?? 'rgba(24, 26, 32, 0.62)'
-  const hex = (n: number) => Math.round(Math.min(Math.max(n, 0), 255)).toString(16).padStart(2, '0')
-  const rgba = css.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/)
-  if (rgba) return `#${hex(Number(rgba[4] ?? 1) * 255)}${hex(Number(rgba[1]))}${hex(Number(rgba[2]))}${hex(Number(rgba[3]))}`
-  const short = css.match(/^#([0-9a-f]{6})([0-9a-f]{2})?$/i)
-  return short ? `#${short[2] ?? 'ff'}${short[1]}` : '#9e181a20'
-}
-
-export function refreshShelfTint() {
-  const tint = shelfTint()
-  for (const dock of docks.values()) if (dock.shelf && !dock.shelf.isDestroyed()) dock.shelf.setBackgroundColor(tint)
-}
-
-function createShelf(material: 'acrylic' | 'mica'): BrowserWindow {
-  const shelf = overlayWindow({
-    transparent: false,
-    backgroundColor: '#00000000',
-    backgroundMaterial: material,
-    roundedCorners: true,
-    thickFrame: false,
-  })
-  shelf.setIgnoreMouseEvents(true)
-  shelf.loadURL('data:text/html,<body style="margin:0;background:transparent"></body>')
-  shelf.setBackgroundColor(shelfTint())
-  // Win11 only rounds frameless windows when asked; the dock surface radius is matched to DWM's 8px.
-  shelf.once('ready-to-show', () => helper.roundCorners(Number(shelf.getNativeWindowHandle().readBigUInt64LE())).catch(() => {}))
-  return shelf
 }
 
 function createDock(display: Display): DockWin {
   const win = overlayWindow()
   loadRoute(win, '/dock')
-  const material = activeMaterial()
-  const shelf = material === 'none' ? null : createShelf(material)
-  const dock: DockWin = { displayId: display.id, win, shelf }
+  const dock: DockWin = { displayId: display.id, win }
   win.once('ready-to-show', () => {
     applyBounds(dock)
     if (!fullscreenHidden) showDock(dock)
@@ -134,7 +78,6 @@ function createDock(display: Display): DockWin {
 }
 
 function showDock(dock: DockWin) {
-  dock.shelf?.showInactive()
   dock.win.showInactive()
   applyLayer()
   if (getSettings().layer === 'above') dock.win.moveTop()
@@ -148,13 +91,11 @@ const handleOf = (w: BrowserWindow) => Number(w.getNativeWindowHandle().readBigU
  */
 export function applyLayer() {
   const { layer } = getSettings()
-  for (const dock of docks.values()) {
-    for (const w of [dock.win, dock.shelf]) {
-      if (!w || w.isDestroyed()) continue
-      if (layer === 'above') w.setAlwaysOnTop(true, 'screen-saver')
-      else w.setAlwaysOnTop(false)
-      if (layer === 'below') helper.toBottom(handleOf(w)).catch(() => {})
-    }
+  for (const { win } of docks.values()) {
+    if (win.isDestroyed()) continue
+    if (layer === 'above') win.setAlwaysOnTop(true, 'screen-saver')
+    else win.setAlwaysOnTop(false)
+    if (layer === 'below') helper.toBottom(handleOf(win)).catch(() => {})
   }
 }
 
@@ -165,16 +106,13 @@ export function dockIsOnTop(): boolean {
 
 function destroyDock(dock: DockWin) {
   if (!dock.win.isDestroyed()) dock.win.destroy()
-  if (dock.shelf && !dock.shelf.isDestroyed()) dock.shelf.destroy()
 }
 
 /** Creates, removes and re-positions dock windows to match the current settings and monitors. */
 export function syncDocks() {
   const wanted = targetDisplays()
-  const material = activeMaterial()
   for (const [id, dock] of docks) {
-    const keep = wanted.some((d) => d.id === id) && (material === 'none') === (dock.shelf === null)
-    if (!keep) {
+    if (!wanted.some((d) => d.id === id)) {
       destroyDock(dock)
       docks.delete(id)
     }
@@ -206,10 +144,8 @@ export function setFullscreenHidden(hidden: boolean) {
   if (hidden === fullscreenHidden) return
   fullscreenHidden = hidden
   for (const dock of docks.values()) {
-    if (hidden) {
-      dock.win.hide()
-      dock.shelf?.hide()
-    } else if (!dock.win.isDestroyed()) showDock(dock)
+    if (hidden) dock.win.hide()
+    else if (!dock.win.isDestroyed()) showDock(dock)
   }
 }
 
@@ -223,7 +159,6 @@ function setAutoHidden(hidden: boolean) {
   for (const dock of docks.values()) {
     if (dock.win.isDestroyed()) continue
     dock.win.setIgnoreMouseEvents(hidden, { forward: false })
-    if (dock.shelf && !dock.shelf.isDestroyed()) hidden ? dock.shelf.hide() : dock.shelf.showInactive()
   }
   broadcast('dock:hidden', { hidden })
 }

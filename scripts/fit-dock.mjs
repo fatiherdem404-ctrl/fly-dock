@@ -32,7 +32,7 @@ const SCENARIOS = [
 ]
 // every scenario starts from the same defaults so one scenario's settings never leak into the next
 const BASE = {
-  material: 'none', theme: 'glass-dark', showRunningApps: false, showTrash: true,
+  theme: 'glass-dark', showRunningApps: false, showTrash: true,
   iconSize: 48, maxScale: 1.75, magnificationRadius: 2, magnification: true, falloff: 'cosine', iconSpacing: 8,
   deskStyle: 'glass', deskDepth: 0, deskEdge: 0, deskOpacity: 1, deskRadTL: 60, deskRadTR: 60, deskRadBL: 60, deskRadBR: 60, shelfGrows: true,
   deskPadTop: 10, deskPadBottom: 10, deskPadLeft: 16, deskPadRight: 16, deskPadLinked: false,

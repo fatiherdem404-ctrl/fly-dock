@@ -43,21 +43,6 @@
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 45%);
 }
 
-/* with acrylic/mica the system draws the material in a window behind this one */
-.dock--flat .dock__desk {
-  border-radius: 8px;
-  border-color: transparent;
-  background: transparent;
-  box-shadow: none;
-}
-.dock--flat .dock__desk-sheen,
-.dock--flat .dock__desk-tint { display: none; }
-
-.dock--desk-azure .dock__desk {
-  background: linear-gradient(180deg, rgba(48, 82, 160, 0.5), rgba(10, 18, 42, 0.82));
-  border: 1.5px solid rgba(130, 180, 255, 0.85);
-  box-shadow: 0 0 0 1px rgba(47, 123, 255, 0.35), 0 0 20px rgba(47, 123, 255, 0.5), 0 10px 26px rgba(2, 8, 30, 0.5), inset 0 1px 0 rgba(190, 215, 255, 0.55);
-}
 .dock--desk-glass3d .dock__desk {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.05) 70%), var(--surface);
   border-color: rgba(255, 255, 255, 0.35);

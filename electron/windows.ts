@@ -1,6 +1,7 @@
 // Window creation helpers shared by every BrowserWindow the app opens.
 import { BrowserWindow, BrowserWindowConstructorOptions } from 'electron'
 import path from 'node:path'
+import os from 'node:os'
 
 const devUrl = process.env.VITE_DEV_SERVER_URL
 
@@ -10,6 +11,9 @@ const devUrl = process.env.VITE_DEV_SERVER_URL
  */
 export const HEADLESS = process.env.FLY_DOCK_HEADLESS === '1'
 export const OFFSCREEN = HEADLESS ? 15000 : 0
+
+// Windows 11 22H2 (build 22621) or newer can blur what is behind a window; only the power menu uses it.
+export const blurSupported = Number(os.release().split('.')[2]) >= 22621
 
 /** Loads the single renderer bundle at a hash route such as /dock, /settings or /widget/abc. */
 export function loadRoute(win: BrowserWindow, route: string) {

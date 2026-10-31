@@ -22,11 +22,6 @@ function migrate() {
     store.set('items', sorted.map(({ order: _order, ...rest }) => rest as DockItem))
     store.set('widgets', [])
   }
-  if (version >= 3 && version < 4) {
-    // Version 3 switched everyone to a system-drawn shelf that had to chase the icons from another window.
-    const settings = store.get('settings')
-    if (settings.material === 'acrylic') store.set('settings', { ...settings, material: 'none' })
-  }
   if (version < 5) {
     // magnifiedSize (px) became maxScale (a ratio of the icon size).
     const old = store.get('settings') as unknown as { magnifiedSize?: number; iconSize?: number }
@@ -51,6 +46,11 @@ function migrate() {
       const r = deskShape === 'square' ? 2 : deskShape === 'rounded' ? 14 : 60
       store.set('settings', { ...rest, deskRadTL: r, deskRadTR: r, deskRadBL: r, deskRadBR: r } as unknown as DockSettings)
     }
+  }
+  if (version < 8) {
+    // The system glass (acrylic/mica) shelf was a separate window and is gone.
+    const { material: _gone, ...rest } = store.get('settings') as unknown as Record<string, unknown>
+    store.set('settings', rest as unknown as DockSettings)
   }
   // Fill settings added since the file was written.
   store.set('settings', { ...DEFAULT_SETTINGS, ...store.get('settings') })

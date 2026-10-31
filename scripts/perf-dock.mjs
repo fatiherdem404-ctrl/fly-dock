@@ -28,7 +28,7 @@ writeFileSync(
       app('cmd', 'C:/Windows/System32/cmd.exe'),
       { id: 'trash', type: 'trash' },
     ],
-    settings: { position, material: 'none', theme: 'glass-dark', ...extraSettings },
+    settings: { position, theme: 'glass-dark', ...extraSettings },
     widgets: [],
   }),
 )

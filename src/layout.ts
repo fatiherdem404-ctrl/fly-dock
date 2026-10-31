@@ -69,10 +69,10 @@ export interface Geometry {
  * A dock cannot be longer than the screen edge it sits on. When the settings ask for more, magnification
  * is eased first, then the icons are scaled down, until the window fits.
  */
-export function fitToScreen(s: DockSettings, types: string[], flat: boolean, longestLabel: number, available: number): DockSettings {
+export function fitToScreen(s: DockSettings, types: string[], longestLabel: number, available: number): DockSettings {
   let cur = s
   for (let i = 0; i < 60; i++) {
-    if (dockGeometry(cur, types, flat, longestLabel).main <= available) return cur
+    if (dockGeometry(cur, types, longestLabel).main <= available) return cur
     cur =
       cur.magnification && cur.maxScale > 1.02
         ? { ...cur, maxScale: Math.max(1, Math.round((cur.maxScale - 0.05) * 100) / 100) }
@@ -81,7 +81,7 @@ export function fitToScreen(s: DockSettings, types: string[], flat: boolean, lon
   return cur
 }
 
-export function dockGeometry(s: DockSettings, types: string[], flat: boolean, longestLabel = 0): Geometry {
+export function dockGeometry(s: DockSettings, types: string[], longestLabel = 0): Geometry {
   const iconSize = s.iconSize
   const gap = s.iconSpacing
   const pads = padsFor(s)
@@ -119,8 +119,8 @@ export function dockGeometry(s: DockSettings, types: string[], flat: boolean, lo
   overshoot = Math.ceil(overshoot) + 4
 
   // a shelf (depth > 0) has a front face; glass and mirror shelves also reflect the icons standing on them
-  const shelf = s.deskDepth > 0 && !flat
-  const reflect = (s.deskStyle === 'mirror' || s.deskStyle === 'glass3d') && !flat
+  const shelf = s.deskDepth > 0
+  const reflect = s.deskStyle === 'mirror' || s.deskStyle === 'glass3d'
   const edge = shelf ? Math.max(0, s.deskEdge) : 0
   const baseOffset = (reflect ? Math.round(iconSize * 0.4) : 0) + edge
   const restThickness = iconSize + pads.crossEdge + pads.crossFar + baseOffset

@@ -213,7 +213,6 @@ function DeskCard({ style }: { style: DeskStyle }) {
 }
 
 function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
-  const supported = useRemote('app:info', [])[0]?.materialSupported
   return (
     <>
       <Card title="Raf stili" hint="Simgelerin üzerinde durduğu zemin. Seçince o stilin en iyi derinliği ve saydamlığı uygulanır, sonra ayrıca değiştirebilirsin.">
@@ -236,12 +235,6 @@ function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
         <Row label="Alt kalınlığı" hint="Rafın ekran kenarına bakan ön yüzü; 3B rafların altındaki kalınlık"><Slider value={s.deskEdge} min={0} max={30} unit=" px" onChange={(deskEdge) => set({ deskEdge })} /></Row>
         <Row label="3B derinlik" hint="0 = düz; yükseldikçe raf perspektifle yatar"><Slider value={s.deskDepth} min={0} max={60} unit=" px" onChange={(deskDepth) => set({ deskDepth })} /></Row>
         <Row label="Raf simgelerle büyüsün" hint="Kapalıyken simgeler raftan taşar (macOS gibi)"><Switch label="Raf büyümesi" value={s.shelfGrows} onChange={(shelfGrows) => set({ shelfGrows })} /></Row>
-      </Card>
-      <Card title="Sistem camı (deneysel)" hint="Windows 11'in gerçek bulanıklığı. Ayrı bir pencere olduğu için hareketli olamaz: raf sabit durur, simgeler üstünde büyür.">
-        <Row label="Malzeme">
-          <Select value={s.material} onChange={(material) => set({ material })} options={[['none', 'Kapalı (tema rafı)'], ['acrylic', 'Akrilik'], ['mica', 'Mica']]} />
-        </Row>
-        {supported === false && <Message text="Bu Windows sürümü sistem camını desteklemiyor (Windows 11 22H2 gerekir)." error />}
       </Card>
       <Card title="Köşe yuvarlaklığı" hint="Rafın dört köşesi ayrı ayrı. Alt köşeler yuvarlanınca ön yüzün kalınlığı da o köşeyle birlikte yuvarlanır.">
         <Row label="Hazır şekiller">

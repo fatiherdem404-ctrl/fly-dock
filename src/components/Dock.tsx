@@ -14,7 +14,6 @@ interface DockProps {
   icons: Record<string, string>
   launching: Set<string>
   hidden: boolean
-  flat: boolean
   onActivate: (item: DockItem) => void
 }
 
@@ -27,7 +26,7 @@ declare global {
   }
 }
 
-export default function Dock({ items, settings: wanted, running, icons, launching, hidden, flat, onActivate }: DockProps) {
+export default function Dock({ items, settings: wanted, running, icons, launching, hidden, onActivate }: DockProps) {
   const horizontal = wanted.position === 'bottom' || wanted.position === 'top'
 
   // One calculation decides the window size, the resting row and every padding, so nothing can be cut off.
@@ -35,23 +34,21 @@ export default function Dock({ items, settings: wanted, running, icons, launchin
   const longestLabel = useMemo(() => items.reduce((m, i) => Math.max(m, (i.label ?? (i.type === 'trash' ? 'Çöp kutusu' : '')).length), 0), [items])
   // what the settings ask for, eased until the dock fits along its screen edge
   const edgeLength = horizontal ? window.screen.availWidth : window.screen.availHeight
-  const settings = useMemo(() => fitToScreen(wanted, types, flat, longestLabel, edgeLength), [wanted, types, flat, longestLabel, edgeLength])
+  const settings = useMemo(() => fitToScreen(wanted, types, longestLabel, edgeLength), [wanted, types, longestLabel, edgeLength])
   const { iconSize, iconSpacing: GAP } = settings
   const hover = hoverProfile(settings)
-  const geo = useMemo(() => dockGeometry(settings, types, flat, longestLabel), [settings, types, flat, longestLabel])
+  const geo = useMemo(() => dockGeometry(settings, types, longestLabel), [settings, types, longestLabel])
   const { pads, baseOffset, edge, liftMax, restThickness, maxThickness, restStart } = geo
-  const shelfMode = settings.deskDepth > 0 && !flat
-  const reflect = (settings.deskStyle === 'mirror' || settings.deskStyle === 'glass3d') && !flat
+  const shelfMode = settings.deskDepth > 0
+  const reflect = settings.deskStyle === 'mirror' || settings.deskStyle === 'glass3d'
   const rest = useMemo(
     () => ({ left: geo.restLeft, width: geo.restWidth, length: geo.restLength, separator: geo.separator }),
     [geo],
   )
 
   useEffect(() => {
-    // A system-drawn shelf (acrylic/mica) is a separate window and cannot be animated in step with the icons,
-    // so it stays still: sized for the resting row plus the room magnification needs, never moved.
-    invoke('dock:layout', { main: geo.main, cross: geo.cross, shelfMain: geo.restLength + pads.mainStart + pads.mainEnd + geo.overshoot, shelfCross: restThickness })
-  }, [geo, pads.mainStart, pads.mainEnd, restThickness])
+    invoke('dock:layout', { main: geo.main, cross: geo.cross })
+  }, [geo])
 
   // ---- spring animation of icon sizes and lifts ----
   const sizes = useRef<number[]>([])
@@ -229,7 +226,7 @@ export default function Dock({ items, settings: wanted, running, icons, launchin
 
   return (
     <div
-      className={`dock dock--${side} dock--show-${settings.showAnimation}${hidden ? ' dock--hidden' : ''}${flat ? ' dock--flat' : ''} dock--desk-${settings.deskStyle}${reflect ? ' dock--reflect' : ''}`}
+      className={`dock dock--${side} dock--show-${settings.showAnimation}${hidden ? ' dock--hidden' : ''} dock--desk-${settings.deskStyle}${reflect ? ' dock--reflect' : ''}`}
       style={{ ...desk.rootVars, '--label-size': `${settings.labelSize}px`, '--label-font': settings.labelFont || 'inherit', '--anim-ms': `${speedToMs(settings.speed, settings.speedMs)}ms` } as React.CSSProperties}
       onMouseMove={track}
       onMouseLeave={leave}

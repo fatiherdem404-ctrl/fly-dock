@@ -21,7 +21,7 @@ writeFileSync(
       { id: 'power1', type: 'power', label: 'Güç', order: 4 },
       { id: 'trash', type: 'trash', order: 999 },
     ],
-    settings: { material: 'none' },
+    settings: {},
   }),
 )
 

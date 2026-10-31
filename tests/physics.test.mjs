@@ -126,7 +126,7 @@ for (let n = 0; n < 200; n++) {
     labelSize: Math.round(rand(9, 20)),
   }
   const types = kinds.slice(0, 3 + (n % 6))
-  const g = dockGeometry(s, types, false, 30)
+  const g = dockGeometry(s, types, 30)
   const pads = padsFor(s)
   // pointer anywhere, sizes possibly stale from another pointer: the widest the row can be is restLength + widening
   assert.ok(g.overshoot >= 0 && g.main >= g.restLength + 2 * Math.max(pads.mainStart, pads.mainEnd), 'window is at least as long as the row with its paddings')
@@ -135,8 +135,8 @@ for (let n = 0; n < 200; n++) {
   assert.ok(g.cross >= g.baseOffset + pads.crossEdge + g.maxIcon + g.liftMax + pads.crossFar, 'the biggest, lifted icon fits across the window')
   // fitting to a screen edge: the result always fits, unless the icons are already at their smallest
   const available = Math.round(rand(300, 1200))
-  const fitted = fitToScreen(s, types, false, 30, available)
-  const fits = dockGeometry(fitted, types, false, 30).main <= available
+  const fitted = fitToScreen(s, types, 30, available)
+  const fits = dockGeometry(fitted, types, 30).main <= available
   assert.ok(fits || fitted.iconSize <= 16, `dock is eased until it fits (available ${available}, icon ${fitted.iconSize})`)
 }
 
