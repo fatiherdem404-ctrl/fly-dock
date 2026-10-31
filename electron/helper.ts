@@ -145,6 +145,11 @@ class Helper extends EventEmitter {
   emptyTrash() {
     return this.call<boolean>('emptyTrash', {}, 120_000)
   }
+  /** Windows' own Properties window for a file or folder. */
+  properties(path: string) {
+    return this.call<boolean>('properties', { path })
+  }
+
   /** Puts a window behind the desktop icons (physical-pixel rectangle on screen). False when the shell has no such layer. */
   desktopAttach(hwnd: number, x: number, y: number, width: number, height: number) {
     return this.call<boolean>('desktopAttach', { hwnd, x, y, width, height })

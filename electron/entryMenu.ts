@@ -11,6 +11,7 @@ import { getItems } from './store'
 import { addPaths, removeFromGroup, replaceInGroup } from './items'
 import { broadcast } from './ipc'
 import { showIconPicker } from './iconPicker'
+import { helper } from './helper'
 import { runWheelEntry, wheelEntries, setWheelState, removeWheelEntry, renameWheelEntry } from './wheel'
 import type { EntryMenuRequest } from '../src/shared/types'
 
@@ -84,6 +85,7 @@ export function showEntryMenu(request: EntryMenuRequest) {
     separator()
     add('Yolu kopyala', 'copy', () => clipboard.writeText(target))
     add('Yeniden adlandır', 'edit', () => void rename(item.id, target))
+    add('Özellikler', 'list', () => void helper.properties(target).catch(() => {}))
     if (inGroup) add('Gruptan çıkar', 'minus', () => (removeFromGroup(item.id, target), broadcast('stack:changed', null)))
     separator()
     add('Sil', 'trash', () => void remove(item.id, target), { danger: true })
@@ -95,6 +97,7 @@ export function showEntryMenu(request: EntryMenuRequest) {
       void runWheelEntry(entry.id)
     })
     if (entry.path) add('Konumunu aç', 'location', () => shell.showItemInFolder(entry.path!))
+    if (entry.path) add('Özellikler', 'list', () => void helper.properties(entry.path!).catch(() => {}))
     separator()
     add('Simge değiştir…', 'image', () => showIconPicker(`wheel:${entry.id}`))
     if (entry.path) {

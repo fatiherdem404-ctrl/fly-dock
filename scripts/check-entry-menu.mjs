@@ -54,6 +54,15 @@ try {
   await sleep(800)
   results.push(['rename works', existsSync(join(folder, 'yeni.txt')) && !existsSync(join(folder, 'a.txt'))])
   results.push(['bad characters are refused', true])
+  // Windows' own Properties window opens for a listed file (and is closed again here)
+  await run(`await window.api.invoke('entry:menu',{kind:'stack',itemId:'folder',path:${JSON.stringify(join(folder, 'yeni.txt'))}})`)
+  await sleep(500)
+  await run(`await window.api.invoke('menu:pick',6)`)
+  await sleep(2500)
+  const { spawnSync } = await import('node:child_process')
+  const ps = "Add-Type @'\nusing System; using System.Text; using System.Runtime.InteropServices;\npublic class PW { public delegate bool EP(IntPtr h, IntPtr l); [DllImport(\"user32.dll\")] public static extern bool EnumWindows(EP p, IntPtr l); [DllImport(\"user32.dll\", CharSet=CharSet.Unicode)] public static extern int GetWindowText(IntPtr h, StringBuilder s, int n); [DllImport(\"user32.dll\")] public static extern bool PostMessage(IntPtr h, uint m, IntPtr w, IntPtr l); public static int CloseAll(string needle){ int n=0; EnumWindows((h,l)=>{ var s=new StringBuilder(260); GetWindowText(h,s,260); if(s.ToString().Contains(needle)){ PostMessage(h,0x10,IntPtr.Zero,IntPtr.Zero); n++; } return true;}, IntPtr.Zero); return n; } }\n'@; [PW]::CloseAll('yeni.txt')"
+  const closed = Number(spawnSync('powershell', ['-NoProfile', '-Command', ps], { encoding: 'utf8' }).stdout.trim())
+  results.push(['the Windows Properties window opens for a listed file', closed >= 1])
   // an entry the window does not list is ignored
   await run(`await window.api.invoke('entry:menu',{kind:'stack',itemId:'folder',path:'C:/Windows/win.ini'})`)
   await sleep(500)
@@ -61,7 +70,7 @@ try {
   // delete (to the recycle bin)
   await run(`await window.api.invoke('entry:menu',{kind:'stack',itemId:'folder',path:${JSON.stringify(join(folder, 'b.txt'))}})`)
   await sleep(500)
-  await run(`await window.api.invoke('menu:pick',7)`)
+  await run(`await window.api.invoke('menu:pick',8)`)
   q = null
   for (let i = 0; i < 20 && !q; i++) { await sleep(300); q = (await pages()).find((p) => p.url.includes('#/confirm')) }
   await run(`await window.api.invoke('confirm:answer','${/id=([0-9a-f]+)/.exec(q.url)[1]}',true)`)
