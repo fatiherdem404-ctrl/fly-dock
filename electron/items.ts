@@ -228,6 +228,7 @@ export async function activateItem(id: string, onStack: (item: DockItem) => void
       return void (await helper.activate(target.hwnd))
     }
     default: {
+      if (item!.targetPath!.toLowerCase().startsWith('shell:')) return void spawn('explorer.exe', [item!.targetPath!], { detached: true, stdio: 'ignore' }).unref()
       const err = await shell.openPath(item!.targetPath!)
       if (err) console.error(`open failed for ${item!.targetPath}: ${err}`)
     }

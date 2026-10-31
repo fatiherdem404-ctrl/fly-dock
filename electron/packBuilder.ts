@@ -9,7 +9,7 @@ import { wheelEntries } from './wheel'
 import { isAllowedImage, readAllowed, libraryThumb, pickFolderImages } from './iconLibrary'
 import type { PackInfo, PackBuilderKey } from '../src/shared/types'
 
-const keyOfPath = (p: string) => path.win32.basename(p, path.win32.extname(p)).toLowerCase().replace(/[^a-z0-9 ._-]/g, '').slice(0, 60)
+const keyOfPath = (p: string) => (p.toLowerCase().startsWith('shell:') ? p.slice(6) : path.win32.basename(p, path.win32.extname(p))).toLowerCase().replace(/[^a-z0-9 ._-]/g, '').slice(0, 60)
 
 const SPECIAL: Record<string, string> = { start: 'Başlat düğmesi', wheel: 'Kontrol paneli simgesi', power: 'Güç menüsü simgesi', group: 'Gruplar' }
 

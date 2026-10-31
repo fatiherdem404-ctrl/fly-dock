@@ -55,7 +55,8 @@ if (arg('icons') === 'sample') {
 const win = (p) => p.replaceAll('/', String.fromCharCode(92))
 const windir = process.env.SystemRoot ?? 'C:/Windows'
 const app = (name, p) => ({ id: name, type: 'app', targetPath: win(p), label: name })
-writeFileSync(join(profile, 'config.json'), JSON.stringify({
+// --defaults: a brand-new profile (no stored items or settings), to see what a fresh install looks like
+if (!arg('defaults')) writeFileSync(join(profile, 'config.json'), JSON.stringify({
   schemaVersion: 8,
   items: [{ id: 'start', type: 'start', label: 'Başlat' }, app('notepad', `${windir}/System32/notepad.exe`), app('calc', `${windir}/System32/calc.exe`), app('explorer', `${windir}/explorer.exe`), { id: 'sep1', type: 'separator' }, { id: 'folder', type: 'folder', targetPath: win(arg('folder') ?? `${windir}/Fonts`), label: 'Fonts' }, { id: 'wheel1', type: 'wheel', label: 'Denetim' }, { id: 'power1', type: 'power', label: 'Güç' }, { id: 'trash', type: 'trash' }],
   settings,

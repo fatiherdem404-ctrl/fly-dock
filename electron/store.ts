@@ -1,3 +1,4 @@
+import { app } from 'electron'
 import Store from 'electron-store'
 import {
   DEFAULT_SETTINGS, SCHEMA_VERSION,
@@ -6,7 +7,14 @@ import {
 
 // schemaVersion is deliberately absent: a missing value means an old file that still needs migrating.
 const defaults: Omit<Persisted, 'schemaVersion'> = {
-  items: [{ id: 'start', type: 'start', label: 'Başlat' }, { id: 'trash', type: 'trash' }],
+  // What a fresh install starts with: the usual places of the PC, the control panel and the bin.
+  items: [
+    { id: 'start', type: 'start', label: 'Başlat' },
+    { id: 'computer', type: 'file', targetPath: 'shell:MyComputerFolder', label: 'Bilgisayarım' },
+    { id: 'documents', type: 'folder', targetPath: app.getPath('documents'), label: 'Belgelerim' },
+    { id: 'controlpanel', type: 'wheel', label: 'Kontrol paneli' },
+    { id: 'trash', type: 'trash', label: 'Geri Dönüşüm Kutusu' },
+  ],
   settings: DEFAULT_SETTINGS,
   widgets: [],
 }

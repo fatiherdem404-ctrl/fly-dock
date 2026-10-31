@@ -174,7 +174,7 @@ try {
     const count = await until(async () => conn.call("document.querySelectorAll('.dw .stack__entry').length"), 'gear entries')
     assert.ok(count >= 10, `catalogue is shown (got ${count})`)
     assert.equal(await conn.call("!!document.querySelector('.dw__close') && !!document.querySelector('.dw__head h2')"), true, 'same title bar and close button as every dock window')
-    assert.equal(await conn.call("document.querySelectorAll('.wheel__icon svg').length === document.querySelectorAll('.dw .stack__entry').length"), true, 'every entry has an icon')
+    assert.equal(await conn.call("document.querySelectorAll('.wheel__icon svg, .wheel__icon img').length === document.querySelectorAll('.dw .stack__entry').length"), true, 'every entry has an icon')
     // typing filters the grid
     await conn.call("(() => { const i = document.querySelector('.dw__search input'); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(i, 'ses'); i.dispatchEvent(new Event('input', { bubbles: true })) })()")
     await until(async () => (await conn.call("document.querySelectorAll('.dw .stack__entry').length")) < count, 'search filters')

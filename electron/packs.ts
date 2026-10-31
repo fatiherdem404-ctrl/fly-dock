@@ -17,7 +17,12 @@ const IMAGE_EXT = new Set(['.png', '.ico', '.svg', '.jpg', '.jpeg', '.webp'])
 const ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,40}$/
 
 const packsRoot = () => path.join(app.getPath('userData'), 'packs')
-const packDir = (type: PackInfo['type'], id: string) => path.join(packsRoot(), type, id)
+/** Icon packs that ship with the app: plain folders next to the program, never copied to the user's data. */
+const BUILTIN_ICON_PACKS = [{ id: 'fly-3d', name: 'Fly 3B', author: 'Fluent Emoji (MIT)' }]
+export const builtinIconRoot = () => (app.isPackaged ? path.join(process.resourcesPath, 'icon-packs') : path.join(app.getAppPath(), 'resources', 'icon-packs'))
+const isBuiltinIconPack = (id: string) => BUILTIN_ICON_PACKS.some((p) => p.id === id)
+
+const packDir = (type: PackInfo['type'], id: string) => (type === 'icons' && isBuiltinIconPack(id) ? path.join(builtinIconRoot(), id) : path.join(packsRoot(), type, id))
 
 // ---- built-in themes ----
 
@@ -128,6 +133,11 @@ const BUILTIN_THEMES: ThemeDef[] = [
 
 export function builtinThemeInfos(): PackInfo[] {
   return BUILTIN_THEMES.map((t) => ({ id: t.id, type: 'theme', name: t.name, author: t.author, builtin: true, hasDesk: !!t.desk, hasWallpaper: !!t.wallpaper?.live }))
+}
+
+/** Built-in themes and icon packs, as listed next to the installed ones. */
+export function builtinPackInfos(): PackInfo[] {
+  return [...builtinThemeInfos(), ...BUILTIN_ICON_PACKS.map((p): PackInfo => ({ id: p.id, type: 'icons', name: p.name, author: p.author, builtin: true }))]
 }
 
 // ---- validation ----
@@ -317,7 +327,7 @@ export function getTheme(id: string): ThemeDef | null {
 
 export function installPack(buf: Buffer): PackInfo {
   const { manifest, files } = validatePackArchive(buf)
-  if (manifest.type === 'theme' && BUILTIN_THEMES.some((t) => t.id === manifest.id)) throw new Error('that id belongs to a built-in theme')
+  if ((manifest.type === 'theme' && BUILTIN_THEMES.some((t) => t.id === manifest.id)) || (manifest.type === 'icons' && isBuiltinIconPack(manifest.id))) throw new Error('that id belongs to a built-in pack')
   const dir = packDir(manifest.type, manifest.id)
   fs.rmSync(dir, { recursive: true, force: true })
   for (const file of files) {
@@ -330,7 +340,7 @@ export function installPack(buf: Buffer): PackInfo {
 }
 
 export function removePack(type: PackInfo['type'], id: string) {
-  if (!ID_PATTERN.test(id)) return
+  if (!ID_PATTERN.test(id) || (type === 'icons' && isBuiltinIconPack(id))) return
   fs.rmSync(packDir(type, id), { recursive: true, force: true })
 }
 
@@ -407,9 +417,13 @@ export function packIconFor(packId: string, item: DockItem, trashHasItems: boole
   let key: string
   if (item.type === 'trash') key = trashHasItems ? 'trash-full' : 'trash'
   else if (item.type === 'start' || item.type === 'wheel' || item.type === 'power' || item.type === 'group') key = item.type
-  else if (item.type === 'folder' || item.type === 'stack') key = 'folder'
-  else if (item.targetPath) {
-    key = path.win32.basename(item.targetPath, path.win32.extname(item.targetPath)).toLowerCase()
+  else if (item.type === 'folder' || item.type === 'stack') {
+    // A well-known folder (Documents, Downloads…) can have its own picture; any other folder gets the generic one.
+    const named = item.targetPath ? path.win32.basename(item.targetPath).toLowerCase() : ''
+    key = map[named] ? named : 'folder'
+  } else if (item.targetPath) {
+    // "shell:MyComputerFolder" style targets are keyed by what follows the colon.
+    key = item.targetPath.toLowerCase().startsWith('shell:') ? item.targetPath.slice(6).toLowerCase() : path.win32.basename(item.targetPath, path.win32.extname(item.targetPath)).toLowerCase()
     if (!map[key] && item.type === 'file') key = 'file'
   } else return null
   const file = map[key]

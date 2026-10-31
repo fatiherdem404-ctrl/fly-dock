@@ -455,7 +455,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   launchAtLogin: false,
   toggleHotkey: 'Control+Alt+D',
   theme: 'glass-dark',
-  iconPack: '',
+  iconPack: 'fly-3d',
   themeDesk: true,
   wallpaperMode: 'off',
   wallpaperSingle: '',

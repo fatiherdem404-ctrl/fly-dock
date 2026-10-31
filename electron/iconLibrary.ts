@@ -5,6 +5,7 @@ import { app, dialog, nativeImage } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import { getSettings, updateSettings } from './store'
+import { builtinIconRoot } from './packs'
 import type { LibraryIcon } from '../src/shared/types'
 
 export const IMAGE_EXT = new Set(['.png', '.ico', '.svg', '.jpg', '.jpeg', '.webp'])
@@ -42,13 +43,13 @@ export function listLibrary(): { icons: LibraryIcon[]; folders: string[] } {
     walk(folder, 1, files)
     for (const file of files) icons.push({ path: file, name: path.basename(file, path.extname(file)), source: path.basename(folder) || folder })
   }
-  try {
-    for (const id of fs.readdirSync(packsRoot())) {
+  for (const root of [builtinIconRoot(), packsRoot()]) try {
+    for (const id of fs.readdirSync(root)) {
       const files: string[] = []
-      walk(path.join(packsRoot(), id), 3, files)
+      walk(path.join(root, id), 3, files)
       let source = id
       try {
-        source = JSON.parse(fs.readFileSync(path.join(packsRoot(), id, 'pack.json'), 'utf8')).name ?? id
+        source = JSON.parse(fs.readFileSync(path.join(root, id, 'pack.json'), 'utf8')).name ?? id
       } catch {
         /* keep the id */
       }
@@ -65,7 +66,7 @@ export function isAllowedImage(file: string): boolean {
   if (typeof file !== 'string' || !isImage(file)) return false
   const target = norm(file)
   if (picked.has(target)) return true
-  const roots = [packsRoot(), ...getSettings().iconFolders].map(norm)
+  const roots = [builtinIconRoot(), packsRoot(), ...getSettings().iconFolders].map(norm)
   return roots.some((r) => target.startsWith(r + path.sep))
 }
 

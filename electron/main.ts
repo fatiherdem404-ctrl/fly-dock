@@ -22,7 +22,7 @@ import { builderKeys, pickBuilderFolder, createBuilderPack } from './packBuilder
 import { initDockWindows, syncDocks, setLayout, applyLayer, dockIsOnTop, isDockHidden, setFullscreenHidden, toggleDockVisibility, disposeDockWindows } from './dockWindows'
 import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN } from './windows'
 import {
-  importPackDialog, exportPackDialog, themeDeskSettings, themeWallpaperFile, listThemes, createThemePack, listInstalled, builtinThemeInfos, getTheme, removePack, clearPackCaches,
+  importPackDialog, exportPackDialog, themeDeskSettings, themeWallpaperFile, listThemes, createThemePack, listInstalled, builtinPackInfos, getTheme, removePack, clearPackCaches,
 } from './packs'
 import { showStack, showPanel, closeStack, readEntries, stackIsFocused, dialogJustClosed, setStackCapture } from './stackWindow'
 import { wheelEntries, runWheelEntry, setWheelState, addWheelEntry, removeWheelEntry, setWheelIcon } from './wheel'
@@ -406,7 +406,7 @@ function registerIpc() {
     }
     return result
   })
-  handle('packs:list', () => [...builtinThemeInfos(), ...listInstalled()])
+  handle('packs:list', () => [...builtinPackInfos(), ...listInstalled()])
   handle('packs:import', async () => {
     const result = await importPackDialog()
     if (result.ok) {
@@ -416,7 +416,7 @@ function registerIpc() {
     return result
   })
   handle('packs:export', async (_e, id) => {
-    const info = [...builtinThemeInfos(), ...listInstalled()].find((p) => p.id === id)
+    const info = [...builtinPackInfos(), ...listInstalled()].find((p) => p.id === id)
     return info ? exportPackDialog(info.type, id) : { ok: false, message: 'pack not found' }
   })
   handle('packs:remove', async (_e, id) => {
@@ -428,7 +428,7 @@ function registerIpc() {
       clearPackCaches()
       broadcast('themes:changed', null)
     }
-    return [...builtinThemeInfos(), ...listInstalled()]
+    return [...builtinPackInfos(), ...listInstalled()]
   })
 
   handle('widgets:list', () => getWidgets())
