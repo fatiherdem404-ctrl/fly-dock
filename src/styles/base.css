@@ -32,7 +32,8 @@ body,
 html[data-view='dock'],
 html[data-view='stack'],
 html[data-view='widget'],
-html[data-view='menu'] {
+html[data-view='menu'],
+html[data-view='confirm'] {
   background: transparent;
   overflow: hidden;
 }

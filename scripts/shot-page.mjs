@@ -54,7 +54,7 @@ writeFileSync(join(profile, 'config.json'), JSON.stringify({
 }))
 
 const port = 9500 + Math.floor(Math.random() * 400)
-const child = spawn(electronPath, ['.', `--user-data-dir=${profile}`, `--remote-debugging-port=${port}`], { stdio: 'ignore', env: { ...process.env, FLY_DOCK_HEADLESS: '1' } })
+const child = spawn(electronPath, ['.', `--user-data-dir=${profile}`, `--remote-debugging-port=${port}`], { stdio: 'ignore', env: { ...process.env, FLY_DOCK_HEADLESS: '1', ...(route.includes('confirm') ? { FLY_DOCK_TEST_CONFIRM: '1' } : {}) } })
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const stop = () => spawn('taskkill', ['/T', '/F', '/PID', String(child.pid)], { stdio: 'ignore' })
 const pages = async () => (await (await fetch(`http://127.0.0.1:${port}/json`)).json()).filter((p) => p.type === 'page')
@@ -64,7 +64,11 @@ async function connect(page) {
   await new Promise((r) => (ws.onopen = r))
   let id = 0
   const pending = new Map()
-  ws.onmessage = (e) => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) pending.get(m.id)(m) }
+  ws.onmessage = (e) => {
+    const m = JSON.parse(e.data)
+    if (m.id && pending.has(m.id)) pending.get(m.id)(m)
+    else if (m.method === 'Runtime.exceptionThrown') console.log('PAGE ERROR:', m.params.exceptionDetails.exception?.description ?? m.params.exceptionDetails.text)
+  }
   const send = (method, params = {}) => new Promise((resolve) => { const n = ++id; pending.set(n, resolve); ws.send(JSON.stringify({ id: n, method, params })) })
   return { send, evaluate: async (expression) => (await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true })).result.result?.value, ws }
 }
@@ -89,11 +93,14 @@ try {
   }
   if (!target) throw new Error(`no page matching ${route}`)
   const view = target === page ? dock : await connect(target)
+  await view.send('Runtime.enable')
   await view.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false })
   const tab = arg('tab')
   if (tab) await view.evaluate(`document.querySelectorAll('.st-tab')[${Number(tab)}]?.click()`)
-  const click = arg('click')
-  if (click) await view.evaluate(`document.querySelector(${JSON.stringify(click)})?.click()`)
+  for (const click of process.argv.filter((a) => a.startsWith('--click=')).map((a) => a.slice(8))) {
+    await view.evaluate(`document.querySelectorAll(${JSON.stringify(click)}).forEach((b) => b.click())`)
+    await sleep(250)
+  }
   await sleep(Number(arg('wait') ?? 900))
   const shot = await view.send('Page.captureScreenshot', { format: 'png' })
   writeFileSync(out, Buffer.from(shot.result.data, 'base64'))

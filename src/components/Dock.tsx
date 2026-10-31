@@ -7,6 +7,7 @@ import { dockGeometry, fitToScreen, DESK_INSET } from '@/layout'
 import DockIcon from './DockIcon'
 import Shelf from './Shelf'
 import { useTexture } from '@/useTexture'
+import { playSound } from '@/sound'
 
 interface DockProps {
   items: DockItem[]
@@ -180,7 +181,7 @@ export default function Dock({ items, settings: wanted, running, icons, launchin
     if (internal) {
       setDragging(null)
       if (locked) return
-      if (overTrash) return void invoke('items:remove', internal)
+      if (overTrash) return void (playSound('remove'), invoke('items:remove', internal))
       const from = items.findIndex((i) => i.id === internal)
       if (from < 0) return
       const next = [...items]
@@ -193,9 +194,16 @@ export default function Dock({ items, settings: wanted, running, icons, launchin
       .map((f) => window.api.pathFor(f))
       .filter(Boolean)
     if (!paths.length) return
-    if (overTrash) invoke('trash:drop', paths)
-    else if (overGroup) invoke('group:add', overGroup, paths)
-    else if (!locked) invoke('items:add-paths', paths, at)
+    if (overTrash) {
+      playSound('trashDrop')
+      invoke('trash:drop', paths)
+    } else if (overGroup) {
+      playSound('drop')
+      invoke('group:add', overGroup, paths)
+    } else if (!locked) {
+      playSound('drop')
+      invoke('items:add-paths', paths, at)
+    }
   }
 
   // ---- render ----
@@ -260,7 +268,7 @@ export default function Dock({ items, settings: wanted, running, icons, launchin
           return (
             <div key={item.id} className="dock__separator" data-kind={separatorKind(settings)} data-horizontal={horizontal} style={{ ...base, ...sep.vars, [horizontal ? 'height' : 'width']: sep.length } as React.CSSProperties}
               draggable={!locked} onDragStart={(e) => { e.dataTransfer.setData(DRAG_TYPE, item.id); setDragging(item.id) }}
-              onDragEnd={(e) => { setDragging(null); if (outside(e)) invoke('items:remove', item.id) }}
+              onDragEnd={(e) => { setDragging(null); if (outside(e)) { playSound('remove'); invoke('items:remove', item.id) } }}
               onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); invoke('menu:show', { kind: 'icon', itemId: item.id }) }}
             />
           )
@@ -288,7 +296,10 @@ export default function Dock({ items, settings: wanted, running, icons, launchin
             onDragEnd={(e) => {
               setDragging(null)
               setInsertAt(null)
-              if (outside(e)) invoke('items:remove', item.id)
+              if (outside(e)) {
+                playSound('remove')
+                invoke('items:remove', item.id)
+              }
             }}
             onContextMenu={(e) => {
               e.preventDefault()

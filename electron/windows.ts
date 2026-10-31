@@ -28,6 +28,7 @@ export function baseWebPreferences(): BrowserWindowConstructorOptions['webPrefer
     nodeIntegration: false,
     sandbox: false,
     backgroundThrottling: false,
+    autoplayPolicy: 'no-user-gesture-required',
   }
 }
 

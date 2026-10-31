@@ -12,6 +12,7 @@ import {
 } from './items'
 import { iconForItem, setTrashState } from './icons'
 import { shellIcon, thumbnail } from './iconService'
+import { askConfirm, answerConfirm } from './confirm'
 import { builderKeys, pickBuilderImage, pickBuilderFolder, createBuilderPack } from './packBuilder'
 import { initDockWindows, syncDocks, setLayout, applyLayer, dockIsOnTop, isDockHidden, setFullscreenHidden, toggleDockVisibility, disposeDockWindows } from './dockWindows'
 import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN } from './windows'
@@ -152,7 +153,12 @@ function showMenu(_e: Electron.IpcMainInvokeEvent, payload: { kind: 'empty' | 'i
   } else if (payload.kind === 'icon' && item && item.type !== 'separator') {
     if (item.type === 'trash') {
       add('Aç', 'open', openRecycleBin)
-      add('Çöp kutusunu boşalt', 'trash', () => helper.emptyTrash().catch(() => {}), { danger: true })
+      add('Çöp kutusunu boşalt', 'trash', async () => {
+        const yes = await askConfirm({ title: 'Çöp kutusu boşaltılsın mı?', message: 'İçindeki her şey kalıcı olarak silinir. Bu geri alınamaz.', confirmLabel: 'Boşalt', danger: true })
+        if (!yes) return
+        await helper.emptyTrash().catch(() => {})
+        broadcast('sound:play', 'trashEmpty')
+      }, { danger: true })
     } else {
       add('Aç', 'open', () => activateItem(item.id, showStackAtCursor))
       if (item.type === 'app') add('Çalışan pencereyi kapat', 'close', () => closeWindowsOf(item))
@@ -271,7 +277,10 @@ function registerIpc() {
   handle('tweaks:list', () => tweakEngine.list())
   handle('tweaks:set', (_e, id, enabled) => tweakEngine.set(id, enabled))
   handle('tweaks:restore-point', () => tweakEngine.restorePoint())
-  handle('tweaks:revert-all', () => tweakEngine.revertAll())
+  handle('tweaks:revert-all', async () => {
+    const yes = await askConfirm({ title: 'Tüm tweakler geri alınsın mı?', message: 'Fly Dock tarafından değiştirdiği her Windows ayarı eski değerine döner. Yönetici gerektirenler için Windows onay isteyebilir.', confirmLabel: 'Geri al', danger: true })
+    return yes ? tweakEngine.revertAll() : 0
+  })
   handle('tweaks:log', () => tweakEngine.log())
   handle('tweaks:restart-explorer', () => restartExplorer())
   handle('group:add', (_e, id, paths) => addToGroup(id, paths))
@@ -281,6 +290,7 @@ function registerIpc() {
 
   handle('themes:list', () => listThemes())
   handle('themes:get', (_e, id) => getTheme(id))
+  handle('confirm:answer', (_e, id, answer) => answerConfirm(id, answer))
   handle('builder:keys', () => builderKeys())
   handle('builder:pick', () => pickBuilderImage())
   handle('builder:folder', (_e, keys) => pickBuilderFolder(keys))
@@ -305,9 +315,9 @@ function registerIpc() {
     const info = [...builtinThemeInfos(), ...listInstalled()].find((p) => p.id === id)
     return info ? exportPackDialog(info.type, id) : { ok: false, message: 'pack not found' }
   })
-  handle('packs:remove', (_e, id) => {
+  handle('packs:remove', async (_e, id) => {
     const info = listInstalled().find((p) => p.id === id)
-    if (info) {
+    if (info && (await askConfirm({ title: `"${info.name}" silinsin mi?`, message: 'Paket bu bilgisayardan kaldırılır. Dışa aktarmadıysan geri getiremezsin.', confirmLabel: 'Sil', danger: true }))) {
       removePack(info.type, id)
       if (info.type === 'theme' && getSettings().theme === id) applySettings({ theme: 'glass-dark' })
       if (info.type === 'icons' && getSettings().iconPack === id) applySettings({ iconPack: '' })
@@ -354,6 +364,7 @@ async function importBackup() {
   if (result.canceled || !result.filePaths[0]) return { ok: false, message: 'cancelled' }
   try {
     const data = JSON.parse(fs.readFileSync(result.filePaths[0], 'utf8'))
+    if (!(await askConfirm({ title: 'Yedek geri yüklensin mi?', message: 'Şu anki ayarların, dock öğelerin ve widgetların yedektekilerle değişir. Uygulama yeniden başlar.', confirmLabel: 'Geri yükle', danger: true }))) return { ok: false, message: 'cancelled' }
     if (data?.app !== brand.slug || !Array.isArray(data.items) || typeof data.settings !== 'object') throw new Error('this is not a backup of this app')
     const defaults = getSettings() as unknown as Record<string, unknown>
     const settings: Record<string, unknown> = {}
@@ -402,6 +413,8 @@ if (!app.requestSingleInstanceLock()) {
     helper.call<{ items: number }>('trash').then((t) => setTrashState(t.items)).catch(() => {})
 
     initDockWindows()
+    // screenshot runs ask for the confirmation window so it can be looked at
+    if (HEADLESS && process.env.FLY_DOCK_TEST_CONFIRM) setTimeout(() => void askConfirm({ title: 'Çöp kutusu boşaltılsın mı?', message: 'İçindeki her şey kalıcı olarak silinir. Bu geri alınamaz.', confirmLabel: 'Boşalt', danger: true }), 1500)
     initWidgets()
     createTray()
     registerHotkeys()

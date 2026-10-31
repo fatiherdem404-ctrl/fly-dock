@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { invoke, useActiveTheme } from '@/api'
 import Icon, { IconName } from '@/icons'
 import type { DockSettings, PowerAction } from '@/shared/types'
+import { initSound, playSound } from '@/sound'
 
 const ACTIONS: { id: PowerAction; label: string; icon: IconName; confirm: boolean }[] = [
   { id: 'lock', label: 'Kilitle', icon: 'lock', confirm: false },
@@ -19,6 +20,8 @@ export default function PowerView() {
   const [closing, setClosing] = useState(false)
   const blur = new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('blur') === '1'
   useEffect(() => {
+    initSound()
+    setTimeout(() => playSound('windowOpen'), 60)
     invoke('settings:get').then(setSettings)
     const timer = setInterval(() => setNow(new Date()), 10_000)
     return () => clearInterval(timer)

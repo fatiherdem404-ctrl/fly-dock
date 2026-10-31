@@ -102,3 +102,12 @@ Sınırlar: akrilik/Mica ayrı bir sistem penceresi olduğu için sabit durur (t
 | ⏳ | DWM efektleri, AppBar çubuğu ve tepsi ikonları (madde 3, 5) | bekliyor: sistem pencerelerine dokunma kararı |
 | ⛔ | Gelişmiş Tema Desteği / SecureUxTheme (madde 4) | kullanıcı onayı yok, sistem dosyalarını yamar |
 | ⏳ | Toys / sanal evcil hayvan (madde 9), WI Explorer (madde 8), plugin API | büyük, ayrı proje |
+
+## Ayar sekmeleri, klasör penceresi, çark, simge paketi, ses (2026-10-31)
+- Ayar sayfalarındaki gruplar alt sekme oldu (seçim hatırlanır); "Rafsız" stili; Mavi çerçeve ayrı görünüm.
+- Klasör/grup penceresi: Explorer önizlemesi (resim, video, PDF), görünüm menüsü (çok büyük → ayrıntılar), sıralama (ad, tarih, boyut, tür; artan/azalan).
+- Çark menüsü: program/dosya/klasör ekle-kaldır, her girdiye kendi simgesi.
+- Simge paketi oluşturucu: öğelere resim ata ya da klasörden dağıt, `.flypack` olarak kaydet.
+- Sesler: dosyasız, anında üretilen 5 stil (yumuşak, cam, ahşap, retro, baloncuk); 20 olay (cin pencere açılış/kapanış, hover, tıklama, açılış, bırakma, silme, çöp boşaltma, menü, onay…); grup grup aç/kapa, ses düzeyi, "Dene" sekmesi.
+- Kendi onay penceremiz (`electron/confirm.ts`, `ConfirmView`): çöp boşaltma, yedek geri yükleme, tüm tweakleri geri alma, paket silme.
+- Fikir: sesleri `.flypack` temalarına koymak (kullanıcı ses dosyası), geçiş sesi için "bildirim" olayı widget'larda henüz kullanılmıyor.

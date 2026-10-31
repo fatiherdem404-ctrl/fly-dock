@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'react'
 import type { CSSProperties } from 'react'
 import type { DockItem, DockPosition, IndicatorStyle, LaunchAnimation } from '@/shared/types'
+import { playSound } from '@/sound'
 
 interface DockIconProps {
   item: DockItem
@@ -44,6 +45,7 @@ export default function DockIcon({ item, style, iconSrc, running, launching, lau
       data-position={position}
       draggable={!locked && item.type !== 'trash'}
       onClick={onClick}
+      onPointerEnter={() => playSound('hover')}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onContextMenu={onContextMenu}

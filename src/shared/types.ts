@@ -1,5 +1,33 @@
 // Types shared by the main process, the preload bridge and every renderer view.
 
+/** Everything the app can play a sound for. Each belongs to one switchable group, see SOUND_GROUPS. */
+export type SoundEvent =
+  | 'hover' | 'click' | 'launch' | 'drop' | 'remove' | 'dockShow' | 'dockHide'
+  | 'windowOpen' | 'windowClose' | 'menuOpen' | 'menuPick'
+  | 'trashDrop' | 'trashEmpty'
+  | 'confirmOpen' | 'accept' | 'cancel' | 'warn' | 'error'
+  | 'toggle' | 'notify'
+
+export type SoundGroup = 'hover' | 'click' | 'launch' | 'dock' | 'windows' | 'menus' | 'trash' | 'dialogs' | 'ui'
+export type SoundTheme = 'soft' | 'glass' | 'wood' | 'retro' | 'bubble'
+
+export const SOUND_GROUP_OF: Record<SoundEvent, SoundGroup> = {
+  hover: 'hover', click: 'click', launch: 'launch', drop: 'dock', remove: 'dock', dockShow: 'dock', dockHide: 'dock',
+  windowOpen: 'windows', windowClose: 'windows', menuOpen: 'menus', menuPick: 'menus',
+  trashDrop: 'trash', trashEmpty: 'trash',
+  confirmOpen: 'dialogs', accept: 'dialogs', cancel: 'dialogs', warn: 'dialogs', error: 'dialogs',
+  toggle: 'ui', notify: 'ui',
+}
+
+export interface ConfirmRequest {
+  title: string
+  message: string
+  confirmLabel?: string
+  cancelLabel?: string
+  /** Red confirm button and a warning sound, for things that cannot be undone. */
+  danger?: boolean
+}
+
 export type DockItemType = 'app' | 'file' | 'folder' | 'stack' | 'group' | 'start' | 'wheel' | 'power' | 'separator' | 'trash'
 
 export interface DockItem {
@@ -163,6 +191,11 @@ export interface DockSettings {
   sepBorderRColor: string
   // labels
   labelMode: LabelMode
+  // sounds
+  soundEnabled: boolean
+  soundVolume: number
+  soundTheme: SoundTheme
+  soundGroups: SoundGroup[]
   labelSize: number
   labelFont: string
   // behaviour
@@ -314,6 +347,10 @@ export const DEFAULT_SETTINGS: DockSettings = {
   sepBorderLColor: '',
   sepBorderRColor: '',
   labelMode: 'hover',
+  soundEnabled: true,
+  soundVolume: 40,
+  soundTheme: 'soft',
+  soundGroups: ['click', 'launch', 'dock', 'windows', 'menus', 'trash', 'dialogs', 'ui'],
   labelSize: 12,
   labelFont: '',
   layer: 'above',
@@ -380,6 +417,7 @@ export interface InvokeMap {
   'builder:pick': { args: []; result: { path: string; preview: string } | null }
   'builder:folder': { args: [keys: string[]]; result: Record<string, { path: string; preview: string }> }
   'builder:create': { args: [name: string, author: string, map: Record<string, string>]; result: { ok: boolean; message: string; pack?: PackInfo } }
+  'confirm:answer': { args: [id: string, answer: boolean]; result: void }
   'themes:list': { args: []; result: PackInfo[] }
   'themes:get': { args: [id: string]; result: ThemeDef | null }
   'packs:list': { args: []; result: PackInfo[] }
@@ -412,6 +450,7 @@ export interface EventMap {
   'widgets:changed': WidgetInstance[]
   'themes:changed': null
   'ui:open-settings': null
+  'sound:play': SoundEvent
 }
 
 export type InvokeChannel = keyof InvokeMap

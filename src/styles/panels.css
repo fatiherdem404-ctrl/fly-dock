@@ -43,3 +43,28 @@ html[data-view='power'] { background: transparent; overflow: hidden; }
 .power__hint { margin-top: 36px; font-size: 12px; opacity: 0.45; }
 .wheel__icon--plain { background: none; box-shadow: none; }
 .wheel-glyph { object-fit: contain; }
+
+/* ---- the app's own confirmation window ---- */
+.confirm-shell { position: absolute; inset: 0; display: grid; place-items: center; padding: 14px; }
+.confirm {
+  width: 100%; box-sizing: border-box; padding: 20px 22px 18px; border-radius: calc(var(--radius) + 2px);
+  display: grid; grid-template-columns: 44px 1fr; gap: 6px 14px; color: var(--tooltip-text);
+  background: color-mix(in srgb, var(--tooltip-bg) 97%, transparent); border: 1px solid var(--surface-border);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5); animation: confirm-in 220ms cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+}
+.confirm--closing { animation: confirm-out 140ms ease-in both; }
+@keyframes confirm-in { from { transform: scale(0.86) translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes confirm-out { from { transform: none; opacity: 1; } to { transform: scale(0.94); opacity: 0; } }
+.confirm__icon { grid-row: span 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; color: #fff; background: linear-gradient(145deg, var(--accent), color-mix(in srgb, var(--accent) 50%, #000)); }
+.confirm--danger .confirm__icon { background: linear-gradient(145deg, #ff6b6b, #b3261e); }
+.confirm__text h2 { margin: 2px 0 6px; font-size: 16px; font-weight: 650; }
+.confirm__text p { margin: 0; font-size: 13px; line-height: 1.5; opacity: 0.8; }
+.confirm__buttons { grid-column: 2; display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.confirm__btn { height: 34px; padding: 0 18px; border-radius: 10px; border: 1px solid var(--surface-border); background: rgba(255, 255, 255, 0.08); color: inherit; font: inherit; font-size: 13px; cursor: pointer; transition: background 140ms, transform 100ms; }
+.confirm__btn:hover { background: rgba(255, 255, 255, 0.16); }
+.confirm__btn:active { transform: scale(0.97); }
+.confirm__btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.confirm__btn--ok { background: var(--accent); border-color: transparent; color: #fff; }
+.confirm__btn--ok:hover { background: color-mix(in srgb, var(--accent) 85%, #fff); }
+.confirm--danger .confirm__btn--ok { background: #d93a30; }
+.confirm--danger .confirm__btn--ok:hover { background: #ee5045; }

@@ -7,6 +7,7 @@ import WidgetView from './views/WidgetView'
 import MenuView from './views/MenuView'
 import WheelView from './views/WheelView'
 import PowerView from './views/PowerView'
+import ConfirmView from './views/ConfirmView'
 import './styles/base.css'
 import './styles/dock.css'
 import './styles/windows.css'
@@ -31,6 +32,8 @@ function Root() {
       return <StackView itemId={param} />
     case 'wheel':
       return <WheelView />
+    case 'confirm':
+      return <ConfirmView />
     case 'power':
       return <PowerView />
     case 'menu':

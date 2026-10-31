@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Dock from '@/components/Dock'
 import { invoke, useActiveTheme, useEvent } from '@/api'
 import type { DockItem, DockSettings, RunningState } from '@/shared/types'
+import { initSound, playSound } from '@/sound'
 
 export default function DockView() {
   const [items, setItems] = useState<DockItem[]>([])
@@ -13,6 +14,7 @@ export default function DockView() {
   const [launching, setLaunching] = useState<Set<string>>(new Set())
 
   useEffect(() => {
+    initSound()
     invoke('items:get').then(setItems)
     invoke('settings:get').then(setSettings)
     invoke('windows:get').then(setRunning)
@@ -23,7 +25,11 @@ export default function DockView() {
   useEvent('settings:changed', setSettings)
   useEvent('windows:changed', setRunning)
   useEvent('trash:changed', (t) => setTrashItems(t.items))
-  useEvent('dock:hidden', (s) => setHidden(s.hidden))
+  useEvent('dock:hidden', (s) => {
+    setHidden(s.hidden)
+    playSound(s.hidden ? 'dockHide' : 'dockShow')
+  })
+  useEvent('sound:play', playSound)
   useActiveTheme(settings?.theme)
 
   // Icons are resolved in main (custom > icon pack > shell). Refetch when anything that affects them changes.
@@ -47,6 +53,7 @@ export default function DockView() {
         setLaunching((s) => new Set(s).add(item.id))
         setTimeout(() => setLaunching((s) => (s.delete(item.id), new Set(s))), 1500)
       }
+      playSound(item.type === 'app' && !running[item.id] ? 'launch' : 'click')
       invoke('items:activate', item.id)
     },
     [running],

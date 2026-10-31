@@ -5,13 +5,15 @@ import DockPreview from '@/components/DockPreview'
 import WheelGlyph from '@/components/WheelGlyph'
 import Shelf from '@/components/Shelf'
 import { useTexture, forgetTexture } from '@/useTexture'
+import { initSound, playSound, previewSound, SOUND_THEMES } from '@/sound'
 import { DESK_LABELS, DESK_PRESETS, DESK_RADII, separatorKind } from '@/desk'
 import {
   DESK_STYLES, DockItem, DockLayer, TweakInfo, DockSettings, PackInfo, ThemeDef, WidgetType,
+  SOUND_GROUP_OF, SoundEvent, SoundGroup, SoundTheme,
   AnimationCurve, DeskStyle, TextureMode, SeparatorStyle, FalloffCurve, HoverAnimation, IndicatorStyle, LaunchAnimation, ShowAnimation, SpeedPreset, StackSize, WindowAnimation, LabelMode,
 } from '@/shared/types'
 
-type Tab = 'dock' | 'desk' | 'motion' | 'windows' | 'theme' | 'icons' | 'items' | 'wheel' | 'tweaks' | 'widgets' | 'general'
+type Tab = 'dock' | 'desk' | 'motion' | 'windows' | 'theme' | 'icons' | 'items' | 'wheel' | 'sound' | 'tweaks' | 'widgets' | 'general'
 const TABS: [Tab, string, IconName][] = [
   ['dock', 'Dock', 'dock'],
   ['desk', 'Zemin ve raf', 'desk'],
@@ -22,6 +24,7 @@ const TABS: [Tab, string, IconName][] = [
   ['items', 'Öğeler', 'items'],
   ['wheel', 'Çark menüsü', 'settings'],
   ['tweaks', 'Tweaks', 'tools'],
+  ['sound', 'Sesler', 'sound'],
   ['widgets', 'Widget\'lar', 'widgets'],
   ['general', 'Genel', 'general'],
 ]
@@ -91,7 +94,7 @@ function Row({ label, hint, children }: { label: string; hint?: string; children
 }
 
 function Switch({ value, onChange, label, disabled }: { value: boolean; onChange: (v: boolean) => void; label: string; disabled?: boolean }) {
-  return <button className="st-switch" role="switch" aria-checked={value} aria-label={label} disabled={disabled} onClick={() => onChange(!value)}><i /></button>
+  return <button className="st-switch" role="switch" aria-checked={value} aria-label={label} disabled={disabled} onClick={() => { playSound('toggle'); onChange(!value) }}><i /></button>
 }
 
 function Slider({ value, min, max, step = 1, unit = '', onChange, format }: { value: number; min: number; max: number; step?: number; unit?: string; onChange: (v: number) => void; format?: (v: number) => string }) {
@@ -119,7 +122,7 @@ function Segmented<T extends string>({ value, options, onChange }: { value: T; o
   return (
     <div className="st-seg" role="radiogroup">
       {options.map(([v, label]) => (
-        <button key={v} role="radio" aria-checked={value === v} onClick={() => onChange(v)}>{label}</button>
+        <button key={v} role="radio" aria-checked={value === v} onClick={() => { playSound('toggle'); onChange(v) }}>{label}</button>
       ))}
     </div>
   )
@@ -129,7 +132,7 @@ function Choice<T extends string>({ value, options, onChange, children }: { valu
   return (
     <div className="st-choices">
       {options.map(([id, label, hint]) => (
-        <button key={id} className="st-choice" aria-pressed={value === id} onClick={() => onChange(id)}>
+        <button key={id} className="st-choice" aria-pressed={value === id} onClick={() => { playSound('toggle'); onChange(id) }}>
           {children?.(id)}
           <b>{label}</b>
           {hint && <small>{hint}</small>}
@@ -559,6 +562,54 @@ function ThemeTab({ s, set, kind }: { s: DockSettings; set: Update; kind: 'theme
   )
 }
 
+// ---- Sounds ----
+
+const SOUND_GROUPS: [SoundGroup, string, string][] = [
+  ['hover', 'Üzerine gelince', 'Fare bir simgenin üstünden geçerken küçük bir tık'],
+  ['click', 'Tıklama', 'Simgeye tıklayınca'],
+  ['launch', 'Uygulama açılışı', 'Kapalı bir program başlatılınca'],
+  ['dock', 'Dock', 'Simge bırakma, silme ve otomatik gizlenen dockun gelip gitmesi'],
+  ['windows', 'Dock pencereleri', 'Klasör, grup ve çark penceresinin cin efektiyle açılıp kapanması'],
+  ['menus', 'Menüler', 'Sağ tık menüsünün açılması ve seçim'],
+  ['trash', 'Çöp kutusu', 'Dosya atma ve çöp kutusunu boşaltma'],
+  ['dialogs', 'Onay pencereleri', 'Soru, onay, vazgeçme ve uyarı sesleri'],
+  ['ui', 'Ayarlar ve bildirimler', 'Bu penceredeki anahtarlar ve bildirim sesi'],
+]
+
+const SOUND_TESTS: [SoundEvent, string][] = [
+  ['hover', 'Üzerine gelme'], ['click', 'Tıklama'], ['launch', 'Açılış'], ['drop', 'Bırakma'], ['remove', 'Silme (puf)'], ['dockShow', 'Dock gelir'], ['dockHide', 'Dock gider'],
+  ['windowOpen', 'Pencere açılır (cin)'], ['windowClose', 'Pencere kapanır (cin)'], ['menuOpen', 'Menü açılır'], ['menuPick', 'Menü seçimi'],
+  ['trashDrop', 'Çöpe atma'], ['trashEmpty', 'Çöp boşaltma'], ['confirmOpen', 'Soru'], ['accept', 'Onay'], ['cancel', 'Vazgeç'], ['warn', 'Uyarı'], ['error', 'Hata'], ['toggle', 'Anahtar'], ['notify', 'Bildirim'],
+]
+
+function SoundTab({ s, set }: { s: DockSettings; set: Update }) {
+  useEffect(() => initSound(), [])
+  const toggleGroup = (g: SoundGroup, on: boolean) => set({ soundGroups: on ? [...s.soundGroups, g] : s.soundGroups.filter((x) => x !== g) })
+  return (
+    <Pages id="sound">
+      <Card title="Genel" hint="Sesler uygulamanın kendi içinde üretilir; ses dosyası gerekmez. Windows'un genel sesine ve ses karıştırıcısına bağlıdır.">
+        <Row label="Sesleri aç"><Switch label="Sesleri aç" value={s.soundEnabled} onChange={(soundEnabled) => set({ soundEnabled })} /></Row>
+        <Row label="Ses düzeyi"><Slider value={s.soundVolume} min={0} max={100} unit="%" onChange={(soundVolume) => set({ soundVolume })} /></Row>
+        <Row label="Ses stili" hint="Aynı olaylar, farklı bir karakterle çalar">
+          <Select<SoundTheme> value={s.soundTheme} onChange={(soundTheme) => { set({ soundTheme }); previewSound('click', soundTheme, s.soundVolume) }} options={(Object.keys(SOUND_THEMES) as SoundTheme[]).map((k): [SoundTheme, string] => [k, SOUND_THEMES[k].label])} />
+        </Row>
+      </Card>
+      <Card tab="Olaylar" title="Hangi olaylarda ses çalsın">
+        {SOUND_GROUPS.map(([group, label, hint]) => (
+          <Row key={group} label={label} hint={hint}><Switch label={label} value={s.soundGroups.includes(group)} onChange={(on) => toggleGroup(group, on)} /></Row>
+        ))}
+      </Card>
+      <Card tab="Dene" title="Sesleri dene" hint="Her ses seçili stille ve düzeyle çalar; olay kapalı olsa bile buradan dinleyebilirsin.">
+        <div className="st-row-inline" style={{ flexWrap: 'wrap' }}>
+          {SOUND_TESTS.map(([event, label]) => (
+            <button key={event} className="st-btn" title={SOUND_GROUPS.find(([g]) => g === SOUND_GROUP_OF[event])?.[1]} onClick={() => previewSound(event, s.soundTheme, s.soundVolume)}><Icon name="play" size={13} />{label}</button>
+          ))}
+        </div>
+      </Card>
+    </Pages>
+  )
+}
+
 // ---- Items and widgets ----
 
 function ItemsTab() {
@@ -774,6 +825,7 @@ export default function SettingsView() {
     })
   }
   useEffect(() => {
+    initSound()
     invoke('settings:get').then(setSettings)
   }, [])
   useEvent('settings:changed', setSettings)
@@ -820,6 +872,7 @@ export default function SettingsView() {
           {tab === 'items' && <ItemsTab />}
           {tab === 'wheel' && <WheelTab />}
           {tab === 'tweaks' && <TweaksTab />}
+          {tab === 'sound' && <SoundTab s={settings} set={set} />}
           {tab === 'widgets' && <WidgetsTab />}
           {tab === 'general' && <GeneralTab s={settings} set={set} />}
         </div>

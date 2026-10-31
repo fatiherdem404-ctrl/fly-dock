@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { invoke, useActiveTheme } from '@/api'
 import Icon, { IconName } from '@/icons'
 import type { DockSettings, MenuItemView } from '@/shared/types'
+import { initSound, playSound } from '@/sound'
 
 /** The dock's context menu: glass panel, icon per entry, grows out of the corner the pointer opened it at. */
 export default function MenuView({ origin }: { origin: string }) {
@@ -10,6 +11,8 @@ export default function MenuView({ origin }: { origin: string }) {
   const [closing, setClosing] = useState(false)
   const pending = useRef<(() => void) | null>(null)
   useEffect(() => {
+    initSound()
+    setTimeout(() => playSound('menuOpen'), 60)
     invoke('menu:items').then(setItems)
     invoke('settings:get').then(setSettings)
   }, [])
@@ -40,7 +43,7 @@ export default function MenuView({ origin }: { origin: string }) {
           <hr key={i} />
         ) : (
           <button key={i} className={`menu__item${item.danger ? ' menu__item--danger' : ''}`} disabled={item.disabled} style={{ animationDelay: `${i * 14}ms` }}
-            onClick={() => leave(() => invoke('menu:pick', i))}>
+            onClick={() => { playSound('menuPick'); leave(() => invoke('menu:pick', i)) }}>
             <span className="menu__icon">{item.icon && <Icon name={item.icon as IconName} size={16} />}</span>
             <span className="menu__label">{item.label}</span>
             {item.checked && <Icon name="check" size={14} style={{ color: 'var(--accent)' }} />}

@@ -2,6 +2,7 @@ import { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { invoke, useActiveTheme } from '@/api'
 import { speedToMs } from '@/physics'
 import type { DockSettings } from '@/shared/types'
+import { initSound, playSound } from '@/sound'
 
 /**
  * Shell of a dock window (folder, group, gear menu): grows out of the dock icon with the chosen animation,
@@ -15,10 +16,13 @@ export default function Panel({ children, onSettings }: { children: ReactNode; o
   const origin = `${Number(query.get('ox') ?? 0) - 10}px ${Number(query.get('oy') ?? 0) - 10}px`
 
   useEffect(() => {
+    initSound()
+    const open = setTimeout(() => playSound('windowOpen'), 60)
     invoke('settings:get').then((s) => {
       setSettings(s)
       onSettings?.(s)
     })
+    return () => clearTimeout(open)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   useActiveTheme(settings?.theme)
@@ -27,6 +31,7 @@ export default function Panel({ children, onSettings }: { children: ReactNode; o
   const close = useCallback(() => {
     if (closing) return
     setClosing(true)
+    playSound('windowClose')
     timer.current = setTimeout(() => invoke('stack:close'), settings ? Math.min(speedToMs(settings.speed, settings.speedMs) * 0.6, 420) : 200)
   }, [closing, settings])
   useEffect(() => () => clearTimeout(timer.current), [])
