@@ -31,6 +31,7 @@ import { createTweakEngine, realRegistry, TWEAKS } from './tweaks'
 import { runElevated } from './elevated'
 import { pickTexture, readTexture, removeTexture, textureBytes, storeTexture } from './textures'
 import { store } from './store'
+import { listPlaces, addPlace, placeIcon } from './places'
 import { popupMenu, menuItemsForRenderer, pickMenuItem, closeMenu, MenuSpec } from './contextMenu'
 import { initWidgets, addWidget, removeWidget, updateWidget, moveWidget, systemStats, weatherFor, nowPlaying, disposeWidgets } from './widgets'
 import type { DockItem, DockSettings, StackEntry } from '../src/shared/types'
@@ -248,9 +249,7 @@ function showMenu(_e: Electron.IpcMainInvokeEvent, payload: { kind: 'empty' | 'i
     add('Program ekle…', 'plus', () => pickAndAdd(['openFile'], [{ name: 'Programlar', extensions: ['exe', 'lnk'] }]), { disabled: locked })
     add('Klasör ekle…', 'folder', () => pickAndAdd(['openDirectory']), { disabled: locked })
     add('Yeni grup', 'group', () => createGroup(), { disabled: locked })
-    add('Kontrol paneli ekle', 'controlpanel', () => addSpecial('wheel', 'Kontrol paneli'), { disabled: locked || getItems().some((i) => i.type === 'wheel') })
-    add('Güç menüsü ekle', 'power', () => addSpecial('power', 'Güç'), { disabled: locked || getItems().some((i) => i.type === 'power') })
-    add('Başlat düğmesi ekle', 'play', () => addStartButton(), { disabled: locked || getItems().some((i) => i.type === 'start') })
+    add('Hazır öğe ekle…', 'apps', showPlacesMenu, { disabled: locked })
     add('Ayraç ekle', 'minus', addSeparator, { disabled: locked })
   }
   separator()
@@ -258,6 +257,16 @@ function showMenu(_e: Electron.IpcMainInvokeEvent, payload: { kind: 'empty' | 'i
   add('Otomatik gizle', 'eyeOff', () => applySettings({ autoHide: !getSettings().autoHide }), { checked: getSettings().autoHide })
   add('Simgeleri kilitle', 'lock', () => applySettings({ lockItems: !locked }), { checked: locked })
   add('Çıkış', 'power', () => app.quit(), { danger: true })
+  popupMenu(specs)
+}
+
+const PLACE_MENU_ICON: Record<string, string> = { computer: 'monitor', profile: 'heart', network: 'network', controlpanel: 'controlpanel', trash: 'trash', power: 'power', start: 'play' }
+
+/** A second menu with the ready-made items the dock does not have yet (it replaces the first one at the pointer). */
+function showPlacesMenu() {
+  const missing = listPlaces().filter((p) => !p.added)
+  const specs: MenuSpec[] = missing.map((p) => ({ label: p.label, icon: PLACE_MENU_ICON[p.id] ?? 'folder', action: () => void addPlace(p.id) }))
+  if (specs.length === 0) specs.push({ label: 'Hepsi zaten dockta', icon: 'check', action: () => {}, disabled: true })
   popupMenu(specs)
 }
 
@@ -285,6 +294,9 @@ function registerIpc() {
   handle('items:remove', (_e, id) => removeItem(id))
   handle('items:update', (_e, id, patch) => updateItem(id, patch))
   handle('items:activate', (_e, id) => activateItem(id, showStackAtCursor))
+  handle('places:list', () => listPlaces())
+  handle('places:add', (_e, id) => addPlace(id))
+  handle('places:icon', (_e, id) => placeIcon(id))
   handle('items:icon', (_e, id) => {
     const item = visibleItems().find((i) => i.id === id)
     return item ? iconForItem(item) : null

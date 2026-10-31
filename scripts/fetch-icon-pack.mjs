@@ -11,7 +11,7 @@ const RAW = 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main'
 const E = (folder, stem = folder.toLowerCase().replace(/ /g, '_')) => [folder, stem]
 const KEYS = {
   folder: E('File folder'), file: E('Page facing up'), trash: E('Wastebasket'), wheel: E('Control knobs'), power: E('High voltage'), group: E('Card file box'),
-  mycomputerfolder: E('Laptop'), documents: E('Open file folder'), belgeler: E('Open file folder'), downloads: E('Package'), indirilenler: E('Package'),
+  mycomputerfolder: E('Laptop'), profile: E('Bust in silhouette'), networkplacesfolder: E('Globe with meridians'), desktop: E('Desktop computer'), documents: E('Open file folder'), belgeler: E('Open file folder'), downloads: E('Package'), indirilenler: E('Package'),
   pictures: E('Framed picture'), resimler: E('Framed picture'), videos: E('Television'), videolar: E('Television'), music: E('Musical note'),
   notepad: E('Memo'), calc: E('Abacus'), mspaint: E('Artist palette'), explorer: E('File folder'), cmd: E('Keyboard'), powershell: E('Keyboard'), wt: E('Keyboard'),
   taskmgr: E('Bar chart'), regedit: E('Wrench'), charmap: E('Input symbols'), magnify: E('Magnifying glass tilted left'), snippingtool: E('Scissors'),

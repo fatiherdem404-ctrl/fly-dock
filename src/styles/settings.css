@@ -333,3 +333,12 @@ html[data-view='settings'] ::-webkit-scrollbar-thumb:hover { background: color-m
   .st-row__control { justify-content: flex-start; }
   .st-page__head p { display: none; }
 }
+
+/* ready-made items */
+.st-places { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.st-place { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--fill); color: inherit; font: inherit; cursor: pointer; text-align: center; transition: background 120ms, transform 120ms; }
+.st-place:hover:not(:disabled) { background: var(--fill-hover, var(--fill)); transform: translateY(-1px); }
+.st-place:disabled { opacity: 0.5; cursor: default; }
+.st-place img, .st-place span { width: 48px; height: 48px; object-fit: contain; }
+.st-place b { font-size: 12.5px; font-weight: 600; }
+.st-place small { font-size: 11px; color: var(--muted, inherit); opacity: 0.75; }

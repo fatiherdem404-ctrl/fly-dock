@@ -183,6 +183,18 @@ try {
     await invoke('stack:close')
   })
 
+  await check('ready-made places are added once, before the recycle bin', async () => {
+    const before = (await invoke('places:list')).find((p) => p.id === 'network')
+    assert.equal(before.added, false, 'network is not in the test dock yet')
+    await invoke('places:add', 'network')
+    const items = await invoke('places:add', 'network')
+    const net = items.filter((i) => i.targetPath === 'shell:NetworkPlacesFolder')
+    assert.equal(net.length, 1, 'asking twice adds it once')
+    assert.ok(items.findIndex((i) => i.id === net[0].id) < items.findIndex((i) => i.type === 'trash'), 'it goes before the recycle bin')
+    await invoke('items:remove', net[0].id)
+    assert.equal(typeof (await invoke('places:icon', 'network')), 'string', 'it has a picture')
+  })
+
   await check('the power menu is a full-screen overlay and asks twice before ending the session', async () => {
     await invoke('items:activate', 'power1')
     const page = await until(async () => (await pages()).find((p) => p.url.includes('#/power')), 'power window')

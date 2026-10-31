@@ -165,6 +165,16 @@ export function addSpecial(type: 'wheel' | 'power', label: string): DockItem[] {
   return commit(next)
 }
 
+/** Puts a finished item before the recycle bin (or at the end), or first when it is the start button. */
+export function addItem(item: DockItem): DockItem[] {
+  const items = getItems()
+  if (item.type === 'start') return commit([item, ...items])
+  const trashAt = items.findIndex((i) => i.type === 'trash')
+  const next = [...items]
+  next.splice(item.type === 'trash' || trashAt < 0 ? next.length : trashAt, 0, item)
+  return commit(next)
+}
+
 export function addStartButton(): DockItem[] {
   const items = getItems()
   if (items.some((i) => i.type === 'start')) return items

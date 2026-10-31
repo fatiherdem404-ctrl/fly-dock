@@ -40,15 +40,19 @@ function Tile({ icon, selected, onPick }: { icon: LibraryIcon; selected: boolean
 export default function IconLibrary({ onPick, selected }: { onPick: (file: string, preview?: string) => void; selected?: string | null }) {
   const [data, setData] = useState<{ icons: LibraryIcon[]; folders: string[] } | null>(null)
   const [query, setQuery] = useState('')
-  const [source, setSource] = useState('')
+  // '' = every source; null = not chosen yet, which starts on the active icon pack so packs do not get mixed up
+  const [chosen, setSource] = useState<string | null>(null)
+  const [activePack, setActivePack] = useState('')
   const [shown, setShown] = useState(PAGE)
   const reload = () => invoke('library:list').then(setData)
   useEffect(() => {
     reload()
+    Promise.all([invoke('settings:get'), invoke('packs:list')]).then(([s, packs]) => setActivePack(packs.find((p) => p.type === 'icons' && p.id === s.iconPack)?.name ?? ''))
   }, [])
   useEvent('themes:changed', () => void reload())
 
   const sources = useMemo(() => [...new Set((data?.icons ?? []).map((i) => i.source))], [data])
+  const source = chosen ?? (sources.includes(activePack) ? activePack : '')
   const filtered = useMemo(() => {
     const q = query.trim().toLocaleLowerCase('tr')
     return (data?.icons ?? []).filter((i) => (!source || i.source === source) && (!q || i.name.toLocaleLowerCase('tr').includes(q)))
@@ -71,8 +75,8 @@ export default function IconLibrary({ onPick, selected }: { onPick: (file: strin
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Simge ara…" spellCheck={false} />
         </label>
         {sources.length > 1 && (
-          <select className="iconlib__select" value={source} onChange={(e) => setSource(e.target.value)} aria-label="Kaynak">
-            <option value="">Tüm kaynaklar</option>
+          <select className="iconlib__select" value={source} onChange={(e) => setSource(e.target.value)} aria-label="Simge paketi">
+            <option value="">Tüm paketler ve klasörler</option>
             {sources.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         )}

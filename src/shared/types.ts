@@ -49,6 +49,13 @@ export interface DockItem {
   children?: string[]
 }
 
+/** A ready-made dock item the user can add from a list (My Computer, Documents, Network…). */
+export interface PlaceInfo {
+  id: string
+  label: string
+  added: boolean
+}
+
 export interface WheelEntry {
   id: string
   name: string
@@ -455,7 +462,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   launchAtLogin: false,
   toggleHotkey: 'Control+Alt+D',
   theme: 'glass-dark',
-  iconPack: 'fly-3d',
+  iconPack: 'fly-win11',
   themeDesk: true,
   wallpaperMode: 'off',
   wallpaperSingle: '',
@@ -477,6 +484,9 @@ export interface InvokeMap {
   'items:remove': { args: [id: string]; result: DockItem[] }
   'items:update': { args: [id: string, patch: Partial<Pick<DockItem, 'label' | 'hotkey' | 'customIconPath'>>]; result: DockItem[] }
   'items:activate': { args: [id: string]; result: void }
+  'places:list': { args: []; result: PlaceInfo[] }
+  'places:add': { args: [id: string]; result: DockItem[] }
+  'places:icon': { args: [id: string]; result: string | null }
   'items:icon': { args: [id: string]; result: string | null }
   'icon:path': { args: [path: string]; result: string | null }
   'settings:get': { args: []; result: DockSettings }
