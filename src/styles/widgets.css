@@ -1,6 +1,6 @@
 /*
  * Desktop widgets. Every widget is a card of a fixed design size drawn from the active theme's colours; the style
- * (glass, solid, accent, minimal) only changes which of those colours are used. The window around the card holds its
+ * (glass, solid, accent, minimal) only changes which of those colours are used. The window around the card has room for its
  * shadow, and the card scales as a whole (see WidgetFrame).
  */
 .widget {
@@ -13,13 +13,13 @@
   border-radius: calc(var(--radius) * 0.9);
   background: var(--surface);
   border: 1px solid var(--surface-border);
-  box-shadow: var(--shadow);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32), 0 1px 4px rgba(0, 0, 0, 0.25);
   color: var(--wc);
   font-family: var(--font);
   overflow: hidden;
   user-select: none;
 }
-html[data-view='widget'] .widget { position: absolute; left: 6px; top: 6px; }
+html[data-view='widget'] .widget { position: absolute; left: 36px; top: 36px; }
 
 .widget--solid { --wc: var(--panel-text); --wm: var(--panel-muted); --wl: color-mix(in srgb, var(--panel-text) 14%, transparent); background: var(--panel-bg); }
 .widget--accent {

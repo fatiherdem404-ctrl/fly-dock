@@ -46,7 +46,7 @@ export const widgetStyle = (options: WidgetOptions): WidgetStyle => {
 }
 
 /** The window around a widget: its size times the scale, plus room all around for the shadow. */
-export const WIDGET_MARGIN = 6
+export const WIDGET_MARGIN = 36
 export function widgetWindowSize(type: WidgetType, options: WidgetOptions): { width: number; height: number } {
   const base = widgetBase(type, options)
   const k = widgetScale(options)
