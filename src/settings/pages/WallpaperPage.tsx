@@ -26,7 +26,7 @@ export function WallpaperTab({ s, set }: { s: DockSettings; set: Update }) {
   const ownFile = s.wallpaperSingle && !s.wallpaperSingle.startsWith('live:') ? s.wallpaperSingle : ''
   return (
     <Pages id="wallpaper">
-      <Card icon="image" title="Duvar kâğıdı" hint="Duvar kâğıdı masaüstü simgelerinin arkasında, Windows’a hiçbir şey yazmadan gösterilir. Uygulamayı kapatınca kendi duvar kâğıdın geri gelir.">
+      <Card icon="image" tab="Kaynak" title="Duvar kâğıdı" hint="Duvar kâğıdı masaüstü simgelerinin arkasında, Windows’a hiçbir şey yazmadan gösterilir. Uygulamayı kapatınca kendi duvar kâğıdın geri gelir.">
         <Cards<WallpaperMode> size="m" value={s.wallpaperMode} onChange={(wallpaperMode) => set({ wallpaperMode })} options={[
           { id: 'off', label: 'Kapalı', hint: 'Windows’un kendi duvar kâğıdı kalır', preview: <Frame><span className="pv-offdesk"><Icon name="image" size={22} /></span></Frame> },
           { id: 'theme', label: 'Temadan gelsin', hint: 'Seçili temanın arka planı; tema değişince o da değişir', preview: theme ? <ThemeScene theme={theme} /> : <Frame>{null}</Frame> },
@@ -43,7 +43,7 @@ export function WallpaperTab({ s, set }: { s: DockSettings; set: Update }) {
         {info?.message && <Message text={info.message} error />}
       </Card>
       {s.wallpaperMode === 'single' && (
-        <Card icon="play" tab="Seçim" title="Canlı arka plan ya da dosya" hint="Hazır canlı sahnelerden birini seç ya da kendi resmini ya da videonu (mp4, webm) ver.">
+        <Card icon="play" tab="Kaynak" title="Canlı arka plan ya da dosya" hint="Hazır canlı sahnelerden birini seç ya da kendi resmini ya da videonu (mp4, webm) ver.">
           <Cards<string> size="m" value={s.wallpaperSingle} onChange={(wallpaperSingle) => set({ wallpaperSingle })} options={[
             ...LIVE_WALLPAPERS.map(([id, name, hint]) => ({ id: `live:${id}`, label: name, hint, preview: <Frame><LiveThumb id={id} /></Frame> })),
             ...(ownFile ? [{ id: ownFile, label: fileName(ownFile), hint: isVideo(ownFile) ? 'Video' : 'Resim', preview: <Frame><FileThumb path={ownFile} /></Frame> }] : []),
@@ -54,7 +54,7 @@ export function WallpaperTab({ s, set }: { s: DockSettings; set: Update }) {
         </Card>
       )}
       {s.wallpaperMode === 'folder' && (
-        <Card icon="folder" tab="Klasör" title="Klasörden slayt" hint="Klasördeki (ve bir alt klasördeki) resim ve videolar belli aralıkla birbirine karışarak değişir.">
+        <Card icon="folder" tab="Kaynak" title="Klasörden slayt" hint="Klasördeki (ve bir alt klasördeki) resim ve videolar belli aralıkla birbirine karışarak değişir.">
           <div className="st-row-inline">
             <button className="st-btn st-btn--accent" onClick={pickFolder}><Icon name="folder" size={15} />{s.wallpaperFolder ? 'Başka klasör seç…' : 'Klasör seç…'}</button>
             {s.wallpaperFolder && <span className="st-muted" title={s.wallpaperFolder}>{fileName(s.wallpaperFolder)}{info ? ` · ${info.folderCount} dosya` : ''}</span>}

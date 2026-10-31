@@ -8,7 +8,7 @@ import { CurvePreview, HoverPreview, IndicatorPreview, LaunchPreview, ShowPrevie
 export function MotionTab({ s, set, preview }: { s: DockSettings; set: Update; preview: () => void }) {
   return (
     <Pages id="motion">
-      <Card icon="clock" title="Hız" hint="Tüm dock animasyonlarının süresi ve hareketin karakteri">
+      <Card icon="clock" tab="Hız" title="Hız" hint="Tüm dock animasyonlarının süresi ve hareketin karakteri">
         <Row icon="play" label="Hız"><Segmented<SpeedPreset> value={s.speed} onChange={(speed) => set({ speed })} options={[['fast', 'Hızlı'], ['medium', 'Orta'], ['slow', 'Yavaş'], ['custom', 'Özel']]} /></Row>
         {s.speed === 'custom' && <Row icon="clock" label="Süre"><Slider value={s.speedMs} min={100} max={1500} step={10} unit=" ms" onChange={(speedMs) => set({ speedMs })} /></Row>}
         <Row icon="motion" label="Hareket tipi" hint="Grafik: bir değerin zamanla nasıl değiştiği" />
@@ -19,14 +19,14 @@ export function MotionTab({ s, set, preview }: { s: DockSettings; set: Update; p
           { id: 'linear', label: 'Düz', hint: 'Sabit hızla', preview: <CurvePreview curve="linear" /> },
         ]} />
       </Card>
-      <Card icon="cursor" title="Fare üzerine gelince" hint="Fare simgelerin üstünden geçerken ne olsun">
+      <Card icon="cursor" tab="Simge efektleri" title="Fare üzerine gelince" hint="Fare simgelerin üstünden geçerken ne olsun">
         <Cards<HoverAnimation> value={s.hoverAnimation} onChange={(hoverAnimation) => set({ hoverAnimation })} options={[
           { id: 'zoom', label: 'Büyüme', hint: 'Simge büyür', preview: <HoverPreview kind="zoom" /> },
           { id: 'lift', label: 'Yükselme', hint: 'Simge raftan kalkar', preview: <HoverPreview kind="lift" /> },
           { id: 'wave', label: 'Dalga', hint: 'Büyür ve kalkar', preview: <HoverPreview kind="wave" /> },
         ]} />
       </Card>
-      <Card icon="open" title="Uygulama başlatma" hint="Bir programı başlatınca simgenin hareketi">
+      <Card icon="open" tab="Simge efektleri" title="Uygulama başlatma" hint="Bir programı başlatınca simgenin hareketi">
         <Cards<LaunchAnimation> size="s" value={s.launchAnimation} onChange={(launchAnimation) => set({ launchAnimation })} options={[
           { id: 'bounce', label: 'Sıçrama', hint: 'İki kez zıplar', preview: <LaunchPreview kind="bounce" /> },
           { id: 'hop', label: 'Atlama', hint: 'Tek zıplama', preview: <LaunchPreview kind="hop" /> },
@@ -35,7 +35,7 @@ export function MotionTab({ s, set, preview }: { s: DockSettings; set: Update; p
         ]} />
         <div className="st-row-inline"><button className="st-btn" onClick={preview}><Icon name="play" size={14} />Üstteki canlı dock’ta dene</button></div>
       </Card>
-      <Card icon="check" title="Çalışan uygulama göstergesi" hint="Açık programın simgesinin altındaki işaret">
+      <Card icon="check" tab="Simge efektleri" title="Çalışan uygulama göstergesi" hint="Açık programın simgesinin altındaki işaret">
         <Cards<IndicatorStyle> size="s" value={s.indicatorStyle} onChange={(indicatorStyle) => set({ indicatorStyle })} options={[
           { id: 'dot', label: 'Nokta', preview: <IndicatorPreview kind="dot" /> },
           { id: 'bar', label: 'Çubuk', preview: <IndicatorPreview kind="bar" /> },
@@ -43,14 +43,14 @@ export function MotionTab({ s, set, preview }: { s: DockSettings; set: Update; p
           { id: 'ring', label: 'Halka', preview: <IndicatorPreview kind="ring" /> },
         ]} />
       </Card>
-      <Card icon="dock" title="Dock giriş ve çıkışı" hint="Otomatik gizleme açıkken dock’un ekrana gelişi">
+      <Card icon="dock" tab="Dock ve pencereler" title="Dock giriş ve çıkışı" hint="Otomatik gizleme açıkken dock’un ekrana gelişi">
         <Cards<ShowAnimation> size="s" value={s.showAnimation} onChange={(showAnimation) => set({ showAnimation })} options={[
           { id: 'slide', label: 'Kayma', preview: <ShowPreview kind="slide" /> },
           { id: 'fade', label: 'Solma', preview: <ShowPreview kind="fade" /> },
           { id: 'scale', label: 'Ölçek', preview: <ShowPreview kind="scale" /> },
         ]} />
       </Card>
-      <Card icon="window" title="Dock pencereleri" hint="Klasör, grup ve çark penceresinin açılış ve kapanış efekti">
+      <Card icon="window" tab="Dock ve pencereler" title="Dock pencereleri" hint="Klasör, grup ve çark penceresinin açılış ve kapanış efekti">
         <Cards<WindowAnimation> size="s" value={s.windowAnimation} onChange={(windowAnimation) => set({ windowAnimation })} options={[
           { id: 'genie', label: 'Cin', hint: 'Simgeden akarak açılır, geri çekilir', preview: <WindowAnimPreview kind="genie" /> },
           { id: 'scale', label: 'Büyüme', preview: <WindowAnimPreview kind="scale" /> },

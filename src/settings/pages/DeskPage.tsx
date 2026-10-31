@@ -108,7 +108,7 @@ export function CustomTexturePrompt({ s, set }: { s: DockSettings; set: Update }
 export function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
   return (
     <Pages id="desk">
-      <Card icon="desk" title="Raf stili" hint="Simgelerin üzerinde durduğu zemin. Seçince o stilin en iyi derinliği ve saydamlığı uygulanır, sonra ayrıca değiştirebilirsin.">
+      <Card icon="desk" tab="Raf" title="Raf stili" hint="Simgelerin üzerinde durduğu zemin. Seçince o stilin en iyi derinliği ve saydamlığı uygulanır, sonra ayrıca değiştirebilirsin.">
         <Choice<DeskStyle>
           value={s.deskStyle}
           onChange={(deskStyle) => set({ deskStyle, deskDepth: DESK_PRESETS[deskStyle].depth, deskOpacity: DESK_PRESETS[deskStyle].opacity, deskEdge: DESK_PRESETS[deskStyle].edge, deskTexScale: DESK_PRESETS[deskStyle].scale, deskRadTL: DESK_RADII[deskStyle][0], deskRadTR: DESK_RADII[deskStyle][0], deskRadBL: DESK_RADII[deskStyle][1], deskRadBR: DESK_RADII[deskStyle][1] })}
@@ -118,7 +118,7 @@ export function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
         </Choice>
         {s.deskStyle === 'custom' && <CustomTexturePrompt s={s} set={set} />}
       </Card>
-      <Card icon="theme" title="Görünüm">
+      <Card icon="theme" tab="Raf" title="Görünüm">
         <Row label="Renk tonu" hint="Boşsa temanın rengi kullanılır">
           <div className="st-color">
             <input type="color" value={/^#[0-9a-f]{6}$/i.test(s.deskColor) ? s.deskColor : '#4da3ff'} onChange={(e) => set({ deskColor: e.target.value })} />
@@ -131,7 +131,7 @@ export function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
         <Row label="Raf simgelerle büyüsün" hint="Kapalıyken simgeler raftan taşar (macOS gibi)"><Switch label="Raf büyümesi" value={s.shelfGrows} onChange={(shelfGrows) => set({ shelfGrows })} /></Row>
       </Card>
       {(s.deskStyle === 'custom' || PATTERNED.includes(s.deskStyle)) && <TextureCard tab="Doku" s={s} set={set} />}
-      <Card icon="maximize" title="Köşe yuvarlaklığı" hint="Rafın dört köşesi ayrı ayrı. Alt köşeler yuvarlanınca ön yüzün kalınlığı da o köşeyle birlikte yuvarlanır.">
+      <Card icon="maximize" tab="Şekil" title="Köşe yuvarlaklığı" hint="Rafın dört köşesi ayrı ayrı. Alt köşeler yuvarlanınca ön yüzün kalınlığı da o köşeyle birlikte yuvarlanır.">
         <Row label="Hazır şekiller">
           <div className="st-row-inline" style={{ margin: 0 }}>
             <button className="st-btn" onClick={() => set(allRadii(60))}>Hap</button>
@@ -146,7 +146,7 @@ export function DeskTab({ s, set }: { s: DockSettings; set: Update }) {
           </Row>
         ))}
       </Card>
-      <Card icon="items" title="Raf boşlukları" hint="Rafın kenarları ile simgeler arasındaki boşluk, ekranın dört yanı için ayrı. Pencere bu boşluklara göre kendiliğinden büyür.">
+      <Card icon="items" tab="Şekil" title="Raf boşlukları" hint="Rafın kenarları ile simgeler arasındaki boşluk, ekranın dört yanı için ayrı. Pencere bu boşluklara göre kendiliğinden büyür.">
         <Row label="Hepsini bağla" hint="Bir kaydırıcıyı oynatınca dördü birlikte değişir"><Switch label="Hepsini bağla" value={s.deskPadLinked} onChange={(deskPadLinked) => set(deskPadLinked ? { deskPadLinked, deskPadTop: s.deskPadTop, deskPadBottom: s.deskPadTop, deskPadLeft: s.deskPadTop, deskPadRight: s.deskPadTop } : { deskPadLinked })} /></Row>
         {PAD_KEYS.map(([key, label]) => (
           <Row key={key} label={label}>

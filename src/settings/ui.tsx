@@ -24,8 +24,10 @@ export function Card({ title, hint, icon, children }: { title: string; hint?: st
 
 /** Groups of a page as sub-tabs: each child's `tab` (or `title`) names its tab, only the chosen one is shown. */
 export function Pages({ id, children }: { id: string; children: ReactNode }) {
-  const pages = Children.toArray(children).filter(isValidElement) as ReactElement<{ title?: string; tab?: string }>[]
-  const label = (p: ReactElement<{ title?: string; tab?: string }>) => p.props.tab ?? p.props.title ?? ''
+  type PageEl = ReactElement<{ title?: string; tab?: string }>
+  const pages = Children.toArray(children).filter(isValidElement) as PageEl[]
+  const label = (p: PageEl) => p.props.tab ?? p.props.title ?? ''
+  const labels = [...new Set(pages.map(label))]
   const key = 'settings.sub.' + id
   const [chosen, setChosen] = useState(() => {
     try {
@@ -42,18 +44,18 @@ export function Pages({ id, children }: { id: string; children: ReactNode }) {
       /* private window: the choice just is not remembered */
     }
   }
-  const current = pages.find((p) => label(p) === chosen) ?? pages[0]
+  const current = labels.includes(chosen) ? chosen : labels[0]
   if (!current) return null
   return (
     <>
-      {pages.length > 1 && (
+      {labels.length > 1 && (
         <div className="st-subtabs" role="tablist">
-          {pages.map((p) => (
-            <button key={label(p)} role="tab" aria-selected={p === current} onClick={() => pick(label(p))}>{label(p)}</button>
+          {labels.map((name) => (
+            <button key={name} role="tab" aria-selected={name === current} onClick={() => pick(name)}>{name}</button>
           ))}
         </div>
       )}
-      <div key={label(current)} className="st-subpage">{current}</div>
+      <div key={current} className="st-subpage">{pages.filter((p) => label(p) === current)}</div>
     </>
   )
 }

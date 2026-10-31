@@ -20,7 +20,7 @@ export function TweaksTab() {
   const nameOf = (id: string) => tweaks?.find((t) => t.id === id)?.name ?? id
   return (
     <Pages id="tweaks">
-      <Card icon="tools" title="Güvenli ayarlar" hint="Çoğu ayar yalnızca kullanıcı kaydında (HKCU) değişir. Değiştirmeden önce eski değer saklanır; kapatınca tam o değer geri gelir.">
+      <Card icon="tools" tab="Ayarlar" title="Güvenli ayarlar" hint="Çoğu ayar yalnızca kullanıcı kaydında (HKCU) değişir. Değiştirmeden önce eski değer saklanır; kapatınca tam o değer geri gelir.">
         <Message text="Yönetici yazan ayarlar yönetici onayı ister (Windows'un kendi onay penceresi açılır); uygulama kendisi hiçbir zaman yönetici çalışmaz. Hizmetleri (SysMain, telemetri, Windows Search) kapatan ayarlar henüz yok. Defender, Windows Update, güvenlik duvarı ve kullanıcı hesaplarına hiç dokunulmaz." />
         {categories.map((category) => (
           <div key={category}>
@@ -40,7 +40,7 @@ export function TweaksTab() {
         </div>
       </Card>
       {(log ?? []).length > 0 && (
-        <Card icon="list" title="Değişiklik kaydı">
+        <Card icon="list" tab="Ayarlar" title="Değişiklik kaydı">
           <div className="st-log">
             {[...(log ?? [])].reverse().slice(0, 12).map((l, i) => (
               <div key={i}>{new Date(l.at).toLocaleString('tr-TR')} — {nameOf(l.id)}: {l.action === 'apply' ? 'açıldı' : 'geri alındı'}</div>

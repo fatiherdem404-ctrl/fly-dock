@@ -30,13 +30,13 @@ export function SoundTab({ s, set }: { s: DockSettings; set: Update }) {
   const toggleGroup = (g: SoundGroup, on: boolean) => set({ soundGroups: on ? [...s.soundGroups, g] : s.soundGroups.filter((x) => x !== g) })
   return (
     <Pages id="sound">
-      <Card icon="sound" title="Genel" hint="Sesler uygulamanın kendi içinde üretilir; ses dosyası gerekmez. Windows'un genel sesine ve ses karıştırıcısına bağlıdır.">
+      <Card icon="sound" tab="Sesler" title="Genel" hint="Sesler uygulamanın kendi içinde üretilir; ses dosyası gerekmez. Windows'un genel sesine ve ses karıştırıcısına bağlıdır.">
         <Row icon="power" label="Sesleri aç"><Switch label="Sesleri aç" value={s.soundEnabled} onChange={(soundEnabled) => set({ soundEnabled })} /></Row>
         <Row icon="sound" label="Ses düzeyi"><Slider value={s.soundVolume} min={0} max={100} unit="%" onChange={(soundVolume) => set({ soundVolume })} /></Row>
         <Row icon="motion" label="Ses stili" hint="Aynı olaylar, farklı bir karakterle çalar. Karta tıklayınca duyarsın." />
         <Cards<SoundTheme> size="s" value={s.soundTheme} onChange={(soundTheme) => { set({ soundTheme }); previewSound('click', soundTheme, s.soundVolume) }} options={(Object.keys(SOUND_THEMES) as SoundTheme[]).map((id) => ({ id, label: SOUND_THEMES[id].label, preview: <Frame><svg viewBox="0 0 100 60" className="pv-svg" aria-hidden="true"><path d="M6 30H94" className="pv-svg__axis" /><path d={wavePath(id)} className="pv-svg__line" /></svg></Frame> }))} />
       </Card>
-      <Card icon="list" tab="Olaylar" title="Hangi olaylarda ses çalsın">
+      <Card icon="list" tab="Sesler" title="Hangi olaylarda ses çalsın">
         {SOUND_GROUPS.map(([group, label, hint]) => (
           <Row key={group} label={label} hint={hint}><Switch label={label} value={s.soundGroups.includes(group)} onChange={(on) => toggleGroup(group, on)} /></Row>
         ))}

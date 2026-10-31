@@ -33,7 +33,7 @@ export function DockTab({ s, set }: { s: DockSettings; set: Update }) {
   const horizontal = s.position === 'bottom' || s.position === 'top'
   return (
     <Pages id="dock">
-      <Card icon="location" title="Konum" hint="Dock'u ekranın hangi kenarına koyacağını, kenara uzaklığını ve kenar boyunca yerini seç. Değişiklikler anında dock'a uygulanır.">
+      <Card icon="location" tab="Konum" title="Konum" hint="Dock'u ekranın hangi kenarına koyacağını, kenara uzaklığını ve kenar boyunca yerini seç. Değişiklikler anında dock'a uygulanır.">
         <PositionPicker value={s.position} onChange={(position) => set({ position })} />
         <Row icon="arrowDown" label="Kenardan uzaklık" hint="Dock ile ekran kenarı arasındaki boşluk">
           <Slider value={s.edgeOffset} min={0} max={160} unit=" px" onChange={(edgeOffset) => set({ edgeOffset })} />
@@ -47,7 +47,7 @@ export function DockTab({ s, set }: { s: DockSettings; set: Update }) {
         </Row>
       </Card>
 
-      <Card icon="dock" title="Simgeler ve büyüme" hint="İkonun kendi boyutu ile fareyle büyümesi ayrı ayarlardır.">
+      <Card icon="dock" tab="Simgeler" title="Simgeler ve büyüme" hint="İkonun kendi boyutu ile fareyle büyümesi ayrı ayarlardır.">
         <Row icon="maximize" label="Simge boyutu"><Slider value={s.iconSize} min={24} max={96} unit=" px" onChange={(iconSize) => set({ iconSize })} /></Row>
         <Row label="Simge aralığı"><Slider value={s.iconSpacing} min={0} max={32} unit=" px" onChange={(iconSpacing) => set({ iconSpacing })} /></Row>
         <Row icon="search" label="Fareyle büyütme"><Switch label="Büyütme" value={s.magnification} onChange={(magnification) => set({ magnification })} /></Row>
@@ -61,11 +61,11 @@ export function DockTab({ s, set }: { s: DockSettings; set: Update }) {
         )}
       </Card>
 
-      <Card icon="minus" title="Ayraç" hint="Dock'taki gruplar arasındaki çizgi. Otomatik seçeneği rafa ve temaya göre okunaklı olanı seçer: ahşap ve metalde oyuk, neonda ışıklı çubuk, camda net çizgi.">
+      <Card icon="minus" tab="Ayraç" title="Ayraç" hint="Dock'taki gruplar arasındaki çizgi. Otomatik seçeneği rafa ve temaya göre okunaklı olanı seçer: ahşap ve metalde oyuk, neonda ışıklı çubuk, camda net çizgi.">
         <Cards<SeparatorStyle> size="s" value={s.separatorStyle} onChange={(separatorStyle) => set({ separatorStyle })} options={([['auto', 'Otomatik'], ['line', 'Çizgi'], ['groove', 'Oyuk'], ['dots', 'Noktalı'], ['glow', 'Işıklı'], ['none', 'Yok']] as [SeparatorStyle, string][]).map(([id, label]) => ({ id, label, preview: <SepPreview kind={id === 'auto' ? separatorKind({ ...s, separatorStyle: 'auto' }) : id} /> }))} />
       </Card>
 
-      <Card icon="settings" tab="Ayraç ayrıntı" title="Ayraç ayrıntıları" hint="Seçtiğin görünümün üstüne uygulanır. Boş bıraktığın ayar rafa ve temaya göre otomatik kalır.">
+      <Card icon="settings" tab="Ayraç" title="Ayraç ayrıntıları" hint="Seçtiğin görünümün üstüne uygulanır. Boş bıraktığın ayar rafa ve temaya göre otomatik kalır.">
         <Row label="Kalınlık" hint="0 = görünümün kendi kalınlığı"><Slider value={s.sepThickness} min={0} max={16} format={(v) => (v === 0 ? 'otomatik' : `${v} px`)} onChange={(sepThickness) => set({ sepThickness })} /></Row>
         <Row label="Yükseklik" hint="Simge boyutunun yüzdesi"><Slider value={s.sepHeight} min={20} max={100} unit="%" onChange={(sepHeight) => set({ sepHeight })} /></Row>
         <Row label="Köşe yuvarlaklığı"><Slider value={s.sepRadius} min={0} max={8} unit=" px" onChange={(sepRadius) => set({ sepRadius })} /></Row>
@@ -92,7 +92,7 @@ export function DockTab({ s, set }: { s: DockSettings; set: Update }) {
         <Row label="Ayracı sıfırla"><button className="st-btn" onClick={() => set({ separatorStyle: 'auto', sepThickness: 0, sepHeight: 70, sepColor: '', sepRadius: 2, sepBorderL: 0, sepBorderR: 0, sepBorderLColor: '', sepBorderRColor: '' })}><Icon name="refresh" size={15} />Varsayılana dön</button></Row>
       </Card>
 
-      <Card icon="list" title="Etiketler" hint="Simgenin üstünde çıkan ad yazısı">
+      <Card icon="list" tab="Etiketler" title="Etiketler" hint="Simgenin üstünde çıkan ad yazısı">
         <Cards<LabelMode> size="s" value={s.labelMode} onChange={(labelMode) => set({ labelMode })} options={([['hover', 'Üzerine gelince'], ['always', 'Hep görünsün'], ['never', 'Hiç']] as [LabelMode, string][]).map(([id, label]) => ({ id, label, preview: <LabelPreview mode={id} /> }))} />
         {s.labelMode !== 'never' && (
           <>
@@ -102,7 +102,7 @@ export function DockTab({ s, set }: { s: DockSettings; set: Update }) {
         )}
       </Card>
 
-      <Card icon="settings" title="Davranış">
+      <Card icon="settings" tab="Davranış" title="Davranış">
         <Row icon="stack" label="Pencerelere göre konum" hint="Diğer pencerelerle dock arasındaki sıra" />
         <Cards<DockLayer> size="s" value={s.layer} onChange={(layer) => set({ layer })} options={[{ id: 'above', label: 'Üstte', hint: 'Hep önde', preview: <LayerPreview layer="above" /> }, { id: 'normal', label: 'Normal', hint: 'Pencereler kapatabilir', preview: <LayerPreview layer="normal" /> }, { id: 'below', label: 'Altta', hint: 'Masaüstü gibi', preview: <LayerPreview layer="below" /> }]} />
         <Row label="Çalışan programlar" hint="Sabitlenmemiş açık programlar ayraçtan sonra görünür"><Switch label="Çalışan programlar" value={s.showRunningApps} onChange={(showRunningApps) => set({ showRunningApps })} /></Row>
