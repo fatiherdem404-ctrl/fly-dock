@@ -51,4 +51,20 @@ throws(writeZip([file('pack.json', { type: 'theme', id: 'aa', name: 'x' }), file
 throws(writeZip([file('pack.json', { type: 'icons', id: 'aa', name: 'x' }), file('icons.json', { map: { a: 'missing.png' } })]), /not in the pack/)
 throws(Buffer.from('not a zip at all, definitely'), /not a zip/)
 
+// a theme can carry its shelf; only known settings with the right kind of value are kept
+const withDesk = (desk, extra = []) => writeZip([file('pack.json', { type: 'theme', id: 'shelf-theme', name: 'Shelf' }), file('theme.json', { vars: {}, desk }), ...extra])
+installPack(withDesk({ deskStyle: 'wood', deskDepth: 26, deskOpacity: 0.9, shelfGrows: false, notAShelfKey: 'dropped' }))
+const shelf = getTheme('shelf-theme').desk
+assert.equal(shelf.deskStyle, 'wood')
+assert.equal(shelf.deskDepth, 26)
+assert.equal(shelf.shelfGrows, false)
+assert.equal('notAShelfKey' in shelf, false, 'unknown keys never reach the settings')
+assert.equal(listInstalled('theme').find((p) => p.id === 'shelf-theme').hasDesk, true)
+assert.equal(listInstalled('theme').find((p) => p.id === 'test-theme').hasDesk, false)
+throws(withDesk({ deskStyle: 'not-a-style' }), /unknown shelf style/)
+throws(withDesk({ deskDepth: 'deep' }), /wrong kind/)
+throws(withDesk({ deskDepth: 99999 }), /out of range/)
+throws(withDesk({ deskColor: 'url(http://evil)' }), /colour/)
+throws(withDesk({}, [file('desk-texture.png', 'MZ this is not a picture')]), /not a valid picture/)
+
 console.log('packs: all checks passed')

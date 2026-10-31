@@ -21,7 +21,7 @@ import { builderKeys, pickBuilderFolder, createBuilderPack } from './packBuilder
 import { initDockWindows, syncDocks, setLayout, applyLayer, dockIsOnTop, isDockHidden, setFullscreenHidden, toggleDockVisibility, disposeDockWindows } from './dockWindows'
 import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN } from './windows'
 import {
-  importPackDialog, exportPackDialog, listThemes, createThemePack, listInstalled, builtinThemeInfos, getTheme, removePack, clearPackCaches,
+  importPackDialog, exportPackDialog, themeDeskSettings, listThemes, createThemePack, listInstalled, builtinThemeInfos, getTheme, removePack, clearPackCaches,
 } from './packs'
 import { showStack, showPanel, closeStack, readEntries, stackIsFocused, dialogJustClosed, setStackCapture } from './stackWindow'
 import { wheelEntries, runWheelEntry, setWheelState, addWheelEntry, removeWheelEntry, setWheelIcon } from './wheel'
@@ -129,8 +129,14 @@ function restartExplorer() {
   })
 }
 
-function applySettings(partial: Partial<DockSettings>): DockSettings {
+function applySettings(request: Partial<DockSettings>): DockSettings {
   const before = getSettings()
+  let partial = request
+  // choosing a theme also gives the dock the shelf that belongs to it
+  if (request.theme !== undefined && request.theme !== before.theme && (request.themeDesk ?? before.themeDesk)) {
+    const desk = themeDeskSettings(request.theme)
+    if (desk) partial = { ...request, ...desk }
+  }
   const next = updateSettings(partial)
   if (partial.launchAtLogin !== undefined) launchAtLogin(next.launchAtLogin)
   if (partial.toggleHotkey !== undefined) registerHotkeys()
@@ -297,8 +303,8 @@ function registerIpc() {
     await new Promise((r) => setTimeout(r, 200))
     return !menuIsOpen() && !confirmIsOpen() && !stackIsFocused() && !dialogJustClosed()
   })
-  handle('themes:create', (_e, name, author, vars) => {
-    const result = createThemePack(name, author, vars)
+  handle('themes:create', (_e, name, author, vars, withDesk) => {
+    const result = createThemePack(name, author, vars, withDesk === true ? getSettings() : null)
     if (result.ok) broadcast('themes:changed', null)
     return result
   })

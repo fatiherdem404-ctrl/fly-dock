@@ -500,7 +500,7 @@ function PackCards({ packs, activeId, onUse, type, onChanged }: { packs: PackInf
         {list.map((p) => (
           <div key={p.id} className="st-pack" data-active={activeId === p.id}>
             <b>{p.name}</b>
-            <small>{p.builtin ? 'Hazır' : p.author ?? 'Bilinmeyen yazar'}{p.version ? ` · ${p.version}` : ''}</small>
+            <small>{p.builtin ? 'Hazır' : p.author ?? 'Bilinmeyen yazar'}{p.version ? ` · ${p.version}` : ''}{p.hasDesk ? ' · raflı' : ''}</small>
             <div className="st-pack__actions">
               <button className="st-btn" onClick={() => onUse(p.id)}>Kullan</button>
               <button className="st-btn" onClick={() => act(() => invoke('packs:export', p.id), 'Dışa aktarıldı')}>Dışa aktar</button>
@@ -647,6 +647,7 @@ function ThemeBuilder({ packs, onMade }: { tab?: string; packs: PackInfo[]; onMa
   const [shadowKind, setShadowKind] = useState('strong')
   const [name, setName] = useState('')
   const [author, setAuthor] = useState('')
+  const [withDesk, setWithDesk] = useState(true)
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
   useEffect(() => {
     invoke('themes:get', base).then((t) => t && setVars(t.vars))
@@ -658,7 +659,7 @@ function ThemeBuilder({ packs, onMade }: { tab?: string; packs: PackInfo[]; onMa
     put({ shadow: shadowCss(kind, accent) })
   }
   const create = async () => {
-    const r = await invoke('themes:create', name, author, vars)
+    const r = await invoke('themes:create', name, author, vars, withDesk)
     setMessage({ text: r.ok ? `"${r.message}" oluşturuldu ve kullanılıyor. Dışa aktarmak için Temalar sekmesindeki listeyi kullan.` : r.message, error: !r.ok })
     if (r.ok && r.pack) onMade(r.pack.id)
   }
@@ -703,6 +704,7 @@ function ThemeBuilder({ packs, onMade }: { tab?: string; packs: PackInfo[]; onMa
           <Row label="Yazı tipi"><Select<string> value={vars.fontFamily} onChange={(fontFamily) => put({ fontFamily })} options={FONTS.some(([v]) => v === vars.fontFamily) ? FONTS : [[vars.fontFamily, 'Özel'], ...FONTS]} /></Row>
         </div>
       </div>
+      <Row label="Şu anki rafı da ekle" hint="Rafın stili, derinliği, köşeleri ve özel dokusu temayla birlikte kaydedilir; tema seçilince raf da değişir"><Switch label="Rafı da ekle" value={withDesk} onChange={setWithDesk} /></Row>
       <Row label="Tema adı"><input className="st-input" type="text" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Benim temam" /></Row>
       <Row label="Yapımcı" hint="İstersen boş bırak"><input className="st-input" type="text" value={author} maxLength={60} onChange={(e) => setAuthor(e.target.value)} /></Row>
       <div className="st-row-inline"><button className="st-btn st-btn--accent" disabled={!name.trim()} onClick={create}><Icon name="download" size={15} />Temayı oluştur ve kullan</button></div>
@@ -721,7 +723,8 @@ function ThemeTab({ s, set, kind }: { s: DockSettings; set: Update; kind: 'theme
   const vars = swatches[s.theme]
   return kind === 'theme' ? (
     <Pages id="themes">
-      <Card title="Temalar" hint="Renkler, cam ve yazı tipi. Tema dosyaları .flypack olarak içe ve dışa aktarılır.">
+      <Card title="Temalar" hint="Renkler, cam, yazı tipi ve istersen dock rafı. Tema dosyaları .flypack olarak içe ve dışa aktarılır; 'raflı' temalar rafıyla birlikte gelir.">
+        <Row label="Tema seçince rafını da uygula" hint="Kapalıyken yalnızca renkler değişir, rafın olduğu gibi kalır"><Switch label="Temanın rafını uygula" value={s.themeDesk} onChange={(themeDesk) => set({ themeDesk })} /></Row>
         <PackCards packs={packs ?? []} activeId={s.theme} onUse={(theme) => set({ theme })} type="theme" onChanged={refresh} />
         {vars && <div className="st-swatches">{[vars.surface, vars.accent, vars.indicator, vars.panelBg].map((c, i) => <i key={i} style={{ background: c }} />)}</div>}
       </Card>

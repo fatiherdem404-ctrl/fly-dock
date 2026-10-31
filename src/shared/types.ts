@@ -223,6 +223,8 @@ export interface DockSettings {
   // look
   theme: string
   iconPack: string
+  /** Choosing a theme also applies the shelf that comes with it. */
+  themeDesk: boolean
   /** Folders whose pictures show up in the icon picker. */
   iconFolders: string[]
 }
@@ -255,12 +257,24 @@ export interface ThemeVars {
   fontFamily: string
 }
 
+/** The shelf settings a theme can carry, so choosing a theme can give the dock its matching shelf. */
+export const DESK_KEYS = [
+  'deskStyle', 'deskColor', 'deskOpacity', 'deskDepth', 'deskEdge', 'shelfGrows',
+  'deskRadTL', 'deskRadTR', 'deskRadBL', 'deskRadBR', 'deskRadLinked',
+  'deskPadTop', 'deskPadBottom', 'deskPadLeft', 'deskPadRight', 'deskPadLinked',
+  'deskTexScale', 'deskTexMode', 'deskTexX', 'deskTexY', 'deskTexRotate',
+] as const
+export type DeskKey = (typeof DESK_KEYS)[number]
+export type ThemeDesk = Partial<Pick<DockSettings, DeskKey>>
+
 export interface ThemeDef {
   id: string
   name: string
   author?: string
   version?: string
   vars: ThemeVars
+  /** Shelf that comes with the theme (optional). */
+  desk?: ThemeDesk
 }
 
 /** One thing an icon pack can replace; `path` is the program it belongs to. */
@@ -286,6 +300,8 @@ export interface PackInfo {
   author?: string
   version?: string
   builtin?: boolean
+  /** The theme also carries a shelf. */
+  hasDesk?: boolean
 }
 
 /** Open windows per dock item id (matched by executable). */
@@ -387,6 +403,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   toggleHotkey: 'Control+Alt+D',
   theme: 'glass-dark',
   iconPack: '',
+  themeDesk: true,
   iconFolders: [],
 }
 
@@ -452,7 +469,7 @@ export interface InvokeMap {
   'entry:menu': { args: [request: EntryMenuRequest]; result: void }
   'panel:capture': { args: [on: boolean]; result: void }
   'panel:blurred': { args: []; result: boolean }
-  'themes:create': { args: [name: string, author: string, vars: ThemeVars]; result: { ok: boolean; message: string; pack?: PackInfo } }
+  'themes:create': { args: [name: string, author: string, vars: ThemeVars, withDesk: boolean]; result: { ok: boolean; message: string; pack?: PackInfo } }
   'themes:list': { args: []; result: PackInfo[] }
   'themes:get': { args: [id: string]; result: ThemeDef | null }
   'packs:list': { args: []; result: PackInfo[] }

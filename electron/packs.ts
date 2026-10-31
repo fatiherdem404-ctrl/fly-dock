@@ -4,7 +4,9 @@ import { app, dialog } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import { readZip, writeZip, ZipEntry, ZipLimits } from './zip'
-import type { PackInfo, ThemeDef, ThemeVars, DockItem } from '../src/shared/types'
+import { DEFAULT_SETTINGS, DESK_KEYS, DESK_STYLES } from '../src/shared/types'
+import type { PackInfo, ThemeDef, ThemeVars, ThemeDesk, DockItem, DockSettings } from '../src/shared/types'
+import { sniff, MAX_TEXTURE_BYTES, storeTexture, textureBytes } from './textures'
 
 export const PACK_EXTENSION = 'flypack'
 
@@ -36,11 +38,12 @@ const GLASS_DARK: ThemeVars = {
 }
 
 const BUILTIN_THEMES: ThemeDef[] = [
-  { id: 'glass-dark', name: 'Glass Dark', author: 'built-in', vars: GLASS_DARK },
+  { id: 'glass-dark', name: 'Glass Dark', author: 'built-in', vars: GLASS_DARK, desk: { deskStyle: 'glass', deskDepth: 0, deskEdge: 0, deskOpacity: 1, deskRadTL: 60, deskRadTR: 60, deskRadBL: 60, deskRadBR: 60 } },
   {
     id: 'frost-light',
     name: 'Frost Light',
     author: 'built-in',
+    desk: { deskStyle: 'glass3d', deskDepth: 34, deskEdge: 8, deskOpacity: 0.95, deskRadTL: 14, deskRadTR: 14, deskRadBL: 5, deskRadBR: 5 },
     vars: {
       ...GLASS_DARK,
       surface: 'rgba(255, 255, 255, 0.58)',
@@ -59,6 +62,7 @@ const BUILTIN_THEMES: ThemeDef[] = [
     id: 'dark',
     name: 'Dark',
     author: 'built-in',
+    desk: { deskStyle: 'matte', deskDepth: 18, deskEdge: 8, deskOpacity: 1, deskRadTL: 10, deskRadTR: 10, deskRadBL: 4, deskRadBR: 4 },
     vars: {
       ...GLASS_DARK,
       surface: '#1f2023',
@@ -79,6 +83,7 @@ const BUILTIN_THEMES: ThemeDef[] = [
     id: 'light',
     name: 'Light',
     author: 'built-in',
+    desk: { deskStyle: 'metal', deskDepth: 22, deskEdge: 8, deskOpacity: 1, deskRadTL: 10, deskRadTR: 10, deskRadBL: 4, deskRadBR: 4 },
     vars: {
       ...GLASS_DARK,
       surface: '#ffffff',
@@ -99,6 +104,7 @@ const BUILTIN_THEMES: ThemeDef[] = [
     id: 'neon-night',
     name: 'Neon Night',
     author: 'built-in',
+    desk: { deskStyle: 'neon', deskDepth: 0, deskEdge: 0, deskOpacity: 1, deskRadTL: 60, deskRadTR: 60, deskRadBL: 60, deskRadBR: 60 },
     vars: {
       ...GLASS_DARK,
       surface: 'rgba(12, 6, 30, 0.7)',
@@ -117,7 +123,7 @@ const BUILTIN_THEMES: ThemeDef[] = [
 ]
 
 export function builtinThemeInfos(): PackInfo[] {
-  return BUILTIN_THEMES.map((t) => ({ id: t.id, type: 'theme', name: t.name, author: t.author, builtin: true }))
+  return BUILTIN_THEMES.map((t) => ({ id: t.id, type: 'theme', name: t.name, author: t.author, builtin: true, hasDesk: !!t.desk }))
 }
 
 // ---- validation ----
@@ -162,6 +168,27 @@ function validateTheme(raw: any, fallback: ThemeVars): ThemeVars {
   return out
 }
 
+/** Only known shelf settings with the right kind of value get through; nothing else from a pack reaches the settings. */
+function validateDesk(raw: any): ThemeDesk | undefined {
+  if (raw === undefined) return undefined
+  if (typeof raw !== 'object' || raw === null) throw new Error('theme.json "desk" must be an object')
+  const out: Record<string, unknown> = {}
+  for (const key of DESK_KEYS) {
+    if (!(key in raw)) continue
+    const value = raw[key]
+    const fallback = DEFAULT_SETTINGS[key]
+    if (typeof value !== typeof fallback) throw new Error(`shelf setting ${key} has the wrong kind of value`)
+    if (typeof value === 'number' && (!Number.isFinite(value) || Math.abs(value) > 600)) throw new Error(`shelf setting ${key} is out of range`)
+    if (key === 'deskStyle' && !DESK_STYLES.includes(value)) throw new Error('unknown shelf style')
+    if (key === 'deskTexMode' && value !== 'tile' && value !== 'fit') throw new Error('unknown texture mode')
+    if (key === 'deskColor' && value !== '' && !COLOR_LIKE.test(value)) throw new Error('shelf colour is not valid')
+    out[key] = value
+  }
+  return out as ThemeDesk
+}
+
+const TEXTURE_ENTRY = /^desk-texture\.(png|jpg|webp)$/
+
 interface Manifest {
   type: PackInfo['type']
   id: string
@@ -193,8 +220,15 @@ export function validatePackArchive(buf: Buffer): { manifest: Manifest; files: Z
   const files: ZipEntry[] = [{ name: 'pack.json', data: Buffer.from(JSON.stringify(manifest, null, 2)) }]
 
   if (manifest.type === 'theme') {
-    const vars = validateTheme(parseJson(byName.get('theme.json'), 'theme.json'), GLASS_DARK)
-    files.push({ name: 'theme.json', data: Buffer.from(JSON.stringify({ vars }, null, 2)) })
+    const themeJson = parseJson(byName.get('theme.json'), 'theme.json')
+    const vars = validateTheme(themeJson, GLASS_DARK)
+    const desk = validateDesk(themeJson.desk)
+    files.push({ name: 'theme.json', data: Buffer.from(JSON.stringify({ vars, ...(desk ? { desk } : {}) }, null, 2)) })
+    const texture = [...byName.values()].find((e) => TEXTURE_ENTRY.test(e.name))
+    if (texture) {
+      if (texture.data.length > MAX_TEXTURE_BYTES || !sniff(texture.data)) throw new Error('the shelf texture in the theme is not a valid picture')
+      files.push(texture)
+    }
   } else {
     const iconsJson = parseJson(byName.get('icons.json'), 'icons.json')
     if (typeof iconsJson?.map !== 'object' || iconsJson.map === null) throw new Error('icons.json needs a "map" object')
@@ -229,7 +263,7 @@ export function listInstalled(type?: PackInfo['type']): PackInfo[] {
     if (!fs.existsSync(root)) continue
     for (const id of fs.readdirSync(root)) {
       const manifest = readManifest(path.join(root, id))
-      if (manifest && manifest.type === t && manifest.id === id) result.push({ ...manifest })
+      if (manifest && manifest.type === t && manifest.id === id) result.push({ ...manifest, ...(t === 'theme' ? { hasDesk: !!getTheme(id)?.desk } : {}) })
     }
   }
   return result
@@ -246,8 +280,9 @@ export function getTheme(id: string): ThemeDef | null {
   const manifest = readManifest(dir)
   if (!manifest) return null
   try {
-    const vars = validateTheme(JSON.parse(fs.readFileSync(path.join(dir, 'theme.json'), 'utf8')), GLASS_DARK)
-    return { id, name: manifest.name, author: manifest.author, version: manifest.version, vars }
+    const raw = JSON.parse(fs.readFileSync(path.join(dir, 'theme.json'), 'utf8'))
+    const vars = validateTheme(raw, GLASS_DARK)
+    return { id, name: manifest.name, author: manifest.author, version: manifest.version, vars, desk: validateDesk(raw.desk) }
   } catch {
     return null
   }
@@ -294,7 +329,7 @@ export async function exportPackDialog(type: PackInfo['type'], id: string): Prom
     name = builtin.name
     entries = [
       { name: 'pack.json', data: Buffer.from(JSON.stringify({ type: 'theme', id: `${id}-copy`, name: `${builtin.name} copy`, author: builtin.author }, null, 2)) },
-      { name: 'theme.json', data: Buffer.from(JSON.stringify({ vars: builtin.vars }, null, 2)) },
+      { name: 'theme.json', data: Buffer.from(JSON.stringify({ vars: builtin.vars, ...(builtin.desk ? { desk: builtin.desk } : {}) }, null, 2)) },
     ]
   } else {
     const dir = packDir(type, id)
@@ -368,17 +403,38 @@ export function packWheelIcon(packId: string, wheelId: string): string | null {
   }
 }
 
+/** The shelf settings a theme brings (its texture stored as the custom desk picture), or null when it has none. */
+export function themeDeskSettings(id: string): Partial<DockSettings> | null {
+  const theme = getTheme(id)
+  if (!theme?.desk) return null
+  const out: Partial<DockSettings> = { ...theme.desk }
+  if (theme.desk.deskStyle === 'custom') {
+    const dir = packDir('theme', id)
+    const entry = fs.existsSync(dir) ? fs.readdirSync(dir).find((f) => TEXTURE_ENTRY.test(f)) : undefined
+    const stored = entry ? storeTexture(fs.readFileSync(path.join(dir, entry))) : null
+    out.deskTexFile = stored?.ok && stored.file ? stored.file : ''
+  }
+  return out
+}
+
 /** Writes the theme made in the builder as a normal pack and installs it (same validation as an import). */
-export function createThemePack(name: string, author: string, vars: ThemeVars): { ok: boolean; message: string; pack?: PackInfo } {
+export function createThemePack(name: string, author: string, vars: ThemeVars, shelf: DockSettings | null = null): { ok: boolean; message: string; pack?: PackInfo } {
   const title = String(name).trim().slice(0, 60)
   if (!title) return { ok: false, message: 'Temaya bir ad ver.' }
   const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'tema'
   const id = `${slug}-${Date.now().toString(36).slice(-4)}`
   try {
+    const withDesk = !!shelf
+    const desk: Record<string, unknown> = {}
+    if (shelf) for (const key of DESK_KEYS) desk[key] = shelf[key]
     const entries: ZipEntry[] = [
       { name: 'pack.json', data: Buffer.from(JSON.stringify({ type: 'theme', id, name: title, author: String(author).trim().slice(0, 60) || undefined, version: '1.0' }, null, 2)) },
-      { name: 'theme.json', data: Buffer.from(JSON.stringify({ vars }, null, 2)) },
+      { name: 'theme.json', data: Buffer.from(JSON.stringify({ vars, ...(withDesk ? { desk } : {}) }, null, 2)) },
     ]
+    // a custom shelf picture travels inside the theme
+    const bytes = shelf && shelf.deskStyle === 'custom' ? textureBytes(shelf.deskTexFile) : null
+    const kind = bytes ? sniff(bytes) : null
+    if (bytes && kind) entries.push({ name: `desk-texture.${kind}`, data: bytes })
     return { ok: true, message: title, pack: installPack(writeZip(entries)) }
   } catch (err) {
     return { ok: false, message: (err as Error).message }
