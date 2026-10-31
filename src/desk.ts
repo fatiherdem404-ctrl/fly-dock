@@ -18,7 +18,7 @@ export const DESK_LABELS: Record<DeskStyle, string> = {
   none: 'Rafsız (boş)',
   glass: 'Koyu cam',
   azure: 'Mavi çerçeve',
-  macos: 'macOS tarzı (düz)',
+  macos: 'Buzlu cam',
   glass3d: '3B cam raf',
   wood: 'Ahşap',
   birch: 'Açık ahşap',
