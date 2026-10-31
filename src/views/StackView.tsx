@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { invoke } from '@/api'
+import { invoke, useEvent } from '@/api'
 import Icon from '@/icons'
-import Panel from '@/components/Panel'
+import DockWindow from '@/components/DockWindow'
 import type { DockSettings, StackEntry, StackSort, StackView as ViewMode } from '@/shared/types'
 
 const VIEWS: [ViewMode, string][] = [['xl', 'Çok büyük simgeler'], ['large', 'Büyük simgeler'], ['medium', 'Orta simgeler'], ['small', 'Küçük simgeler'], ['list', 'Liste'], ['details', 'Ayrıntılar']]
@@ -63,9 +63,12 @@ function sorted(entries: StackEntry[], by: StackSort, desc: boolean): StackEntry
 export default function StackView({ itemId }: { itemId: string }) {
   const [entries, setEntries] = useState<StackEntry[] | null>(null)
   const [settings, setSettings] = useState<DockSettings | null>(null)
+  const reload = () => invoke('stack:list', itemId).then(setEntries)
   useEffect(() => {
-    invoke('stack:list', itemId).then(setEntries)
+    reload()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemId])
+  useEvent('stack:changed', () => void reload())
 
   const change = (partial: Partial<DockSettings>) => {
     setSettings((cur) => (cur ? { ...cur, ...partial } : cur))
@@ -78,21 +81,23 @@ export default function StackView({ itemId }: { itemId: string }) {
   const rows = view === 'list' || view === 'details'
 
   const open = (entry: StackEntry) => invoke('stack:open', entry.path)
+  const title = decodeURIComponent(new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('t') ?? '') || 'Klasör'
+  const toolbar = (
+    <>
+      <select className="stack__select" aria-label="Görünüm" value={view} onChange={(e) => change({ stackView: e.target.value as ViewMode })}>
+        {VIEWS.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
+      </select>
+      <select className="stack__select" aria-label="Sırala" value={by} onChange={(e) => change({ stackSort: e.target.value as StackSort })}>
+        {SORTS.map(([v, label]) => <option key={v} value={v}>Sırala: {label}</option>)}
+      </select>
+      <button className="stack__tool" aria-label={desc ? 'Azalan sıra' : 'Artan sıra'} title={desc ? 'Azalan' : 'Artan'} onClick={() => change({ stackDesc: !desc })}>
+        <Icon name={desc ? 'arrowDown' : 'arrowUp'} size={14} />
+      </button>
+      <span className="stack__count">{list ? `${list.length} öğe` : ''}</span>
+    </>
+  )
   return (
-    <Panel onSettings={setSettings}>
-      <div className="stack__col">
-      <div className="stack__bar">
-        <select className="stack__select" aria-label="Görünüm" value={view} onChange={(e) => change({ stackView: e.target.value as ViewMode })}>
-          {VIEWS.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
-        </select>
-        <select className="stack__select" aria-label="Sırala" value={by} onChange={(e) => change({ stackSort: e.target.value as StackSort })}>
-          {SORTS.map(([v, label]) => <option key={v} value={v}>Sırala: {label}</option>)}
-        </select>
-        <button className="stack__tool" aria-label={desc ? 'Azalan sıra' : 'Artan sıra'} title={desc ? 'Azalan' : 'Artan'} onClick={() => change({ stackDesc: !desc })}>
-          <Icon name={desc ? 'arrowDown' : 'arrowUp'} size={14} />
-        </button>
-        <span className="stack__count">{list ? `${list.length} öğe` : ''}</span>
-      </div>
+    <DockWindow title={title} icon="folder" toolbar={toolbar} onSettings={setSettings}>
       <div className="stack__scroll">
         {list && list.length === 0 && (
           <div className="stack__empty">
@@ -107,7 +112,7 @@ export default function StackView({ itemId }: { itemId: string }) {
         )}
         <div className={`stack__grid stack__grid--${view}`}>
           {list?.map((entry) => (
-            <button key={entry.path} className={`stack__entry${rows ? ' stack__entry--row' : ''}`} title={entry.path} onClick={() => open(entry)}>
+            <button key={entry.path} className={`stack__entry${rows ? ' stack__entry--row' : ''}`} title={entry.path} onClick={() => open(entry)} onContextMenu={(e) => { e.preventDefault(); invoke('entry:menu', { kind: 'stack', itemId, path: entry.path }) }}>
               <StackIcon entry={entry} view={view} />
               <span className="stack__name">{entry.name}</span>
               {view === 'details' && (
@@ -121,7 +126,6 @@ export default function StackView({ itemId }: { itemId: string }) {
           ))}
         </div>
       </div>
-      </div>
-    </Panel>
+    </DockWindow>
   )
 }

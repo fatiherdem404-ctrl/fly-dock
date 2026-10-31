@@ -12,7 +12,9 @@ import {
 } from './items'
 import { iconForItem, setTrashState } from './icons'
 import { shellIcon, thumbnail } from './iconService'
-import { askConfirm, answerConfirm } from './confirm'
+import { askConfirm, askInput, answerConfirm, confirmIsOpen } from './confirm'
+import { showEntryMenu } from './entryMenu'
+import { menuIsOpen } from './contextMenu'
 import { listLibrary, libraryThumb, pickImage, addLibraryFolder, removeLibraryFolder } from './iconLibrary'
 import { showIconPicker, closeIconPicker, pickerInfo, applyPickedIcon } from './iconPicker'
 import { builderKeys, pickBuilderFolder, createBuilderPack } from './packBuilder'
@@ -287,7 +289,9 @@ function registerIpc() {
 
   handle('themes:list', () => listThemes())
   handle('themes:get', (_e, id) => getTheme(id))
-  handle('confirm:answer', (_e, id, answer) => answerConfirm(id, answer))
+  handle('confirm:answer', (_e, id, answer, text) => answerConfirm(id, answer, text))
+  handle('entry:menu', (_e, request) => showEntryMenu(request))
+  handle('panel:blurred', () => !menuIsOpen() && !confirmIsOpen())
   handle('themes:create', (_e, name, author, vars) => {
     const result = createThemePack(name, author, vars)
     if (result.ok) broadcast('themes:changed', null)
@@ -428,7 +432,8 @@ if (!app.requestSingleInstanceLock()) {
 
     initDockWindows()
     // screenshot runs ask for the confirmation window so it can be looked at
-    if (HEADLESS && process.env.FLY_DOCK_TEST_CONFIRM) setTimeout(() => void askConfirm({ title: 'Çöp kutusu boşaltılsın mı?', message: 'İçindeki her şey kalıcı olarak silinir. Bu geri alınamaz.', confirmLabel: 'Boşalt', danger: true }), 1500)
+    if (HEADLESS && process.env.FLY_DOCK_TEST_CONFIRM === 'input') setTimeout(() => void askInput({ title: 'Yeniden adlandır', message: 'Yeni adı yaz.', confirmLabel: 'Adlandır', value: 'rapor-2026.docx' }), 1500)
+    else if (HEADLESS && process.env.FLY_DOCK_TEST_CONFIRM) setTimeout(() => void askConfirm({ title: 'Çöp kutusu boşaltılsın mı?', message: 'İçindeki her şey kalıcı olarak silinir. Bu geri alınamaz.', confirmLabel: 'Boşalt', danger: true }), 1500)
     initWidgets()
     createTray()
     registerHotkeys()

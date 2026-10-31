@@ -17,13 +17,19 @@ export default function ConfirmView() {
   })()
   const [settings, setSettings] = useState<DockSettings | null>(null)
   const [closing, setClosing] = useState(false)
+  const [text, setText] = useState(request.input?.value ?? '')
+  const inputRef = useRef<HTMLInputElement>(null)
   const cancelRef = useRef<HTMLButtonElement>(null)
   const okRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     initSound()
     invoke('settings:get').then(setSettings)
-    ;(request.danger ? cancelRef : okRef).current?.focus()
+    if (request.input) {
+      inputRef.current?.focus()
+      const dot = text.lastIndexOf('.')
+      inputRef.current?.setSelectionRange(0, dot > 0 ? dot : text.length)
+    } else (request.danger ? cancelRef : okRef).current?.focus()
     // the sound engine needs its settings first; a short wait keeps the opening chime from being skipped
     const t = setTimeout(() => playSound(request.danger ? 'warn' : 'confirmOpen'), 80)
     return () => clearTimeout(t)
@@ -35,7 +41,7 @@ export default function ConfirmView() {
     if (closing) return
     setClosing(true)
     playSound(yes ? 'accept' : 'cancel')
-    setTimeout(() => invoke('confirm:answer', id, yes), 140)
+    setTimeout(() => invoke('confirm:answer', id, yes, request.input ? text : undefined), 140)
   }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -49,10 +55,11 @@ export default function ConfirmView() {
   return (
     <div className="confirm-shell">
       <div className={`confirm${closing ? ' confirm--closing' : ''}${request.danger ? ' confirm--danger' : ''}`} role="alertdialog" aria-label={request.title}>
-        <span className="confirm__icon"><Icon name={request.danger ? 'trash' : 'check'} size={22} /></span>
+        <span className="confirm__icon"><Icon name={request.danger ? 'trash' : request.input ? 'edit' : 'check'} size={22} /></span>
         <div className="confirm__text">
           <h2>{request.title}</h2>
           <p>{request.message}</p>
+          {request.input && <input ref={inputRef} className="confirm__input" value={text} maxLength={200} spellCheck={false} onChange={(e) => setText(e.target.value)} />}
         </div>
         <div className="confirm__buttons">
           <button ref={cancelRef} className="confirm__btn" onClick={() => answer(false)}>{request.cancelLabel ?? 'Vazgeç'}</button>

@@ -115,6 +115,13 @@ export async function addWheelEntry(kind: 'file' | 'folder'): Promise<boolean> {
   return true
 }
 
+export function renameWheelEntry(id: string, name: string): boolean {
+  const state = wheelState()
+  if (!state.custom.some((c) => c.id === id) || !name.trim()) return false
+  store.set('wheel', { ...state, custom: state.custom.map((c) => (c.id === id ? { ...c, name: name.trim().slice(0, 60) } : c)) })
+  return true
+}
+
 export function removeWheelEntry(id: string) {
   const state = wheelState()
   if (!state.custom.some((c) => c.id === id)) return

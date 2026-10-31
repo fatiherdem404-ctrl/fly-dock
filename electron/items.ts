@@ -192,6 +192,11 @@ export function removeFromGroup(id: string, target: string): DockItem[] {
   return commit(getItems().map((i) => (i.id === id && i.type === 'group' ? { ...i, children: (i.children ?? []).filter((p) => p !== target) } : i)))
 }
 
+/** A file inside a group was renamed on disk: the group follows it. */
+export function replaceInGroup(id: string, from: string, to: string): DockItem[] {
+  return commit(getItems().map((i) => (i.id === id && i.type === 'group' ? { ...i, children: (i.children ?? []).map((p) => (p === from ? to : p)) } : i)))
+}
+
 export function openRecycleBin() {
   spawn('explorer.exe', ['shell:RecycleBinFolder'], { detached: true, stdio: 'ignore' }).unref()
 }

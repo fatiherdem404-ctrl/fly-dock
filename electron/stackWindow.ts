@@ -43,17 +43,22 @@ export function readEntries(item: DockItem): StackEntry[] {
   }
 }
 
+export function focusStack() {
+  if (stackWindow && !stackWindow.isDestroyed()) stackWindow.focus()
+}
+
 export function closeStack() {
   stackWindow?.destroy()
   stackWindow = null
 }
 
 export function showStack(item: DockItem, anchor: { x: number; y: number }) {
-  showPanel(`/stack/${item.id}`, anchor)
+  const title = item.label || (item.targetPath ? path.basename(item.targetPath) : '') || 'Klasör'
+  showPanel(`/stack/${item.id}`, anchor, title)
 }
 
 /** Opens a dock window at `route`; `anchor` is the screen point it grows out of (the dock icon). */
-export function showPanel(route: string, anchor: { x: number; y: number }) {
+export function showPanel(route: string, anchor: { x: number; y: number }, title = '') {
   closeStack()
   const s = getSettings()
   const display = screen.getDisplayNearestPoint(anchor)
@@ -90,7 +95,7 @@ export function showPanel(route: string, anchor: { x: number; y: number }) {
   })
   stackWindow = win
   win.setAlwaysOnTop(true, 'screen-saver')
-  loadRoute(win, `${route}?ox=${Math.round(anchor.x - x)}&oy=${Math.round(anchor.y - y)}`)
+  loadRoute(win, `${route}?ox=${Math.round(anchor.x - x)}&oy=${Math.round(anchor.y - y)}&t=${encodeURIComponent(title)}`)
   win.once('ready-to-show', () => {
     win.show()
     win.focus()

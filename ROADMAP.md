@@ -111,3 +111,9 @@ Sınırlar: akrilik/Mica ayrı bir sistem penceresi olduğu için sabit durur (t
 - Sesler: dosyasız, anında üretilen 5 stil (yumuşak, cam, ahşap, retro, baloncuk); 20 olay (cin pencere açılış/kapanış, hover, tıklama, açılış, bırakma, silme, çöp boşaltma, menü, onay…); grup grup aç/kapa, ses düzeyi, "Dene" sekmesi.
 - Kendi onay penceremiz (`electron/confirm.ts`, `ConfirmView`): çöp boşaltma, yedek geri yükleme, tüm tweakleri geri alma, paket silme.
 - Fikir: sesleri `.flypack` temalarına koymak (kullanıcı ses dosyası), geçiş sesi için "bildirim" olayı widget'larda henüz kullanılmıyor.
+
+## Tek pencere stili ve bağlam menüleri (2026-10-31)
+- Klasör, grup ve çark penceresi artık tek bileşen (`DockWindow`): temadan boyanan çerçeve, başlık çubuğu, sağda X ile kapat düğmesi, araç çubuğu, kaydırılan gövde.
+- Pencere içindeki öğelere sağ tık menüsü (Windows gibi): Aç, Konumunu aç, Dock'a ekle, Yolu kopyala, Yeniden adlandır, Gruptan çıkar, Sil (geri dönüşüm kutusuna). Çark girdilerinde: Aç, Simge değiştir, Yeniden adlandır, Gizle/Kaldır.
+- Kendi metin girişi penceresi (yeniden adlandırma) ve onay penceresi; menü ya da soru açılınca dock penceresi kapanmaz.
+- Test: `node scripts/check-entry-menu.mjs` (adlandırma, çakışan ad, silme, listede olmayan yol).

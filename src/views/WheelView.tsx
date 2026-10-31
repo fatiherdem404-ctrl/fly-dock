@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { invoke } from '@/api'
+import { invoke, useEvent } from '@/api'
 import Icon from '@/icons'
 import WheelGlyph from '@/components/WheelGlyph'
-import Panel from '@/components/Panel'
+import DockWindow from '@/components/DockWindow'
 import type { WheelEntry } from '@/shared/types'
 
 /** The gear menu: Windows control panels and admin tools in one searchable grid. */
@@ -10,10 +10,13 @@ export default function WheelView() {
   const [data, setData] = useState<{ entries: WheelEntry[]; hidden: string[] } | null>(null)
   const [query, setQuery] = useState('')
   const input = useRef<HTMLInputElement>(null)
+  const reload = () => invoke('wheel:list').then(setData)
   useEffect(() => {
-    invoke('wheel:list').then(setData)
+    reload()
     input.current?.focus()
   }, [])
+  useEvent('stack:changed', () => void reload())
+  useEvent('icons:changed', () => void reload())
 
   const groups = useMemo(() => {
     const visible = (data?.entries ?? []).filter((e) => !data?.hidden.includes(e.id) && e.name.toLocaleLowerCase('tr').includes(query.trim().toLocaleLowerCase('tr')))
@@ -22,16 +25,17 @@ export default function WheelView() {
     return [...byCategory.entries()]
   }, [data, query])
 
+  const toolbar = (
+    <label className="dw__search">
+      <Icon name="settings" size={15} />
+      <input ref={input} value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Ara…" spellCheck={false}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && groups[0]) invoke('wheel:run', groups[0][1][0].id)
+        }} />
+    </label>
+  )
   return (
-    <Panel>
-      <div className="wheel">
-        <label className="wheel__search">
-          <Icon name="settings" size={16} />
-          <input ref={input} value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Ara…" spellCheck={false}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && groups[0]) invoke('wheel:run', groups[0][1][0].id)
-            }} />
-        </label>
+    <DockWindow title="Çark menüsü" icon="settings" toolbar={toolbar}>
         <div className="stack__scroll">
           {groups.length === 0 && data && <div className="stack__empty"><span>Eşleşen bir şey yok</span></div>}
           {groups.map(([category, entries]) => (
@@ -39,16 +43,15 @@ export default function WheelView() {
               <h4 className="wheel__category">{category}</h4>
               <div className="stack__grid">
                 {entries.map((e) => (
-                  <button key={e.id} className="stack__entry" title={e.name} onClick={() => invoke('wheel:run', e.id)}>
+                  <button key={e.id} className="stack__entry" title={e.name} onClick={() => invoke('wheel:run', e.id)} onContextMenu={(ev) => { ev.preventDefault(); invoke('entry:menu', { kind: 'wheel', id: e.id }) }}>
                     <span className={`wheel__icon${e.iconFile || e.path || e.packIcon ? ' wheel__icon--plain' : ''}`}><WheelGlyph entry={e} size={e.iconFile || e.path || e.packIcon ? 44 : 26} /></span>
-                    <span>{e.name}</span>
+                    <span className="stack__name stack__name--wrap">{e.name}</span>
                   </button>
                 ))}
               </div>
             </section>
           ))}
-        </div>
       </div>
-    </Panel>
+    </DockWindow>
   )
 }

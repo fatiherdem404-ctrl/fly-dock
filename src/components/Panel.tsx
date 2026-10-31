@@ -1,8 +1,13 @@
-import { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { invoke, useActiveTheme } from '@/api'
 import { speedToMs } from '@/physics'
 import type { DockSettings } from '@/shared/types'
 import { initSound, playSound } from '@/sound'
+
+const CloseContext = createContext<() => void>(() => {})
+
+/** Closes the surrounding dock window with its exit animation (the close button, Esc and click-away use the same path). */
+export const usePanelClose = () => useContext(CloseContext)
 
 /**
  * Shell of a dock window (folder, group, gear menu): grows out of the dock icon with the chosen animation,
@@ -39,10 +44,12 @@ export default function Panel({ children, onSettings }: { children: ReactNode; o
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close()
     window.addEventListener('keydown', onKey)
-    window.addEventListener('blur', close)
+    // opening a context menu from inside the window also blurs it; the main process knows whether that is the case
+    const onBlur = () => invoke('panel:blurred').then((away) => away && close())
+    window.addEventListener('blur', onBlur)
     return () => {
       window.removeEventListener('keydown', onKey)
-      window.removeEventListener('blur', close)
+      window.removeEventListener('blur', onBlur)
     }
   }, [close])
 
@@ -51,7 +58,7 @@ export default function Panel({ children, onSettings }: { children: ReactNode; o
   return (
     <div className="stack-shell" onMouseDown={(e) => e.target === e.currentTarget && close()}>
       <div className={`stack stack--${kind}${closing ? ' stack--closing' : ''}`} style={{ transformOrigin: origin, '--win-ms': `${ms}ms` } as React.CSSProperties}>
-        {children}
+        <CloseContext.Provider value={close}>{children}</CloseContext.Provider>
       </div>
     </div>
   )

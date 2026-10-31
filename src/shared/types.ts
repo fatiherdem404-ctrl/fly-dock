@@ -26,7 +26,12 @@ export interface ConfirmRequest {
   cancelLabel?: string
   /** Red confirm button and a warning sound, for things that cannot be undone. */
   danger?: boolean
+  /** Turns the window into a one-line text prompt; the answer carries the text. */
+  input?: { value: string }
 }
+
+/** Which entry of a dock window was right-clicked. */
+export type EntryMenuRequest = { kind: 'stack'; itemId: string; path: string } | { kind: 'wheel'; id: string }
 
 export type DockItemType = 'app' | 'file' | 'folder' | 'stack' | 'group' | 'start' | 'wheel' | 'power' | 'separator' | 'trash'
 
@@ -439,7 +444,9 @@ export interface InvokeMap {
   'iconpick:apply': { args: [target: string, file: string | null]; result: { ok: boolean; message: string } }
   'iconpick:close': { args: []; result: void }
   'builder:create': { args: [name: string, author: string, map: Record<string, string>]; result: { ok: boolean; message: string; pack?: PackInfo } }
-  'confirm:answer': { args: [id: string, answer: boolean]; result: void }
+  'confirm:answer': { args: [id: string, answer: boolean, text?: string]; result: void }
+  'entry:menu': { args: [request: EntryMenuRequest]; result: void }
+  'panel:blurred': { args: []; result: boolean }
   'themes:create': { args: [name: string, author: string, vars: ThemeVars]; result: { ok: boolean; message: string; pack?: PackInfo } }
   'themes:list': { args: []; result: PackInfo[] }
   'themes:get': { args: [id: string]; result: ThemeDef | null }
@@ -474,6 +481,7 @@ export interface EventMap {
   'themes:changed': null
   'ui:open-settings': null
   'icons:changed': null
+  'stack:changed': null
   'sound:play': SoundEvent
 }
 

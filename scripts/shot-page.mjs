@@ -62,7 +62,7 @@ writeFileSync(join(profile, 'config.json'), JSON.stringify({
 }))
 
 const port = 9500 + Math.floor(Math.random() * 400)
-const child = spawn(electronPath, ['.', `--user-data-dir=${profile}`, `--remote-debugging-port=${port}`], { stdio: 'ignore', env: { ...process.env, FLY_DOCK_HEADLESS: '1', ...(route.includes('confirm') ? { FLY_DOCK_TEST_CONFIRM: '1' } : {}) } })
+const child = spawn(electronPath, ['.', `--user-data-dir=${profile}`, `--remote-debugging-port=${port}`], { stdio: 'ignore', env: { ...process.env, FLY_DOCK_HEADLESS: '1', ...(route.includes('confirm') ? { FLY_DOCK_TEST_CONFIRM: arg('input') ? 'input' : '1' } : {}) } })
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const stop = () => spawn('taskkill', ['/T', '/F', '/PID', String(child.pid)], { stdio: 'ignore' })
 const pages = async () => (await (await fetch(`http://127.0.0.1:${port}/json`)).json()).filter((p) => p.type === 'page')
@@ -89,11 +89,12 @@ try {
   }
   if (!page) throw new Error('app did not start')
   const dock = await connect(page)
+  if (arg('pre')) await dock.evaluate(arg('pre'))
   if (route.includes('settings')) await dock.evaluate("window.api.invoke('app:open-settings')")
   if (route.includes('wheel')) await dock.evaluate("window.api.invoke('items:activate', 'wheel1')")
   if (route.includes('power')) await dock.evaluate("window.api.invoke('items:activate', 'power1')")
   if (route.includes('iconpick')) await dock.evaluate("window.api.invoke('iconpick:show', 'notepad')")
-  if (route.includes('menu')) await dock.evaluate("window.api.invoke('menu:show', { kind: 'icon', itemId: 'folder' })")
+  if (route.includes('menu') && !arg('pre')) await dock.evaluate("window.api.invoke('menu:show', { kind: 'icon', itemId: 'folder' })")
   if (route.includes('stack')) await dock.evaluate("window.api.invoke('stack:show', 'folder', { x: 900, y: 800 })")
   let target
   for (let i = 0; i < 40 && !target; i++) {

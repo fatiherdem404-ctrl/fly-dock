@@ -1,6 +1,7 @@
 // The dock's context menu is a small themed window (glass, icons, open animation) instead of the native menu.
 import { BrowserWindow, screen } from 'electron'
 import { baseWebPreferences, loadRoute, OFFSCREEN } from './windows'
+import { focusStack } from './stackWindow'
 import type { MenuItemView } from '../src/shared/types'
 
 export interface MenuSpec extends MenuItemView {
@@ -15,9 +16,16 @@ export function menuItemsForRenderer(): MenuItemView[] {
   return current.map(({ action: _action, ...view }) => view)
 }
 
+export function menuIsOpen(): boolean {
+  return !!menuWindow && !menuWindow.isDestroyed()
+}
+
 export function closeMenu() {
+  const wasOpen = menuIsOpen()
   menuWindow?.destroy()
   menuWindow = null
+  // a menu opened from a dock window hands the focus back to it
+  if (wasOpen) focusStack()
 }
 
 export function pickMenuItem(index: number) {
