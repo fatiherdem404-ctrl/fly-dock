@@ -11,7 +11,7 @@ import {
   activateItem, openRecycleBin, launchAtLogin, loginEnabled, onItemsChanged, visibleItems, isRunningItem, broadcastItems, createGroup, addToGroup, addStartButton, addSpecial,
 } from './items'
 import { iconForItem, setTrashState } from './icons'
-import { shellIcon } from './iconService'
+import { shellIcon, thumbnail } from './iconService'
 import { initDockWindows, syncDocks, setLayout, applyLayer, dockIsOnTop, isDockHidden, setFullscreenHidden, toggleDockVisibility, disposeDockWindows } from './dockWindows'
 import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN } from './windows'
 import {
@@ -214,6 +214,7 @@ function registerIpc() {
     const item = visibleItems().find((i) => i.id === id)
     return item ? iconForItem(item) : null
   })
+  handle('stack:thumb', (_e, target, size) => thumbnail(target, Math.min(Math.max(Number(size) || 96, 32), 256)).catch(() => null))
   handle('icon:path', (_e, target) => shellIcon(target, 96).catch(() => null))
 
   handle('settings:get', () => getSettings())

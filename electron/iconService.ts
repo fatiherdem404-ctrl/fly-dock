@@ -1,6 +1,6 @@
 // Icons come from the C# helper (shell icon at up to 256px, with alpha) and are cached on disk
 // per path + modification time, so an updated exe gets a fresh icon.
-import { app } from 'electron'
+import { app, nativeImage } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import crypto from 'node:crypto'
@@ -41,6 +41,31 @@ export async function shellIcon(rawPath: string, size = 128, variant = ''): Prom
   fs.writeFileSync(file, Buffer.from(b64, 'base64'))
   const url = `data:image/png;base64,${b64}`
   memory.set(file, url)
+  return url
+}
+
+const thumbs = new Map<string, string | null>()
+
+/** Explorer-style preview (photo, video frame, PDF page) as a data URL, or null when the shell has none. */
+export async function thumbnail(rawPath: string, size: number): Promise<string | null> {
+  const target = path.win32.normalize(rawPath)
+  let stamp = 0
+  try {
+    stamp = fs.statSync(target).mtimeMs
+  } catch {
+    return null
+  }
+  const key = `${target.toLowerCase()}|${size}|${stamp}`
+  if (thumbs.has(key)) return thumbs.get(key) ?? null
+  let url: string | null = null
+  try {
+    const img = await nativeImage.createThumbnailFromPath(target, { width: size, height: size })
+    if (!img.isEmpty()) url = img.toDataURL()
+  } catch {
+    /* no preview for this file */
+  }
+  if (thumbs.size > 400) thumbs.clear()
+  thumbs.set(key, url)
   return url
 }
 

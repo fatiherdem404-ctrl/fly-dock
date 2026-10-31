@@ -88,3 +88,25 @@
 .menu__item--danger:hover:not(:disabled) { background: rgba(255, 80, 80, 0.4); }
 .menu__icon { display: grid; place-items: center; width: 18px; color: color-mix(in srgb, var(--tooltip-text) 75%, var(--accent)); }
 .menu__label { flex: 1; }
+
+/* ---- folder window: view / sort bar, view modes ---- */
+.stack__col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.stack__bar { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--surface-border); font-size: 12px; }
+.stack__select, .stack__tool { height: 28px; border: 1px solid var(--surface-border); border-radius: 8px; background: rgba(255, 255, 255, 0.08); color: inherit; font: inherit; font-size: 12px; padding: 0 8px; cursor: pointer; }
+.stack__select option { color: #111; }
+.stack__tool { display: grid; place-items: center; width: 28px; padding: 0; }
+.stack__select:hover, .stack__tool:hover { background: rgba(255, 255, 255, 0.16); }
+.stack__count { margin-left: auto; opacity: 0.6; }
+.stack__scroll { min-height: 0; }
+.stack__name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stack__grid--xl { grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); }
+.stack__grid--large { grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); }
+.stack__grid--small { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 4px; }
+.stack__grid--xl .stack__entry span, .stack__grid--large .stack__entry span { max-width: 100%; }
+.stack__grid--list, .stack__grid--details { display: flex; flex-direction: column; gap: 2px; }
+.stack__entry--row { flex-direction: row; justify-content: flex-start; gap: 10px; padding: 5px 8px; text-align: left; transform: none !important; }
+.stack__grid--list .stack__name { flex: 1; }
+.stack__grid--details .stack__entry--row, .stack__head { display: grid; grid-template-columns: 20px minmax(0, 1fr) 90px 120px 76px; align-items: center; gap: 10px; }
+.stack__meta { opacity: 0.7; font-size: 11.5px; }
+.stack__meta--num { text-align: right; }
+.stack__head { padding: 0 8px 6px; font-size: 11px; opacity: 0.55; border-bottom: 1px solid var(--surface-border); margin-bottom: 4px; }

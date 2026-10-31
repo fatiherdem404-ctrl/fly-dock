@@ -11,26 +11,33 @@ let stackWindow: BrowserWindow | null = null
 
 const SIZES = { small: [360, 300], medium: [520, 420] } as const
 
+/** Name, kind, size and date of one path; a missing target is still listed so it can be removed. */
+function describe(p: string, name = path.basename(p)): StackEntry {
+  let isDirectory = false
+  let size = 0
+  let mtime = 0
+  try {
+    const st = fs.statSync(p)
+    isDirectory = st.isDirectory()
+    size = isDirectory ? 0 : st.size
+    mtime = st.mtimeMs
+  } catch {
+    /* unreadable: listed without details */
+  }
+  return { name, path: p, isDirectory, size, mtime, ext: isDirectory ? '' : path.extname(p).slice(1).toLowerCase() }
+}
+
 export function readEntries(item: DockItem): StackEntry[] {
   if (item.type === 'group') {
-    return (item.children ?? []).map((p) => {
-      let isDirectory = false
-      try {
-        isDirectory = fs.statSync(p).isDirectory()
-      } catch {
-        /* missing target: still listed so it can be removed */
-      }
-      return { name: path.basename(p, path.extname(p)) || p, path: p, isDirectory }
-    })
+    return (item.children ?? []).map((p) => ({ ...describe(p), name: path.basename(p, path.extname(p)) || p }))
   }
   if (!item.targetPath) return []
   try {
     return fs
       .readdirSync(item.targetPath, { withFileTypes: true })
       .filter((d) => !d.name.startsWith('.') && !/^(desktop\.ini|thumbs\.db)$/i.test(d.name))
-      .map((d) => ({ name: d.name, path: path.join(item.targetPath!, d.name), isDirectory: d.isDirectory() }))
-      .sort((a, b) => Number(b.isDirectory) - Number(a.isDirectory) || a.name.localeCompare(b.name))
-      .slice(0, 600)
+      .slice(0, 2000)
+      .map((d) => describe(path.join(item.targetPath!, d.name), d.name))
   } catch {
     return []
   }
