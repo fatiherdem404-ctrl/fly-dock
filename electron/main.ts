@@ -23,7 +23,7 @@ import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN } from './windows'
 import {
   importPackDialog, exportPackDialog, listThemes, createThemePack, listInstalled, builtinThemeInfos, getTheme, removePack, clearPackCaches,
 } from './packs'
-import { showStack, showPanel, closeStack, readEntries } from './stackWindow'
+import { showStack, showPanel, closeStack, readEntries, stackIsFocused } from './stackWindow'
 import { wheelEntries, runWheelEntry, setWheelState, addWheelEntry, removeWheelEntry, setWheelIcon } from './wheel'
 import { showPowerMenu, closePowerMenu, runPowerAction } from './power'
 import { createTweakEngine, realRegistry, TWEAKS } from './tweaks'
@@ -291,7 +291,11 @@ function registerIpc() {
   handle('themes:get', (_e, id) => getTheme(id))
   handle('confirm:answer', (_e, id, answer, text) => answerConfirm(id, answer, text))
   handle('entry:menu', (_e, request) => showEntryMenu(request))
-  handle('panel:blurred', () => !menuIsOpen() && !confirmIsOpen())
+  handle('panel:blurred', async () => {
+    // a menu or question opened from the window takes the focus and gives it back; wait for that before judging
+    await new Promise((r) => setTimeout(r, 200))
+    return !menuIsOpen() && !confirmIsOpen() && !stackIsFocused()
+  })
   handle('themes:create', (_e, name, author, vars) => {
     const result = createThemePack(name, author, vars)
     if (result.ok) broadcast('themes:changed', null)

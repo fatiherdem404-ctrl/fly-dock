@@ -43,6 +43,10 @@ export function readEntries(item: DockItem): StackEntry[] {
   }
 }
 
+export function stackIsFocused(): boolean {
+  return !!stackWindow && !stackWindow.isDestroyed() && stackWindow.isFocused()
+}
+
 export function focusStack() {
   if (stackWindow && !stackWindow.isDestroyed()) stackWindow.focus()
 }
