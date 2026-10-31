@@ -43,7 +43,7 @@ export default function BatteryWidget() {
           <circle cx="50" cy="50" r={R} className="wg-ring__track" />
           <circle cx="50" cy="50" r={R} className={`wg-ring__bar wg-ring__bar--${low ? 'low' : 'ok'}`} strokeDasharray={`${(pct / 100) * C} ${C}`} transform="rotate(-90 50 50)" />
         </svg>
-        <b>{pct}<small>%</small></b>
+        <b><span>{pct}<small>%</small></span></b>
       </div>
       <div className="wg-bat__text">
         <b>{charging ? 'Şarj oluyor' : level === null ? 'Pil' : 'Pilde'}</b>
