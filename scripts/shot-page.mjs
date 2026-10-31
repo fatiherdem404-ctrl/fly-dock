@@ -19,14 +19,14 @@ const [width, height] = (arg('size') ?? '1100x760').split('x').map(Number)
 const profile = mkdtempSync(join(tmpdir(), 'dock-shot-'))
 
 // --texture=sample stores a generated 96x96 test image (diagonal stripes with a dot) as the custom desk texture
-function samplePng(hue = 0) {
-  const W = 96
+function samplePng(hue = 0, W = 96) {
   const raw = Buffer.alloc(W * (W * 4 + 1))
   for (let y = 0; y < W; y++) {
     raw[y * (W * 4 + 1)] = 0
     for (let x = 0; x < W; x++) {
       const stripe = ((x + y) % 24) < 12
       const dot = (x - 48) ** 2 + (y - 48) ** 2 < 100
+      if (W > 200) { raw.set([(Math.random() * 255) | 0, (Math.random() * 255) | 0, (Math.random() * 255) | 0, 255], y * (W * 4 + 1) + 1 + x * 4); continue }
       const px = dot ? [255, 255, 255, 255] : stripe ? [(210 + hue * 3) % 256, (120 + hue * 5) % 256, (60 + hue * 7) % 256, 255] : [(120 + hue * 3) % 256, (60 + hue * 5) % 256, (30 + hue * 7) % 256, 255]
       raw.set(px, y * (W * 4 + 1) + 1 + x * 4)
     }
@@ -37,8 +37,8 @@ function samplePng(hue = 0) {
   const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(W, 0); ihdr.writeUInt32BE(W, 4); ihdr[8] = 8; ihdr[9] = 6
   return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0))])
 }
-if (arg('texture') === 'sample') {
-  const png = samplePng()
+if (arg('texture') === 'sample' || arg('texture') === 'big') {
+  const png = samplePng(0, arg('texture') === 'big' ? 1500 : 96)
   const file = createHash('sha1').update(png).digest('hex').slice(0, 16) + '.png'
   mkdirSync(join(profile, 'textures'), { recursive: true })
   writeFileSync(join(profile, 'textures', file), png)
