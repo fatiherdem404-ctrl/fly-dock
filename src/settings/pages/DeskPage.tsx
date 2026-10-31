@@ -66,19 +66,27 @@ export const allRadii = (v: number) => ({ deskRadTL: v, deskRadTR: v, deskRadBL:
 
 export const PAD_KEYS: ['deskPadTop' | 'deskPadBottom' | 'deskPadLeft' | 'deskPadRight', string][] = [['deskPadTop', 'Üst'], ['deskPadBottom', 'Alt'], ['deskPadLeft', 'Sol'], ['deskPadRight', 'Sağ']]
 
-export function DeskCard({ style }: { style: DeskStyle }) {
+/** A little shelf with three icons standing on it; `length` is the shelf's width in px, `label` a tooltip over the middle icon. */
+export function DeskCard({ style, length = 116, label }: { style: DeskStyle; length?: number; label?: string }) {
   const preset = DESK_PRESETS[style]
   return (
     <div className={`st-desk dock dock--desk-${style} dock--bottom`} style={{ '--desk-depth': `${DESK_PRESETS[style].depth}px` } as React.CSSProperties}>
-      <div style={{ position: 'absolute', left: '8%', right: '8%', bottom: 5, height: 34 }}>
+      <div style={{ position: 'absolute', left: '50%', width: length, marginLeft: -length / 2, bottom: 5, height: 34 }}>
         {style === 'none' ? null : preset.depth > 0 ? (
-          <Shelf length={116} thickness={34} edge={Math.round(preset.edge * 0.5)} depth={preset.depth * 0.5} side="bottom" radii={{ tl: DESK_RADII[style][0], tr: DESK_RADII[style][0], bl: DESK_RADII[style][1], br: DESK_RADII[style][1] }} opacity={1} />
+          <Shelf length={length} thickness={34} edge={Math.round(preset.edge * 0.5)} depth={preset.depth * 0.5} side="bottom" radii={{ tl: DESK_RADII[style][0], tr: DESK_RADII[style][0], bl: DESK_RADII[style][1], br: DESK_RADII[style][1] }} opacity={1} />
         ) : (
           <div className="dock__desk" style={{ position: 'absolute', inset: '8px 0 0 0', borderRadius: 999 }}><span className="dock__desk-sheen" /></div>
         )}
       </div>
 
-      <div className="st-desk__row" style={{ bottom: style === 'none' ? 18 : 14 }}>{[0, 1, 2].map((i) => <i key={i} className="st-desk__icon" style={{ transform: i === 1 ? 'translateY(-4px)' : undefined }} />)}</div>
+      <div className="st-desk__row" style={{ bottom: style === 'none' ? 18 : 14, left: '50%', right: 'auto', width: length, marginLeft: -length / 2 }}>
+        {[0, 1, 2].map((i) => (
+          <span key={i} className="st-desk__slot" style={{ transform: i === 1 ? 'translateY(-4px)' : undefined }}>
+            {i === 1 && label && <em className="st-desk__tip">{label}</em>}
+            <i className="st-desk__icon" />
+          </span>
+        ))}
+      </div>
     </div>
   )
 }

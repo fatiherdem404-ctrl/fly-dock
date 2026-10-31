@@ -160,3 +160,10 @@
 .pv-stack i:nth-child(2) { left: 22%; top: 20%; background: linear-gradient(135deg, #1fb0ff, #4a2aa0); transform: rotate(3deg); }
 .pv-stack i:nth-child(3) { left: 34%; top: 14%; background: linear-gradient(135deg, #d1795a, #7a4fb0); transform: rotate(-1deg); }
 .pv-stack .pv-file { position: absolute; inset: 0; opacity: 0.0; }
+
+/* icon slots on the little shelf, with an optional label over the middle one */
+.st-desk__slot { position: relative; display: block; }
+.st-desk__slot .st-desk__icon { display: block; }
+.st-desk__tip { position: absolute; left: 50%; bottom: calc(100% + 5px); transform: translateX(-50%); padding: 1px 7px; border-radius: 6px; background: var(--tooltip-bg, rgba(10, 16, 34, 0.92)); color: var(--tooltip-text, #fff); font-size: 9px; font-style: normal; white-space: nowrap; border: 1px solid var(--surface-border, rgba(255, 255, 255, 0.2)); }
+.pv-scene__shelf { left: 0; right: 0; bottom: 4%; }
+.pv-scene__shelf .st-desk { height: 62px; overflow: visible; }

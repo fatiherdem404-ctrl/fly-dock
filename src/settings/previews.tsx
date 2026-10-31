@@ -191,15 +191,24 @@ export const wallStyle = (live?: string): React.CSSProperties =>
 
 /** A whole desktop in miniature painted with one theme: wallpaper, dock with its shelf, a label and a panel. */
 export function ThemeScene({ theme, hue }: { theme: ThemeDef; hue?: number }) {
+  const box = useRef<HTMLSpanElement>(null)
+  const [width, setWidth] = useState(220)
+  useEffect(() => {
+    const el = box.current
+    if (!el) return
+    const observer = new ResizeObserver(() => setWidth(el.clientWidth))
+    observer.observe(el)
+    setWidth(el.clientWidth)
+    return () => observer.disconnect()
+  }, [])
   const live = theme.wallpaper?.live
   const accentHue = hue ?? hueOf(theme.vars.accent)
   return (
-    <span className="pv pv-scene" style={themeStyle(theme.vars)}>
+    <span ref={box} className="pv pv-scene" style={themeStyle(theme.vars)}>
       <span className="pv-scene__wall" style={wallStyle(live)}>
         {live && <LiveThumb id={live} hue={accentHue} className="pv-scene__live" />}
       </span>
-      <span className="pv-scene__shelf"><DeskCard style={(theme.desk?.deskStyle as DeskStyle | undefined) ?? 'glass'} /></span>
-      <em className="pv-scene__tip">Etiket</em>
+      <span className="pv-scene__shelf"><DeskCard style={(theme.desk?.deskStyle as DeskStyle | undefined) ?? 'glass'} length={Math.max(110, Math.round(width * 0.58))} label="Etiket" /></span>
       <span className="pv-scene__panel"><b>Aa</b><i /></span>
     </span>
   )
