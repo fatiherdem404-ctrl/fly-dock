@@ -72,6 +72,8 @@ export function StudioTab({ set }: { set: Update }) {
   useEffect(() => write('extras', extras), [extras])
   const all = useMemo(() => [...STUDIO_KEYS, ...extras.map((e) => [e.key, e.label, 'app-window'] as [string, string, string])], [extras])
   const [editing, setEditing] = useState<string | null>(null)
+  const [styles, setStyles] = useState<Record<string, Partial<Design>>>(() => read('styles', {}))
+  useEffect(() => write('styles', styles), [styles])
   useEffect(() => write('picks', picks), [picks])
   useEffect(() => {
     let live = true
@@ -85,8 +87,8 @@ export function StudioTab({ set }: { set: Update }) {
 
   const cards = useMemo(() => {
     const test = GROUPS.find(([id]) => id === group)![2]
-    return all.map((x, idx) => [...x, idx] as [string, string, string, number]).filter(([k, , , idx]) => test(k, idx)).map(([key, label, glyph, idx], i) => ({ key, label, extra: idx >= STUDIO_KEYS.length, svg: cardSvg(design, glyph, { index: idx, badge: key === 'trash-full', uid: `s${i}`, ...arts[key] }) }))
-  }, [design, group, arts, all])
+    return all.map((x, idx) => [...x, idx] as [string, string, string, number]).filter(([k, , , idx]) => test(k, idx)).map(([key, label, glyph, idx], i) => ({ key, label, extra: idx >= STUDIO_KEYS.length, svg: cardSvg({ ...design, ...styles[key] }, glyph, { index: idx, badge: key === 'trash-full', uid: `s${i}`, ...arts[key] }) }))
+  }, [design, group, arts, all, styles])
 
   const make = async () => {
     setBusy(true)
@@ -95,7 +97,7 @@ export function StudioTab({ set }: { set: Update }) {
       const images: Record<string, string> = {}
       for (let i = 0; i < all.length; i++) {
         const [key, , glyph] = all[i]
-        images[key] = await rasterize(cardSvg(design, glyph, { index: i, badge: key === 'trash-full', uid: 'x', ...(await artOf(picks[key] ?? null)) }), 256)
+        images[key] = await rasterize(cardSvg({ ...design, ...styles[key] }, glyph, { index: i, badge: key === 'trash-full', uid: 'x', ...(await artOf(picks[key] ?? null)) }), 256)
       }
       const r = await invoke('studio:make-pack', name, 'İkon stüdyosu', images, fallback ? { ...design } : null)
       if (r.ok && r.pack) {
@@ -130,7 +132,7 @@ export function StudioTab({ set }: { set: Update }) {
           {cards.map((c) => (
             <figure key={c.key} className="sd__card" onClick={() => setEditing(c.key)} title="Simgeyi değiştirmek için tıkla">
               <span dangerouslySetInnerHTML={{ __html: c.svg }} />
-              <figcaption>{c.label}{picks[c.key] ? ' ✎' : ''}{c.extra && <button className="sd__x" title="Bu programı listeden çıkar" onClick={(e) => { e.stopPropagation(); setExtras((cur) => cur.filter((x) => x.key !== c.key)) }}>✕</button>}</figcaption>
+              <figcaption>{c.label}{picks[c.key] || styles[c.key] ? ' ✎' : ''}{c.extra && <button className="sd__x" title="Bu programı listeden çıkar" onClick={(e) => { e.stopPropagation(); setExtras((cur) => cur.filter((x) => x.key !== c.key)) }}>✕</button>}</figcaption>
             </figure>
           ))}
           {group === 'apps' && (
@@ -162,6 +164,9 @@ export function StudioTab({ set }: { set: Update }) {
         <GlyphPicker
           title={all.find(([k]) => k === editing)?.[1] ?? editing}
           current={picks[editing] ?? null}
+          design={design}
+          style={styles[editing] ?? {}}
+          onStyle={(s) => setStyles((cur) => { const next = { ...cur }; if (Object.keys(s).length) next[editing] = s; else delete next[editing]; return next })}
           onClose={() => setEditing(null)}
           onPick={(g) => {
             setPicks((cur) => {

@@ -200,9 +200,9 @@ try {
   })
 
   await check('toys: the balls live in a click-through window, can be hit with the racket and thrown', async () => {
-    await invoke('settings:update', { toyTennis: true, toyBasket: true })
+    await invoke('settings:update', { toyTennis: true })
     const page = await until(async () => (await pages()).find((p) => p.url.includes('#/toys')), 'toy window')
-    const conn = await connect(page)
+    let conn = await connect(page)
     await until(async () => conn.call("!!window.__toys && !!window.__toys.balls.tennis"), 'toys are created')
     await sleep(1500)
     // a fast pointer sweeping through the tennis ball hits it
@@ -227,8 +227,16 @@ try {
       }, 8)
     })`)
     assert.equal(hit, true, 'the ball flew off after being hit')
+    // only one game runs at a time: switching to the basketball turns the tennis off
+    await invoke('settings:update', { toyBasket: true })
+    assert.equal((await invoke('settings:get')).toyTennis, false, 'turning one game on turns the others off')
+    // the toy window may be rebuilt for the new game: look it up again
+    await sleep(1200)
+    conn = await connect(await until(async () => (await pages()).find((p) => p.url.includes('#/toys')), 'toy window again'))
+    await until(async () => conn.call("!!window.__toys && !!window.__toys.balls.basket"), 'the basketball is created')
+    await sleep(800)
     // grab and throw the basketball
-    const thrown = await conn.call(`new Promise((resolve) => {
+    const thrown = await conn.call(`new Promise((resolve) => { 
       const b = window.__toys.balls.basket
       const fire = (type, x, y) => window.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, button: 0 }))
       fire('mousemove', b.x, b.y)
@@ -248,6 +256,8 @@ try {
     assert.equal(thrown.released && thrown.moving, true, 'letting go throws it')
     // the boot and the racket: coming near the football turns the pointer into a boot
     await invoke('settings:update', { toyFootball: true })
+    await sleep(1200)
+    conn = await connect(await until(async () => (await pages()).find((p) => p.url.includes('#/toys')), 'toy window again'))
     await until(async () => conn.call("!!window.__toys.balls.football"), 'football exists')
     await sleep(1800)
     const armed = await conn.call(`(() => {
@@ -259,6 +269,8 @@ try {
     await invoke('settings:update', { toyFootball: false })
     // keep-it-up: a click serves the baseball, the pointer becomes the racket and every hit is counted
     await invoke('settings:update', { toyBounce: true })
+    await sleep(1200)
+    conn = await connect(await until(async () => (await pages()).find((p) => p.url.includes('#/toys')), 'toy window again'))
     await until(async () => conn.call("!!window.__toys.balls.bounce"), 'baseball exists')
     await sleep(1500)
     const rally = await conn.call(`new Promise((resolve) => {
@@ -285,7 +297,7 @@ try {
     assert.ok(rally.hits >= 3, `the racket kept the ball up (hits: ${rally.hits})`)
     assert.equal(rally.stopped, true, 'a right click puts the racket down')
     await sleep(400)
-    assert.equal(await conn.call("document.querySelectorAll('.hud-card').length >= 3"), true, 'the scoreboard shows a card for every game that is on')
+    assert.equal(await conn.call("document.querySelectorAll('.hud-card').length === 1 && !!document.querySelector('.hud-card__close')"), true, 'the scoreboard shows the game that is on, with its close button')
     await invoke('settings:update', { toyBounce: false })
 
     const scores = await invoke('toys:scores', { basket: 3 })
