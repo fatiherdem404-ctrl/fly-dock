@@ -7,7 +7,7 @@ A modern dock for your desktop — An open-source Windows dock inspired by Rocke
 
 > Status: early development (Phase 0). Not ready for daily use yet.
 
-![Screenshot placeholder](docs/screenshot.png)
+![Fly Dock](docs/social-preview.png)
 
 ## Features
 

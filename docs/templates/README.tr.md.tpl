@@ -7,7 +7,7 @@
 
 > Durum: erken geliştirme (Faz 0). Henüz günlük kullanıma uygun değil.
 
-![Ekran görüntüsü yer tutucusu](docs/screenshot.png)
+![Fly Dock](docs/social-preview.png)
 
 ## Özellikler
 
