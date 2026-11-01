@@ -167,3 +167,32 @@ export function inGoal(ball: Ball, side: 'left' | 'right', width: number, depth:
   const inside = side === 'left' ? ball.x < depth : ball.x > width - depth
   return inside && ball.y > floor - height + ball.r * 0.5
 }
+
+/**
+ * A solid circle that moves (a racket head, the toe of a boot) running into the ball: the ball is pushed out of it and
+ * bounces off like off a moving wall, so a resting racket still returns a falling ball and a swung one sends it flying.
+ * Returns true on contact.
+ */
+export function bounceOffMover(ball: Ball, cx: number, cy: number, cr: number, cvx: number, cvy: number, restitution = 0.85): boolean {
+  const dx = ball.x - cx
+  const dy = ball.y - cy
+  const dist = Math.hypot(dx, dy)
+  const reach = ball.r + cr
+  if (dist >= reach || dist === 0) return false
+  const nx = dx / dist
+  const ny = dy / dist
+  ball.x = cx + nx * reach
+  ball.y = cy + ny * reach
+  const rel = (ball.vx - cvx) * nx + (ball.vy - cvy) * ny
+  if (rel < 0) {
+    ball.vx -= (1 + restitution) * rel * nx
+    ball.vy -= (1 + restitution) * rel * ny
+  }
+  ball.floorHits = 0
+  const v = Math.hypot(ball.vx, ball.vy)
+  if (v > MAX_SPEED) {
+    ball.vx *= MAX_SPEED / v
+    ball.vy *= MAX_SPEED / v
+  }
+  return true
+}

@@ -14,6 +14,8 @@ const UA = 'FlyDock-asset-fetch/1.0 (local build script)'
 const PNGS = {
   'hand.png': `${FLUENT}/Hand%20with%20fingers%20splayed/Default/3D/hand_with_fingers_splayed_3d_default.png`,
   'fist.png': `${FLUENT}/Raised%20fist/Default/3D/raised_fist_3d_default.png`,
+  'reach.png': `${FLUENT}/Rightwards%20hand/Default/3D/rightwards_hand_3d_default.png`,
+  'grab.png': `${FLUENT}/Palm%20down%20hand/Default/3D/palm_down_hand_3d_default.png`,
   'basketball.png': `${FLUENT}/Basketball/3D/basketball_3d.png`,
   'soccer.png': `${FLUENT}/Soccer%20ball/3D/soccer_ball_3d.png`,
 }

@@ -14,7 +14,7 @@ let boundsKey = ''
 
 const wanted = () => {
   const s = getSettings()
-  return s.toyPet || s.toyBasket || s.toyFootball || s.toyTennis || s.toyYoyo
+  return s.toyPet || s.toyBasket || s.toyFootball || s.toyTennis || s.toyBounce
 }
 
 function close() {

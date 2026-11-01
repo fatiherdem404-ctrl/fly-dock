@@ -200,7 +200,7 @@ try {
     const page = await until(async () => (await pages()).find((p) => p.url.includes('#/toys')), 'toy window')
     const conn = await connect(page)
     await until(async () => conn.call("!!window.__toys && !!window.__toys.balls.tennis && !!window.__toys.pet"), 'toys are created')
-    assert.equal(await conn.call("document.querySelector('.pet') !== null && document.querySelector('.pet').style.display !== 'none'"), true, 'the pet is drawn')
+    assert.equal(await conn.call('!!window.__toys.pet && window.__toys.pet.y > 0'), true, 'the pet stands on the floor')
     await sleep(1500)
     // a fast pointer sweeping through the tennis ball hits it
     const kicked = await conn.call(`(() => {
@@ -254,28 +254,36 @@ try {
     })()`)
     assert.equal(armed, 'football', 'the pointer turns into a boot near the football')
     await invoke('settings:update', { toyFootball: false })
-    // the baseball on its string: holding it starts a timed round, letting go ends the hold
-    await invoke('settings:update', { toyYoyo: true })
-    await until(async () => conn.call("!!window.__toys.balls.yoyo"), 'baseball exists')
+    // keep-it-up: a click serves the baseball, the pointer becomes the racket and every hit is counted
+    await invoke('settings:update', { toyBounce: true })
+    await until(async () => conn.call("!!window.__toys.balls.bounce"), 'baseball exists')
     await sleep(1500)
-    const yoyo = await conn.call(`new Promise((resolve) => {
+    const rally = await conn.call(`new Promise((resolve) => {
       const st = window.__toys
-      const b = st.balls.yoyo
+      const b = st.balls.bounce
       const fire = (type, x, y) => window.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, button: 0 }))
       fire('mousemove', b.x, b.y)
       fire('mousedown', b.x, b.y)
-      const held = st.yoyoHeld
-      const round = st.games.yoyo.round.active
-      fire('mousemove', b.x, b.y - 200)
-      setTimeout(() => {
-        fire('mouseup', 0, 0)
-        resolve({ held, round, released: !st.yoyoHeld })
-      }, 60)
+      const served = { playing: st.bounce.playing, round: st.games.bounce.round.active }
+      // hold the racket under the ball for a while
+      let n = 0
+      const timer = setInterval(() => {
+        fire('mousemove', b.x, b.y + 36)
+        if (++n > 140) {
+          clearInterval(timer)
+          const combo = st.bounce.combo
+          const hits = st.games.bounce.round.score
+          window.dispatchEvent(new MouseEvent('contextmenu', { clientX: 0, clientY: 0, cancelable: true }))
+          resolve({ served, combo, hits, stopped: !st.bounce.playing })
+        }
+      }, 16)
     })`)
-    assert.deepEqual(yoyo, { held: true, round: true, released: true }, 'the baseball is held on its string and a timed round starts')
+    assert.deepEqual(rally.served, { playing: true, round: true }, 'a click serves the ball and starts a timed round')
+    assert.ok(rally.hits >= 3, `the racket kept the ball up (hits: ${rally.hits})`)
+    assert.equal(rally.stopped, true, 'a right click puts the racket down')
     await sleep(400)
     assert.equal(await conn.call("document.querySelectorAll('.hud-card').length >= 3"), true, 'the scoreboard shows a card for every game that is on')
-    await invoke('settings:update', { toyYoyo: false })
+    await invoke('settings:update', { toyBounce: false })
 
     // the dog fetches a thrown stick and brings it back; the cat has a ball of yarn
     assert.equal(await conn.call('!!window.__toys.balls.yarn'), true, 'the cat has a ball of yarn')

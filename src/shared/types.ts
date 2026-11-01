@@ -254,13 +254,13 @@ export interface DockSettings {
   toyBasket: boolean
   toyFootball: boolean
   toyTennis: boolean
-  /** Baseball on an elastic string. */
-  toyYoyo: boolean
+  /** Keep a baseball in the air on a racket. */
+  toyBounce: boolean
   /** 'free': just play and keep count; 'timed': a 60-second round with a record. */
   toyBasketMode: ToyMode
   toyFootballMode: ToyMode
   toyTennisMode: ToyMode
-  toyYoyoMode: ToyMode
+  toyBounceMode: ToyMode
   toySound: boolean
   /** Where the toys sit among other windows: always on top, like a window, or under everything. */
   toyLayer: DockLayer
@@ -271,7 +271,7 @@ export interface DockSettings {
   toyPetPlay: boolean
 }
 
-export const DEFAULT_TOY_SCORES: ToyScores = { basket: 0, basketBest: 0, football: 0, footballBest: 0, tennisBest: 0, tennisTimedBest: 0, yoyoBest: 0, yoyoCombo: 0 }
+export const DEFAULT_TOY_SCORES: ToyScores = { basket: 0, basketBest: 0, football: 0, footballBest: 0, tennisBest: 0, tennisTimedBest: 0, bounceBest: 0, bounceCombo: 0 }
 
 export type ToyMode = 'free' | 'timed'
 
@@ -289,10 +289,10 @@ export interface ToyScores {
   tennisBest: number
   /** Most tennis hits in one 60-second round. */
   tennisTimedBest: number
-  /** Most baseball bounces in one 60-second round. */
-  yoyoBest: number
-  /** Most bounces in a row on one hold of the string (free play). */
-  yoyoCombo: number
+  /** Most racket hits keeping the baseball up in one 60-second round. */
+  bounceBest: number
+  /** Longest run of hits without letting the baseball fall (free play). */
+  bounceCombo: number
 }
 
 export type WidgetType = 'clock' | 'analog' | 'calendar' | 'weather' | 'system' | 'media' | 'battery' | 'note'
@@ -531,11 +531,11 @@ export const DEFAULT_SETTINGS: DockSettings = {
   toyBasket: false,
   toyFootball: false,
   toyTennis: false,
-  toyYoyo: false,
+  toyBounce: false,
   toyBasketMode: 'timed',
   toyFootballMode: 'timed',
   toyTennisMode: 'free',
-  toyYoyoMode: 'timed',
+  toyBounceMode: 'timed',
   toySound: true,
   toyLayer: 'above',
   toyFloor: 'dock',

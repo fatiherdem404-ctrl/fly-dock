@@ -9,7 +9,7 @@ import PetSprite, { PET_NAMES } from '@/toys/PetSprite'
 import type { PetKind } from '@/toys/pet'
 
 /** A small picture of each game, drawn once: the pitch with its ball. */
-function GamePic({ game }: { game: 'basket' | 'football' | 'tennis' | 'yoyo' }) {
+function GamePic({ game }: { game: 'basket' | 'football' | 'tennis' | 'bounce' }) {
   return (
     <svg viewBox="0 0 160 70" className="st-toypic" aria-hidden="true">
       <rect x="0" y="60" width="160" height="10" fill="rgba(255,255,255,0.12)" />
@@ -29,7 +29,7 @@ function GamePic({ game }: { game: 'basket' | 'football' | 'tennis' | 'yoyo' }) 
           <circle cx="80" cy="46" r="13" fill="#f2f3f6" /><path d="M80 40l6 4-2 7h-8l-2-7z" fill="#23262e" />
         </>
       )}
-      {game === 'yoyo' && (
+      {game === 'bounce' && (
         <>
           <path d="M40 8 C 44 30 60 40 78 44" stroke="#efe7d2" strokeWidth="1.8" fill="none" />
           <circle cx="40" cy="8" r="3" fill="#ffd9a0" />
@@ -55,20 +55,20 @@ function Scores(_props: { tab: string }) {
     invoke('toys:scores').then(setScores)
   }, [])
   return (
-    <Card icon="check" tab="Oyunlar" title="Skorların" hint="Süreye karşı modda tur 60 saniyedir: topa ilk dokunuşunla başlar, süre dolunca rekorun kaydedilir. Serbest modda rekor yalnızca tenis serisi ve yo-yo kombosu için tutulur. Kapatıp açsan da kaybolmaz.">
+    <Card icon="check" tab="Oyunlar" title="Skorların" hint="Süreye karşı modda tur 60 saniyedir: topa ilk dokunuşunla başlar, süre dolunca rekorun kaydedilir. Serbest modda rekor yalnızca tenis serisi ve sektirme serisi için tutulur. Kapatıp açsan da kaybolmaz.">
       <div className="st-scores">
         <div><b>{scores.basketBest}</b><small>Basketbol rekoru (60 sn)</small><em>toplam {scores.basket}</em></div>
         <div><b>{scores.footballBest}</b><small>Futbol rekoru (60 sn)</small><em>toplam {scores.football}</em></div>
         <div><b>{scores.tennisTimedBest}</b><small>Tenis rekoru (60 sn)</small><em>en uzun seri {scores.tennisBest}</em></div>
-        <div><b>{scores.yoyoBest}</b><small>Beyzbol Yo-yo rekoru (60 sn)</small><em>en uzun kombo {scores.yoyoCombo}</em></div>
+        <div><b>{scores.bounceBest}</b><small>Sektirme rekoru (60 sn)</small><em>en uzun seri {scores.bounceCombo}</em></div>
       </div>
-      <Row label="Skorları sıfırla"><button className="st-btn" onClick={() => invoke('toys:scores', { basket: 0, basketBest: 0, football: 0, footballBest: 0, tennisBest: 0, tennisTimedBest: 0, yoyoBest: 0, yoyoCombo: 0 }).then(setScores)}><Icon name="refresh" size={15} />Sıfırla</button></Row>
+      <Row label="Skorları sıfırla"><button className="st-btn" onClick={() => invoke('toys:scores', { basket: 0, basketBest: 0, football: 0, footballBest: 0, tennisBest: 0, tennisTimedBest: 0, bounceBest: 0, bounceCombo: 0 }).then(setScores)}><Icon name="refresh" size={15} />Sıfırla</button></Row>
     </Card>
   )
 }
 
 export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
-  const game = (key: 'toyBasket' | 'toyFootball' | 'toyTennis' | 'toyYoyo', modeKey: 'toyBasketMode' | 'toyFootballMode' | 'toyTennisMode' | 'toyYoyoMode', pic: 'basket' | 'football' | 'tennis' | 'yoyo', title: string, hint: string, how: string) => (
+  const game = (key: 'toyBasket' | 'toyFootball' | 'toyTennis' | 'toyBounce', modeKey: 'toyBasketMode' | 'toyFootballMode' | 'toyTennisMode' | 'toyBounceMode', pic: 'basket' | 'football' | 'tennis' | 'bounce', title: string, hint: string, how: string) => (
     <Card icon="toys" tab="Oyunlar" title={title} hint={hint}>
       <div className="st-toygame">
         <Frame className="st-toygame__pic"><GamePic game={pic} /></Frame>
@@ -98,7 +98,7 @@ export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
       {game('toyBasket', 'toyBasketMode', 'basket', 'Basketbol', 'Sağ kenarda bir pota, yerde bir top.', 'İmleç topun yanına gelince ele dönüşür: topu tutup fırlat, potadan geçerse sepet sayılır.')}
       {game('toyFootball', 'toyFootballMode', 'football', 'Futbol', 'İki yanda kale, ortada bir top.', 'İmleç topun yanına gelince krampon\'a dönüşür: topa hızlıca vur, iki kenardaki kalelerden birine girerse gol olur.')}
       {game('toyTennis', 'toyTennisMode', 'tennis', 'Tenis', 'Ortada bir file, hafif bir top.', 'İmleç topun yanına gelince rakete dönüşür. Serbestte en uzun seri, süreye karşıda 60 saniyedeki vuruş sayısı kaydedilir.')}
-      {game('toyYoyo', 'toyYoyoMode', 'yoyo', 'Beyzbol Yo-yo', 'Esnek bir ipe bağlı beyzbol topu.', 'Topu fareyle tut: ip seni takip eder. Topu yere vurdurdukça her sekme puan, üst üste sekmeler kombo olur.')}
+      {game('toyBounce', 'toyBounceMode', 'bounce', 'Sektirme', 'Raketle beyzbol topunu havada tut.', 'Topa tıkla, havaya fırlasın; imleç raketin olur. Topu yere düşürmeden sektir, her vuruş bir puan. Düşerse seri biter; sağ tık oyunu bırakır.')}
       <Scores tab="Oyunlar" />
       <Card icon="window" tab="Yerleşim" title="Pencere katmanı" hint="Oyuncaklar diğer pencerelerin üstünde mi dursun, onlar gibi davransın mı, yoksa masaüstü gibi altta mı kalsın.">
         <Cards<DockLayer> size="s" value={s.toyLayer} onChange={(toyLayer) => set({ toyLayer })} options={[

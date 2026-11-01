@@ -59,6 +59,24 @@ const world = { width: 1000, floor: 800, gravity: 1800, restitution: 0.7, rollin
   assert.equal(ball.kickBall(far, 100, 100, 2000, 0), false, 'misses when away')
 }
 
+// a moving solid (racket head, boot toe): a falling ball bounces off a resting one, a swung one sends it flying, a miss does nothing
+{
+  const b = ball.makeBall(300, 200, 15)
+  b.vy = 600
+  assert.equal(ball.bounceOffMover(b, 300, 232, 26, 0, 0, 0.9), true, 'a falling ball meets the racket head')
+  assert.ok(b.vy < -400, `it bounces up (${b.vy})`)
+  assert.ok(b.y <= 232 - 26 - 15 + 0.01, 'and is pushed out of the head')
+  const hit = ball.makeBall(300, 200, 15)
+  assert.equal(ball.bounceOffMover(hit, 270, 200, 26, 1500, 0, 0.8), true)
+  assert.ok(hit.vx > 1500, `a swung head launches the ball (${hit.vx})`)
+  const miss = ball.makeBall(600, 200, 15)
+  assert.equal(ball.bounceOffMover(miss, 270, 200, 26, 1500, 0, 0.8), false)
+  const away = ball.makeBall(300, 200, 15)
+  away.vx = 900
+  ball.bounceOffMover(away, 270, 200, 26, 0, 0, 0.8)
+  assert.ok(away.vx >= 900, 'a ball already leaving is not pulled back')
+}
+
 // throws take the speed of the last moments
 {
   const v = ball.throwVelocity([[0, 0, 0], [10, 0, 50], [60, -30, 100], [160, -90, 150]])
