@@ -2,11 +2,9 @@ import { useEffect, useState } from 'react'
 import { invoke } from '@/api'
 import Icon from '@/icons'
 import { DEFAULT_TOY_SCORES, DockLayer, DockSettings, ToyMode, ToyScores } from '@/shared/types'
-import { Card, Cards, Pages, Row, Segmented, Slider, Switch, Update } from '../ui'
+import { Card, Cards, Pages, Row, Segmented, Switch, Update } from '../ui'
 import { LayerPreview } from '../previews'
 import { Frame } from '../previews'
-import PetSprite, { PET_NAMES } from '@/toys/PetSprite'
-import type { PetKind } from '@/toys/pet'
 
 /** A small picture of each game, drawn once: the pitch with its ball. */
 function GamePic({ game }: { game: 'basket' | 'football' | 'tennis' | 'bounce' }) {
@@ -80,21 +78,6 @@ export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
   )
   return (
     <Pages id="toys">
-      <Card icon="toys" tab="Evcil hayvan" title="Evcil hayvan" hint="Masaüstünde, dock’un üstünde gezen küçük bir dost. Uyur, oturur, seni takip eder; tutup fırlatabilir, tıklayıp sevebilirsin.">
-        <Row label="Evcil hayvan açık"><Switch label="Evcil hayvan" value={s.toyPet} onChange={(toyPet) => set({ toyPet })} /></Row>
-        <Cards<PetKind> value={s.toyPetKind} onChange={(toyPetKind) => set({ toyPetKind })} options={(['cat', 'dog'] as PetKind[]).map((k) => ({
-          id: k,
-          label: PET_NAMES[k],
-          hint: k === 'cat' ? 'Sakin ve tembel' : 'Neşeli, hep peşinde',
-          preview: <span className="st-petpic"><PetSprite kind={k} /></span>,
-        }))} />
-      </Card>
-      <Card icon="edit" tab="Evcil hayvan" title="Huyu ve boyu">
-        <Row label="Adı" hint="Üzerine gelince ya da severken görünür"><input className="st-input" type="text" maxLength={20} value={s.toyPetName} onChange={(e) => set({ toyPetName: e.target.value })} /></Row>
-        <Row label="Peşimden gelsin" hint="İmleci yere yakın tutunca yanına koşar"><Switch label="Takip" value={s.toyPetChase} onChange={(toyPetChase) => set({ toyPetChase })} /></Row>
-        <Row label="Oyuncağı olsun" hint="Kedinin ip yumağı, köpeğin fırlatılıp getirilen odunu"><Switch label="Oyuncak" value={s.toyPetPlay} onChange={(toyPetPlay) => set({ toyPetPlay })} /></Row>
-        <Row label="Boyut"><Slider value={s.toyPetSize} min={48} max={140} step={2} unit=" px" onChange={(toyPetSize) => set({ toyPetSize })} /></Row>
-      </Card>
       {game('toyBasket', 'toyBasketMode', 'basket', 'Basketbol', 'Sağ kenarda bir pota, yerde bir top.', 'İmleç topun yanına gelince ele dönüşür: topu tutup fırlat, potadan geçerse sepet sayılır.')}
       {game('toyFootball', 'toyFootballMode', 'football', 'Futbol', 'İki yanda kale, ortada bir top.', 'İmleç topun yanına gelince krampon\'a dönüşür: topa hızlıca vur, iki kenardaki kalelerden birine girerse gol olur.')}
       {game('toyTennis', 'toyTennisMode', 'tennis', 'Tenis', 'Ortada bir file, hafif bir top.', 'İmleç topun yanına gelince rakete dönüşür. Serbestte en uzun seri, süreye karşıda 60 saniyedeki vuruş sayısı kaydedilir.')}

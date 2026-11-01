@@ -22,7 +22,7 @@ export const TAB_INFO: Record<Tab, TabInfo> = {
   items: { id: 'items', label: 'Öğeler', icon: 'items', blurb: 'Dock’taki programlar ve kısayolları' },
   wheel: { id: 'wheel', label: 'Kontrol paneli', icon: 'controlpanel', blurb: 'Windows ayarlarına ve araçlarına hızlı erişim listesi' },
   widgets: { id: 'widgets', label: 'Widget’lar', icon: 'widgets', blurb: 'Saat, takvim, hava durumu ve daha fazlası; temana uyumlu' },
-  toys: { id: 'toys', label: 'Oyuncaklar', icon: 'toys', blurb: 'Evcil hayvan, basketbol, futbol, tenis ve sektirme' },
+  toys: { id: 'toys', label: 'Oyuncaklar', icon: 'toys', blurb: 'Basketbol, futbol, tenis ve sektirme' },
   tweaks: { id: 'tweaks', label: 'Tweaks', icon: 'tools', blurb: 'Güvenli, geri alınabilir Windows ayarları' },
   general: { id: 'general', label: 'Genel', icon: 'general', blurb: 'Başlangıç, yedek ve hakkında' },
 }
@@ -89,7 +89,6 @@ export const SEARCH_INDEX: SearchEntry[] = [
   e('Dock’taki öğeler, kısayollar', 'items', undefined, 'hotkey'),
   e('Kontrol paneli girdileri', 'wheel', undefined, 'denetim masası çark ekle araçlar'),
   e('Widget ekle (analog saat, takvim, hava, not…)', 'widgets', 'Ekle', 'saat hava pil sistem medya not'),
-  e('Evcil hayvan (kedi, köpek)', 'toys', 'Evcil hayvan', 'pet oyuncak peşimden'),
   e('Basketbol, futbol, tenis, sektirme', 'toys', 'Oyunlar', 'oyun top pota gol seri skor serbest süreye karşı rekor'),
   e('Windows tweak’leri', 'tweaks', undefined, 'gizli dosya uzantı klasik menü'),
   e('Windows ile başlat', 'general', undefined, 'startup login'),

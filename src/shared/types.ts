@@ -245,12 +245,6 @@ export interface DockSettings {
   /** Folders whose pictures show up in the icon picker. */
   iconFolders: string[]
   // desktop toys
-  toyPet: boolean
-  toyPetKind: 'cat' | 'dog'
-  toyPetName: string
-  /** The pet runs to the pointer when it is near the floor. */
-  toyPetChase: boolean
-  toyPetSize: number
   toyBasket: boolean
   toyFootball: boolean
   toyTennis: boolean
@@ -267,8 +261,6 @@ export interface DockSettings {
   /** What the toys stand on: the top of the dock or the bottom edge of the screen. */
   toyFloor: 'dock' | 'screen'
   toyHoopSide: 'left' | 'right'
-  /** The cat gets a ball of yarn, the dog a stick to fetch. */
-  toyPetPlay: boolean
 }
 
 export const DEFAULT_TOY_SCORES: ToyScores = { basket: 0, basketBest: 0, football: 0, footballBest: 0, tennisBest: 0, tennisTimedBest: 0, bounceBest: 0, bounceCombo: 0 }
@@ -523,11 +515,6 @@ export const DEFAULT_SETTINGS: DockSettings = {
   wallpaperPauseFullscreen: true,
   wallpaperPauseBattery: true,
   iconFolders: [],
-  toyPet: false,
-  toyPetKind: 'cat',
-  toyPetName: 'Pamuk',
-  toyPetChase: true,
-  toyPetSize: 72,
   toyBasket: false,
   toyFootball: false,
   toyTennis: false,
@@ -540,7 +527,6 @@ export const DEFAULT_SETTINGS: DockSettings = {
   toyLayer: 'above',
   toyFloor: 'dock',
   toyHoopSide: 'right',
-  toyPetPlay: true,
 }
 
 // ---- IPC contract: one table drives the preload bridge, the main-process handlers and the renderer calls ----

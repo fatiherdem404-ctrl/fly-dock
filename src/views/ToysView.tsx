@@ -2,10 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { invoke, useEvent } from '@/api'
 import type { DockSettings, ToyMode, ToyScores } from '@/shared/types'
 import { DEFAULT_TOY_SCORES } from '@/shared/types'
-import { Ball, Segment, World, bounceOffMover, inGoal, kickBall, makeBall, scoredThroughRim, stepBall, throwVelocity } from '@/toys/ball'
-import { Pet, drop, makePet, pickUp, stepPet, stroke } from '@/toys/pet'
-import { drawPet, drawPetExtras } from '@/toys/petDraw'
-import { drawSprite, frameFor, preloadPet } from '@/toys/petSprites'
+import { Ball, Segment, World, bounceOffMover, inGoal, makeBall, scoredThroughRim, stepBall, throwVelocity } from '@/toys/ball'
 import handUrl from '@/assets/toys/hand.png'
 import fistUrl from '@/assets/toys/fist.png'
 import reachUrl from '@/assets/toys/reach.png'
@@ -16,12 +13,10 @@ import basketballUrl from '@/assets/toys/basketball.png'
 import soccerUrl from '@/assets/toys/soccer.png'
 
 type GameId = 'basket' | 'football' | 'tennis' | 'bounce'
-/** The pet's own playthings: the cat's ball of yarn and the dog's stick. */
-type PlayKind = 'yarn' | 'stick'
-type BallKind = GameId | PlayKind
+type BallKind = GameId
 type Round = { active: boolean; left: number; score: number }
 
-const ALL: BallKind[] = ['basket', 'football', 'tennis', 'bounce', 'yarn', 'stick']
+const ALL: BallKind[] = ['basket', 'football', 'tennis', 'bounce']
 const GAME_IDS: GameId[] = ['basket', 'football', 'tennis', 'bounce']
 const ROUND_SECONDS = 60
 
@@ -69,10 +64,9 @@ interface HudResult {
 /** Everything that moves lives here, outside React: the animation loop reads and writes it every frame. */
 interface Sim {
   balls: Partial<Record<BallKind, Ball>>
-  pet: Pet | null
   pointer: { x: number; y: number; vx: number; vy: number; t: number } | null
   samples: [number, number, number][]
-  drag: { kind: 'ball'; ball: BallKind; dx: number; dy: number } | { kind: 'pet'; dx: number; dy: number; moved: number; at: number } | null
+  drag: { kind: 'ball'; ball: BallKind; dx: number; dy: number } | null
   capture: boolean
   scores: ToyScores
   /** Tennis rally in free play. */
@@ -99,20 +93,8 @@ interface Sim {
   toolVy: number
   /** Last time each ball was struck, to count one stroke once. */
   struck: Record<string, number>
-  /** The dog has the stick in its mouth. */
-  carried: boolean
-  /** The stick was thrown and lies free for the dog to fetch. */
-  stickThrown: boolean
-  /** Where the stick was thrown from: the dog brings it back there. */
-  throwFrom: number
   /** Racket and baseball: a rally is on, the pointer is the racket, and hits in a row are counted. */
   bounce: { playing: boolean; combo: number; respawn: number }
-  /** Pet animation: a clock, and how far through its walking cycle it is. */
-  clock: number
-  /** Seconds until the pet says something on its own. */
-  talk: number
-  gait: number
-  lastPetX: number
   cursor: string
 }
 
@@ -121,8 +103,6 @@ const SPEC: Record<BallKind, { r: number; gravity: number; restitution: number; 
   football: { r: 28, gravity: 1900, restitution: 0.62, rolling: 0.9 },
   tennis: { r: 13, gravity: 1500, restitution: 0.86, rolling: 0.7 },
   bounce: { r: 17, gravity: 1900, restitution: 0.8, rolling: 1 },
-  yarn: { r: 15, gravity: 1800, restitution: 0.5, rolling: 0.8 },
-  stick: { r: 9, gravity: 1900, restitution: 0.3, rolling: 3.2 },
 }
 const GOAL_DEPTH = 64
 const GOAL_HEIGHT = 150
@@ -177,15 +157,13 @@ function segmentsFor(kind: BallKind, width: number, floor: number, side: 'left' 
   return []
 }
 
-function startPosition(kind: BallKind, width: number, floor: number, side: 'left' | 'right', petX = width * 0.3): [number, number] {
+function startPosition(kind: BallKind, width: number, floor: number, side: 'left' | 'right'): [number, number] {
   const r = SPEC[kind].r
   switch (kind) {
     case 'basket': return [side === 'right' ? width - 280 : 280, floor - r]
     case 'football': return [width * 0.62, floor - r]
     case 'tennis': return [width * 0.3, floor - r]
-    case 'bounce': return [width * 0.46, floor - r]
-    case 'yarn': return [Math.min(Math.max(petX + 170, 80), width - 80), floor - r]
-    default: return [Math.min(Math.max(petX - 170, 80), width - 80), floor - r]
+    default: return [width * 0.46, floor - r]
   }
 }
 
@@ -209,65 +187,6 @@ function tone(on: boolean, from: number, to: number, seconds: number, type: Osci
     osc.stop(t0 + seconds + 0.02)
   } catch {
     /* no audio device: the toys stay silent */
-  }
-}
-
-/** One voiced sound: a pitch glide through a band-pass filter, which is what gives a meow or a bark its vowel. */
-function note(on: boolean, from: number, to: number, seconds: number, type: OscillatorType, volume: number, delay: number, filterHz: number, q: number) {
-  if (!on) return
-  try {
-    audio ??= new AudioContext()
-    if (audio.state === 'suspended') void audio.resume()
-    const t0 = audio.currentTime + delay
-    const osc = audio.createOscillator()
-    const filter = audio.createBiquadFilter()
-    const gain = audio.createGain()
-    osc.type = type
-    osc.frequency.setValueAtTime(from, t0)
-    osc.frequency.exponentialRampToValueAtTime(Math.max(30, to), t0 + seconds)
-    filter.type = 'bandpass'
-    filter.frequency.value = filterHz
-    filter.Q.value = q
-    gain.gain.setValueAtTime(0.0001, t0)
-    gain.gain.exponentialRampToValueAtTime(volume, t0 + Math.min(0.04, seconds / 3))
-    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + seconds)
-    osc.connect(filter).connect(gain).connect(audio.destination)
-    osc.start(t0)
-    osc.stop(t0 + seconds + 0.03)
-  } catch {
-    /* no audio device */
-  }
-}
-
-type Voice = 'happy' | 'lift' | 'call' | 'huff' | 'proud'
-
-/** What a cat or a dog says: a meow with a purr, or a bark, for the moment it is in. */
-function petVoice(on: boolean, kind: 'cat' | 'dog', voice: Voice) {
-  if (!on) return
-  if (kind === 'cat') {
-    if (voice === 'lift') {
-      note(on, 700, 1100, 0.14, 'sawtooth', 0.09, 0, 1500, 5)
-      note(on, 1100, 800, 0.25, 'sawtooth', 0.08, 0.12, 1300, 5)
-    } else if (voice === 'huff') {
-      note(on, 400, 300, 0.08, 'triangle', 0.05, 0, 900, 2)
-    } else {
-      note(on, 520, 820, 0.18, 'sawtooth', 0.08, 0, 1400, 5)
-      note(on, 820, 520, 0.34, 'sawtooth', 0.08, 0.16, 1100, 5)
-      if (voice === 'happy' || voice === 'proud') for (let i = 0; i < 36; i++) note(on, 78, 70, 0.035, 'sawtooth', 0.05, 0.55 + i * 0.045, 260, 1)
-    }
-    return
-  }
-  if (voice === 'lift') {
-    note(on, 950, 1400, 0.08, 'square', 0.05, 0, 1800, 3)
-    note(on, 1400, 700, 0.18, 'square', 0.05, 0.07, 1500, 3)
-  } else if (voice === 'huff') {
-    note(on, 220, 140, 0.09, 'sawtooth', 0.07, 0, 800, 2)
-  } else if (voice === 'proud') {
-    note(on, 330, 130, 0.14, 'sawtooth', 0.14, 0, 900, 3)
-    note(on, 360, 140, 0.16, 'sawtooth', 0.14, 0.22, 950, 3)
-  } else {
-    note(on, 300, 120, 0.13, 'sawtooth', 0.13, 0, 900, 3)
-    if (voice === 'happy') note(on, 340, 130, 0.14, 'sawtooth', 0.12, 0.2, 950, 3)
   }
 }
 
@@ -298,28 +217,11 @@ function drawBall(c: CanvasRenderingContext2D, b: Ball, kind: BallKind, floor: n
   const shade = Math.max(0.08, 0.32 - height / 900)
   c.fillStyle = `rgba(0,0,0,${shade})`
   c.beginPath()
-  c.ellipse(b.x, floor - 2, (kind === 'stick' ? 30 : b.r) * Math.max(0.35, 1 - height / 700), b.r * 0.22, 0, 0, TAU)
+  c.ellipse(b.x, floor - 2, b.r * Math.max(0.35, 1 - height / 700), b.r * 0.22, 0, 0, TAU)
   c.fill()
   c.save()
   c.translate(b.x, b.y)
   c.rotate(b.angle)
-  if (kind === 'stick') {
-    // a branch: a rounded brown stick with a knot and a twig
-    c.lineCap = 'round'
-    c.strokeStyle = '#6b4423'
-    c.lineWidth = 9
-    c.beginPath(); c.moveTo(-32, 0); c.lineTo(32, 0); c.stroke()
-    c.strokeStyle = '#8f5f33'
-    c.lineWidth = 5
-    c.beginPath(); c.moveTo(-31, -1.5); c.lineTo(31, -1.5); c.stroke()
-    c.strokeStyle = '#6b4423'
-    c.lineWidth = 4
-    c.beginPath(); c.moveTo(6, 0); c.lineTo(16, -11); c.stroke()
-    c.fillStyle = '#4a2c13'
-    c.beginPath(); c.arc(-18, 1, 2, 0, TAU); c.fill()
-    c.restore()
-    return
-  }
   if ((kind === 'basket' || kind === 'football') && ready(PICS[kind])) {
     const d = b.r * 2.12
     c.drawImage(PICS[kind], -d / 2, -d / 2, d, d)
@@ -329,7 +231,6 @@ function drawBall(c: CanvasRenderingContext2D, b: Ball, kind: BallKind, floor: n
   const g = c.createRadialGradient(-b.r * 0.35, -b.r * 0.4, b.r * 0.1, 0, 0, b.r)
   if (kind === 'basket') { g.addColorStop(0, '#ffb066'); g.addColorStop(1, '#c9591b') }
   else if (kind === 'football') { g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#cfd3da') }
-  else if (kind === 'yarn') { g.addColorStop(0, '#ff9ec4'); g.addColorStop(1, '#d6447f') }
   else if (kind === 'bounce') { g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#d9d6cf') }
   else { g.addColorStop(0, '#e9ff6a'); g.addColorStop(1, '#a9c91d') }
   c.fillStyle = g
@@ -337,15 +238,7 @@ function drawBall(c: CanvasRenderingContext2D, b: Ball, kind: BallKind, floor: n
   c.arc(0, 0, b.r, 0, TAU)
   c.fill()
   c.lineCap = 'round'
-  if (kind === 'yarn') {
-    c.strokeStyle = 'rgba(120,20,60,0.55)'
-    c.lineWidth = 1.5
-    for (let i = -2; i <= 2; i++) {
-      c.beginPath()
-      c.ellipse(0, 0, b.r * 0.95, Math.max(2, b.r * (0.25 + Math.abs(i) * 0.18)), i * 0.5, 0, TAU)
-      c.stroke()
-    }
-  } else if (kind === 'bounce') {
+  if (kind === 'bounce') {
     // a baseball: two curved seams with red stitches
     c.strokeStyle = '#c8302f'
     c.lineWidth = 1.8
@@ -609,16 +502,15 @@ function Toys({ s }: { s: DockSettings }) {
   const [hud, setHud] = useState<{ cards: HudCard[]; result: HudResult | null }>({ cards: [], result: null })
   const newGame = () => ({ round: { active: false, left: 0, score: 0 }, session: 0 })
   const sim = useRef<Sim>({
-    balls: {}, pet: null, pointer: null, samples: [], drag: null, capture: false, scores: { ...DEFAULT_TOY_SCORES }, rally: 0,
+    balls: {}, pointer: null, samples: [], drag: null, capture: false, scores: { ...DEFAULT_TOY_SCORES }, rally: 0,
     games: { basket: newGame(), football: newGame(), tennis: newGame(), bounce: newGame() },
     result: null, flash: null, respawn: 0, hover: false, size: '', armed: null, toolDir: 1, toolTilt: 0, toolPos: null, toolVx: 0, toolVy: 0, struck: {},
-    carried: false, stickThrown: false, throwFrom: 0, bounce: { playing: false, combo: 0, respawn: 0 }, clock: 0, talk: 20, gait: 0, lastPetX: 0, cursor: '',
+    bounce: { playing: false, combo: 0, respawn: 0 }, cursor: '',
   })
 
   useEffect(() => {
     const st = sim.current
     ;(window as unknown as { __toys: Sim }).__toys = st
-    preloadPet(settingsRef.current.toyPetKind)
     invoke('toys:scores').then((scores) => (st.scores = scores))
     const setCapture = (on: boolean) => {
       if (st.capture === on) return
@@ -662,21 +554,12 @@ function Toys({ s }: { s: DockSettings }) {
       if (record) [523, 659, 784, 1047].forEach((f, i) => tone(sound, f, f, 0.2, 'triangle', 0.1, i * 0.12))
       else tone(sound, 400, 200, 0.4, 'triangle', 0.1)
     }
-    const petBox = () => {
-      const cur = settingsRef.current
-      const p = st.pet
-      if (!p || !cur.toyPet) return null
-      const size = cur.toyPetSize
-      return { x: p.x - size * 0.55, y: p.y - size * 0.95, w: size * 1.1, h: size * 0.95 }
-    }
-    /** What can be picked up or started at a point: basketball, baseball, yarn, stick or the pet. */
-    const grabAt = (x: number, y: number): { kind: 'ball'; ball: BallKind } | { kind: 'pet' } | null => {
-      for (const kind of ['yarn', 'stick', 'bounce', 'basket'] as BallKind[]) {
+    /** What can be picked up or started at a point: the basketball or the baseball. */
+    const grabAt = (x: number, y: number): { kind: 'ball'; ball: BallKind } | null => {
+      for (const kind of ['bounce', 'basket'] as BallKind[]) {
         const b = st.balls[kind]
-        if (b && Math.hypot(b.x - x, b.y - y) <= b.r + (kind === 'stick' ? 26 : 8)) return { kind: 'ball', ball: kind }
+        if (b && Math.hypot(b.x - x, b.y - y) <= b.r + 8) return { kind: 'ball', ball: kind }
       }
-      const box = petBox()
-      if (box && x >= box.x && x <= box.x + box.w && y >= box.y && y <= box.y + box.h) return { kind: 'pet' }
       return null
     }
     /** Is the pointer close enough to a ball to turn into a hand, a boot or a racket? */
@@ -693,9 +576,7 @@ function Toys({ s }: { s: DockSettings }) {
       st.armed = playing || st.drag ? null : armedFor(x, y)
       const over = playing || st.drag ? null : grabAt(x, y)
       setCapture(!!over || !!st.armed || !!st.drag || playing)
-      setCursor(st.drag || st.armed || playing ? 'none' : over ? (over.kind === 'pet' ? 'pointer' : 'grab') : '')
-      const hovering = over?.kind === 'pet'
-      if (hovering !== st.hover) st.hover = hovering
+      setCursor(st.drag || st.armed || playing ? 'none' : over ? 'grab' : '')
     }
     /** A rally of the racket and the baseball has ended: the ball touched the floor. */
     const dropBounce = () => {
@@ -730,15 +611,9 @@ function Toys({ s }: { s: DockSettings }) {
             ball.x = Math.min(Math.max(e.clientX + d.dx, ball.r), w - ball.r)
             ball.y = Math.min(Math.max(e.clientY + d.dy, ball.r), h - ball.r)
           }
-        } else if (st.pet) {
-          d.moved += Math.hypot(e.movementX, e.movementY)
-          st.pet.x = e.clientX + d.dx
-          st.pet.y = e.clientY + d.dy
         }
         return
       }
-      const yarn = st.balls.yarn
-      if (yarn && kickBall(yarn, e.clientX, e.clientY, vx, vy)) tone(settingsRef.current.toySound, 330, 200, 0.06, 'triangle', 0.08)
       refresh(e.clientX, e.clientY)
     }
     const onDown = (e: MouseEvent) => {
@@ -766,21 +641,8 @@ function Toys({ s }: { s: DockSettings }) {
         ball.vx = 0
         ball.vy = 0
         ball.floorHits = 0
-        if (over.ball === 'stick') {
-          st.carried = false
-          st.stickThrown = false
-        }
         if (over.ball === 'basket') startRound('basket')
         st.drag = { kind: 'ball', ball: over.ball, dx: ball.x - e.clientX, dy: ball.y - e.clientY }
-      } else if (st.pet) {
-        if (st.carried) {
-          st.carried = false
-          const stick = st.balls.stick
-          if (stick) stick.grabbed = false
-        }
-        pickUp(st.pet)
-        petVoice(settingsRef.current.toySound, settingsRef.current.toyPetKind, 'lift')
-        st.drag = { kind: 'pet', dx: st.pet.x - e.clientX, dy: st.pet.y - e.clientY, moved: 0, at: performance.now() }
       }
     }
     const onUp = () => {
@@ -795,20 +657,7 @@ function Toys({ s }: { s: DockSettings }) {
           ball.grabbed = false
           ball.vx = v.vx
           ball.vy = v.vy
-          if (d.ball === 'stick' && Math.hypot(v.vx, v.vy) > 250) {
-            st.stickThrown = true
-            st.throwFrom = st.pointer?.x ?? ball.x
-          }
         }
-      } else if (st.pet) {
-        const click = d.moved < 5 && performance.now() - d.at < 400
-        if (click) {
-          st.pet.state = 'idle'
-          st.pet.timer = 0.1
-          stroke(st.pet)
-          const cur = settingsRef.current
-          petVoice(cur.toySound, cur.toyPetKind, 'happy')
-        } else drop(st.pet, v.vx * 0.5, v.vy * 0.5)
       }
       const p = st.pointer
       if (p) refresh(p.x, p.y)
@@ -868,7 +717,6 @@ function Toys({ s }: { s: DockSettings }) {
       if (w < 300 || h < 300) return // the window has not been laid out yet
       const floor = floorOf(cur, h)
       const side = cur.toyHoopSide
-      st.clock += dt
 
       // the toys that should exist right now
       const enabled: Record<BallKind, boolean> = {
@@ -876,8 +724,6 @@ function Toys({ s }: { s: DockSettings }) {
         football: cur.toyFootball,
         tennis: cur.toyTennis,
         bounce: cur.toyBounce,
-        yarn: cur.toyPet && cur.toyPetPlay && cur.toyPetKind === 'cat',
-        stick: cur.toyPet && cur.toyPetPlay && cur.toyPetKind === 'dog',
       }
 
       // a changed screen size puts the balls back where they start, and nothing scores while they settle
@@ -885,7 +731,7 @@ function Toys({ s }: { s: DockSettings }) {
       if (st.size !== sizeKey) {
         if (st.size) {
           for (const kind of Object.keys(st.balls) as BallKind[]) {
-            const [x, y] = startPosition(kind, w, floor, side, st.pet?.x)
+            const [x, y] = startPosition(kind, w, floor, side)
             Object.assign(st.balls[kind]!, { x, y: y - 120, vx: 0, vy: 0 })
           }
           st.respawn = 0.6
@@ -897,14 +743,10 @@ function Toys({ s }: { s: DockSettings }) {
         if (!enabled[kind]) {
           if (st.balls[kind]) {
             delete st.balls[kind]
-            if (kind === 'stick') {
-              st.carried = false
-              st.stickThrown = false
-            }
             if (kind === 'bounce') st.bounce = { playing: false, combo: 0, respawn: 0 }
           }
         } else if (!st.balls[kind]) {
-          const [x, y] = startPosition(kind, w, floor, side, st.pet?.x)
+          const [x, y] = startPosition(kind, w, floor, side)
           st.balls[kind] = makeBall(x, y - 120, SPEC[kind].r)
         }
       }
@@ -914,8 +756,6 @@ function Toys({ s }: { s: DockSettings }) {
         if (g.round.active && (!enabledOf(cur, id) || modeOf(cur, id) === 'free')) g.round.active = false
         if (!enabledOf(cur, id)) g.session = 0
       }
-      if (!cur.toyPet) st.pet = null
-      else if (!st.pet) st.pet = makePet(w * 0.3, floor)
 
       // ---- the pointer's tool: which ball it faces, how it swings, and every spot it passed through this frame ----
       const p = st.pointer
@@ -953,12 +793,10 @@ function Toys({ s }: { s: DockSettings }) {
       for (const kind of ALL) {
         const ball = st.balls[kind]
         if (!ball) continue
-        if (kind === 'stick' && st.carried) continue
         const spec = SPEC[kind]
         const world: World = { width: w, floor, gravity: spec.gravity, restitution: spec.restitution, rolling: spec.rolling }
         const hitsBefore = ball.floorHits
         const prevY = ball.y
-        const prevAngle = ball.angle
         const speedBefore = Math.abs(ball.vy)
         // a ball being served up off the floor, or waiting to be put back, stays out of the physics
         if (kind === 'bounce' && st.bounce.respawn > 0) {
@@ -973,14 +811,7 @@ function Toys({ s }: { s: DockSettings }) {
           continue
         }
         stepBall(ball, dt, world, segmentsFor(kind, w, floor, side))
-        if (kind === 'stick' && !ball.grabbed) {
-          // a thrown stick tumbles in the air and settles flat once it lies on the floor
-          if (ball.y >= floor - ball.r - 0.5) {
-            const flat = Math.round(prevAngle / Math.PI) * Math.PI
-            ball.angle = prevAngle + (flat - prevAngle) * Math.min(1, 12 * dt)
-          } else ball.angle = prevAngle + ball.vx * 0.12 * dt
-        }
-        if (ball.floorHits > hitsBefore && speedBefore > 260 && kind !== 'stick') tone(cur.toySound, 150, 70, 0.09, 'sine', Math.min(0.2, speedBefore / 6000))
+        if (ball.floorHits > hitsBefore && speedBefore > 260) tone(cur.toySound, 150, 70, 0.09, 'sine', Math.min(0.2, speedBefore / 6000))
         if (ball.y > floor - ball.r) ball.y = floor - ball.r
 
         // the boot, the racket: solid, swept along the way the pointer travelled
@@ -1076,59 +907,6 @@ function Toys({ s }: { s: DockSettings }) {
         if (st.result.left <= 0) st.result = null
       }
 
-      const pet = st.pet
-      if (pet) {
-        const yarn = st.balls.yarn
-        const stick = st.balls.stick
-        const event = stepPet(pet, dt, {
-          width: w, floor, pointer: st.pointer, chase: cur.toyPetChase, size: cur.toyPetSize, rand: Math.random, kind: cur.toyPetKind,
-          yarn: yarn ? { x: yarn.x, rolling: Math.hypot(yarn.vx, yarn.vy) > 40 || yarn.y < floor - yarn.r - 4 } : null,
-          stick: stick ? { x: stick.x, free: st.stickThrown && !stick.grabbed && !st.carried } : null,
-          home: st.throwFrom || w / 2,
-        })
-        const size = cur.toyPetSize
-        if (event === 'swat' && yarn) {
-          yarn.vx += pet.dir * (260 + Math.random() * 200)
-          yarn.vy = -(240 + Math.random() * 220)
-          tone(cur.toySound, 700, 420, 0.07, 'triangle', 0.08)
-        } else if (event === 'pickup') {
-          st.carried = true
-          st.stickThrown = false
-          if (stick) {
-            stick.vx = 0
-            stick.vy = 0
-          }
-          petVoice(cur.toySound, cur.toyPetKind, 'huff')
-        } else if (event === 'drop') {
-          st.carried = false
-          if (stick) {
-            stick.vx = pet.dir * 40
-            stick.vy = -120
-          }
-          petVoice(cur.toySound, cur.toyPetKind, 'proud')
-        }
-        if (st.carried && stick) {
-          // the stick rides in the dog's mouth
-          stick.x = pet.x + pet.dir * size * 0.5
-          stick.y = pet.y - size * 0.6
-          stick.vx = 0
-          stick.vy = 0
-          stick.angle = pet.dir > 0 ? 0.2 : -0.2
-        }
-        st.talk -= dt
-        if (st.talk <= 0) {
-          st.talk = 25 + Math.random() * 40
-          if (pet.state === 'idle' || pet.state === 'sit' || pet.state === 'walk') petVoice(cur.toySound, cur.toyPetKind, 'call')
-        }
-        // the walking cycle moves on with the ground the pet really covers, so the feet never slide
-        const moved = Math.abs(pet.x - st.lastPetX)
-        st.lastPetX = pet.x
-        if (pet.state === 'walk' || pet.state === 'run' || pet.state === 'carry') {
-          const cycle = size * (pet.state === 'walk' ? 0.62 : 0.85)
-          st.gait += moved / cycle
-        }
-      }
-
       const cv = canvas.current
       if (cv) {
         const dpr = window.devicePixelRatio || 1
@@ -1140,21 +918,6 @@ function Toys({ s }: { s: DockSettings }) {
         c.setTransform(dpr, 0, 0, dpr, 0, 0)
         c.clearRect(0, 0, w, h)
         drawScene(c, cur, st, w, floor)
-        if (pet) {
-          const size = cur.toyPetSize
-          if (pet.state !== 'held') {
-            // a soft shadow keeps the pet on the ground, and it shrinks while the pet is in the air
-            const lift = Math.max(0, floor - pet.y)
-            c.fillStyle = `rgba(0,0,0,${Math.max(0.05, 0.15 - lift / 700)})`
-            c.beginPath()
-            c.ellipse(pet.x, floor - 1, size * 0.3 * Math.max(0.5, 1 - lift / 500), size * 0.05, 0, 0, Math.PI * 2)
-            c.fill()
-          }
-          const frame = frameFor(cur.toyPetKind, pet.state, st.clock, st.gait)
-          if (!drawSprite(c, cur.toyPetKind, pet.state, frame, pet.x, pet.y, size, pet.dir)) drawPet(c, pet.x, pet.y, size, pet.dir, { kind: cur.toyPetKind, state: pet.state, time: st.clock, gait: st.gait })
-          if (st.carried && st.balls.stick) drawBall(c, st.balls.stick, 'stick', floor)
-          drawPetExtras(c, pet.x, pet.y, size, pet.state, st.clock, cur.toyPetName || 'Dostum', st.hover || pet.state === 'happy' || pet.state === 'held')
-        }
         if (p) {
           const dragged = st.drag && st.drag.kind === 'ball' ? st.balls[st.drag.ball] : null
           if (dragged) {

@@ -195,12 +195,11 @@ try {
     assert.equal(typeof (await invoke('places:icon', 'network')), 'string', 'it has a picture')
   })
 
-  await check('toys: the pet and the balls live in a click-through window, balls can be kicked and thrown', async () => {
-    await invoke('settings:update', { toyPet: true, toyTennis: true, toyBasket: true })
+  await check('toys: the balls live in a click-through window, can be hit with the racket and thrown', async () => {
+    await invoke('settings:update', { toyTennis: true, toyBasket: true })
     const page = await until(async () => (await pages()).find((p) => p.url.includes('#/toys')), 'toy window')
     const conn = await connect(page)
-    await until(async () => conn.call("!!window.__toys && !!window.__toys.balls.tennis && !!window.__toys.pet"), 'toys are created')
-    assert.equal(await conn.call('!!window.__toys.pet && window.__toys.pet.y > 0'), true, 'the pet stands on the floor')
+    await until(async () => conn.call("!!window.__toys && !!window.__toys.balls.tennis"), 'toys are created')
     await sleep(1500)
     // a fast pointer sweeping through the tennis ball hits it
     const kicked = await conn.call(`(() => {
@@ -285,34 +284,11 @@ try {
     assert.equal(await conn.call("document.querySelectorAll('.hud-card').length >= 3"), true, 'the scoreboard shows a card for every game that is on')
     await invoke('settings:update', { toyBounce: false })
 
-    // the dog fetches a thrown stick and brings it back; the cat has a ball of yarn
-    assert.equal(await conn.call('!!window.__toys.balls.yarn'), true, 'the cat has a ball of yarn')
-    await invoke('settings:update', { toyPetKind: 'dog' })
-    await until(async () => conn.call("!!window.__toys.balls.stick && !window.__toys.balls.yarn"), 'the dog has a stick, the yarn is gone')
-    const thrownStick = await conn.call(`new Promise((resolve) => {
-      const st = window.__toys
-      const b = st.balls.stick
-      const fire = (type, x, y) => window.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, button: 0 }))
-      fire('mousemove', b.x, b.y)
-      fire('mousedown', b.x, b.y)
-      let i = 0
-      const timer = setInterval(() => {
-        fire('mousemove', b.x + 30, b.y - 30)
-        if (++i > 6) {
-          clearInterval(timer)
-          fire('mouseup', 0, 0)
-          setTimeout(() => resolve(st.stickThrown), 50)
-        }
-      }, 10)
-    })`)
-    assert.equal(thrownStick, true, 'a thrown stick lies free for the dog')
-    await until(async () => conn.call('window.__toys.carried || window.__toys.pet.cool > 0'), 'the dog fetched the stick', 70)
-    await until(async () => conn.call('!window.__toys.carried && !window.__toys.stickThrown'), 'the dog brings it back and lets go', 80)
     const scores = await invoke('toys:scores', { basket: 3 })
     assert.equal(scores.basket, 3, 'scores are stored')
     await invoke('toys:scores', { basket: 0 })
     conn.ws.close()
-    await invoke('settings:update', { toyPet: false, toyTennis: false, toyBasket: false, toyPetKind: 'cat' })
+    await invoke('settings:update', { toyTennis: false, toyBasket: false })
     await until(async () => !(await pages()).some((p) => p.url.includes('#/toys')), 'toy window closes when all toys are off')
   })
 
