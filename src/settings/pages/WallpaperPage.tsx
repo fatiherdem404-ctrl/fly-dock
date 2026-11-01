@@ -64,6 +64,7 @@ export function WallpaperTab({ s, set }: { s: DockSettings; set: Update }) {
         <Row icon="maximize" label="Resim yerleşimi"><Select<WallpaperFit> value={s.wallpaperFit} onChange={(wallpaperFit) => set({ wallpaperFit })} options={FITS} /></Row>
         <Row icon="monitor" label="Tam ekran uygulamada dur" hint="Oyun ya da video tam ekranken arka plan çalışmaz, işlemciyi yormaz"><Switch label="Tam ekranda dur" value={s.wallpaperPauseFullscreen} onChange={(wallpaperPauseFullscreen) => set({ wallpaperPauseFullscreen })} /></Row>
         <Row icon="cursor" label="Fareye tepki ver" hint="Hareketli arka planlar farenin yerini izler: yıldızlar bağlanır, dalgalar kabarır, baloncuklar kaçışır"><Switch label="Fareye tepki" value={s.wallpaperReact} onChange={(wallpaperReact) => set({ wallpaperReact })} /></Row>
+        <Row icon="clock" label="Hareketli arka plan hızı" hint="Kendi yazdığın kod sahneleri bu hızda çizilir. Düşük hız işlemciyi, ekran kartını ve fanları rahatlatır"><Select<number> value={s.wallpaperFps} onChange={(wallpaperFps) => set({ wallpaperFps })} options={[[15, '15 kare (en sessiz)'], [24, '24 kare'], [30, '30 kare (önerilen)'], [60, '60 kare']]} /></Row>
         <Row icon="battery" label="Pilde dur" hint="Dizüstü pille çalışırken hareketli arka plan durur"><Switch label="Pilde dur" value={s.wallpaperPauseBattery} onChange={(wallpaperPauseBattery) => set({ wallpaperPauseBattery })} /></Row>
         {info && <p className="st-prose">{info.paused ? 'Şu an duraklatılmış.' : info.source ? 'Çalışıyor.' : 'Arka plan yok.'}</p>}
       </Card>

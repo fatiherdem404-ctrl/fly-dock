@@ -246,6 +246,8 @@ export interface DockSettings {
   wallpaperReact: boolean
   /** The cursor pack in use ('' = Windows' own pointers). */
   cursorPack: string
+  /** Frames per second of code scenes on the desktop (lower is quieter and cooler). */
+  wallpaperFps: number
   /** Folders whose pictures show up in the icon picker. */
   iconFolders: string[]
   // desktop toys
@@ -578,6 +580,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   wallpaperPauseBattery: true,
   wallpaperReact: true,
   cursorPack: '',
+  wallpaperFps: 30,
   iconFolders: [],
   toyBasket: false,
   toyFootball: false,

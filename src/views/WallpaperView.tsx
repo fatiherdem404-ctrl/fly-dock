@@ -32,12 +32,12 @@ function VideoLayer({ url, fit, paused }: { url: string; fit: WallpaperFit; paus
   return <video ref={video} className="wp__media" src={url} autoPlay loop muted playsInline style={{ objectFit: FIT_CSS[fit].object as 'cover' }} />
 }
 
-function Layer({ source, fit, hue, paused, visible, pointer }: { source: WallpaperSource; fit: WallpaperFit; hue: number; paused: boolean; visible: boolean; pointer: Pointer }) {
+function Layer({ source, fit, hue, paused, visible, pointer, fps }: { source: WallpaperSource; fit: WallpaperFit; hue: number; paused: boolean; visible: boolean; pointer: Pointer; fps: number }) {
   const f = FIT_CSS[fit]
   return (
     <div className="wp__layer" style={{ opacity: visible ? 1 : 0 }}>
       {source.kind === 'live' && <LiveLayer id={source.live ?? 'aurora'} hue={hue} paused={paused} pointer={pointer} />}
-      {source.kind === 'scene' && source.code && <SceneFrame code={source.code} paused={paused} pointer={pointer} />}
+      {source.kind === 'scene' && source.code && <SceneFrame code={source.code} paused={paused} fps={fps} pointer={pointer} />}
       {source.kind === 'video' && source.url && <VideoLayer url={source.url} fit={fit} paused={paused} />}
       {source.kind === 'image' && source.url && <div className="wp__media" style={{ backgroundImage: `url("${source.url}")`, backgroundSize: f.size, backgroundRepeat: f.repeat, backgroundPosition: 'center' }} />}
     </div>
@@ -102,7 +102,7 @@ export default function WallpaperView() {
   return (
     <div className="wp">
       {layers.map((l) => (
-        <Layer key={l.key} source={l.source} fit={info?.fit ?? 'fill'} hue={hue} paused={info?.paused ?? false} visible={l.visible} pointer={pointer} />
+        <Layer key={l.key} source={l.source} fit={info?.fit ?? 'fill'} hue={hue} paused={info?.paused ?? false} visible={l.visible} pointer={pointer} fps={settings?.wallpaperFps ?? 30} />
       ))}
     </div>
   )

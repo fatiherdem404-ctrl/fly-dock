@@ -17,7 +17,7 @@ const ctx = canvas.getContext('2d')
 const view = { width: 0, height: 0 }
 const pointer = { x: 0, y: 0, nx: 0.5, ny: 0.5, on: false, down: false }
 let scene = { init: null, draw: null, click: null }
-let paused = false, failed = false, last = 0, t0 = 0, warm = 45
+let paused = false, failed = false, last = 0, t0 = 0, warm = 45, gap = 1000 / 30
 const fail = (e) => {
   if (failed) return
   failed = true
@@ -29,7 +29,7 @@ const fail = (e) => {
 const fit = () => {
   const dpr = Math.min(2, window.devicePixelRatio || 1)
   const w = Math.max(1, window.innerWidth), h = Math.max(1, window.innerHeight)
-  const k = Math.min(dpr, Math.sqrt(4000000 / (w * h)))
+  const k = Math.min(dpr, Math.sqrt(2200000 / (w * h)))
   canvas.width = Math.round(w * k)
   canvas.height = Math.round(h * k)
   ctx.setTransform(k, 0, 0, k, 0, 0)
@@ -41,6 +41,8 @@ const frame = (now) => {
   requestAnimationFrame(frame)
   // a paused scene still draws its first moments, so a thumbnail is never a black square
   if (failed || !scene.draw || (paused && warm <= 0)) { last = now; return }
+  // a screen may refresh at 144 Hz; a wallpaper does not need to, and the fans do not need to hear it
+  if (now - last < gap - 2) return
   warm--
   const dt = Math.min(0.1, (now - last) / 1000 || 0.016)
   last = now
@@ -56,6 +58,7 @@ window.addEventListener('message', (ev) => {
   if (d.fly === 'pointer') { pointer.nx = d.x; pointer.ny = d.y; pointer.x = d.x * view.width; pointer.y = d.y * view.height; pointer.on = !!d.on }
   else if (d.fly === 'click') { pointer.down = true; setTimeout(() => { pointer.down = false }, 120); if (scene.click && !failed) { try { scene.click(d.x * view.width, d.y * view.height) } catch (e) { fail(e) } } }
   else if (d.fly === 'pause') paused = !!d.v
+  else if (d.fly === 'fps') gap = 1000 / Math.max(5, Math.min(120, Number(d.v) || 30))
 })
 window.addEventListener('resize', fit)
 window.addEventListener('mousemove', (e) => { pointer.x = e.clientX; pointer.y = e.clientY; pointer.nx = e.clientX / view.width; pointer.ny = e.clientY / view.height; pointer.on = true })
@@ -91,26 +94,33 @@ export interface SceneError {
 interface Props {
   code: string
   paused?: boolean
+  /** Frames per second the scene is drawn at (default 30). */
+  fps?: number
   /** Live pointer in 0..1, fed from outside when the frame cannot see the mouse itself (the desktop wallpaper). */
   pointer?: Pointer
   onError?: (e: SceneError | null) => void
   className?: string
 }
 
-export default function SceneFrame({ code, paused = false, pointer, onError, className }: Props) {
+export default function SceneFrame({ code, paused = false, fps = 30, pointer, onError, className }: Props) {
   const frame = useRef<HTMLIFrameElement>(null)
   const doc = useMemo(() => sceneDocument(code), [code])
   const report = useRef(onError)
   report.current = onError
   const pausedRef = useRef(paused)
   pausedRef.current = paused
+  const fpsRef = useRef(fps)
+  fpsRef.current = fps
 
   useEffect(() => {
     report.current?.(null)
     const onMessage = (ev: MessageEvent) => {
       if (ev.source !== frame.current?.contentWindow) return
       const d = ev.data
-      if (d?.fly === 'scene-ready') frame.current?.contentWindow?.postMessage({ fly: 'pause', v: pausedRef.current }, '*')
+      if (d?.fly === 'scene-ready') {
+        frame.current?.contentWindow?.postMessage({ fly: 'pause', v: pausedRef.current }, '*')
+        frame.current?.contentWindow?.postMessage({ fly: 'fps', v: fpsRef.current }, '*')
+      }
       if (d?.fly === 'scene-error') report.current?.({ message: String(d.message).slice(0, 300), line: Number(d.line) || 0 })
     }
     window.addEventListener('message', onMessage)
@@ -120,6 +130,9 @@ export default function SceneFrame({ code, paused = false, pointer, onError, cla
   useEffect(() => {
     frame.current?.contentWindow?.postMessage({ fly: 'pause', v: paused }, '*')
   }, [paused, doc])
+  useEffect(() => {
+    frame.current?.contentWindow?.postMessage({ fly: 'fps', v: fps }, '*')
+  }, [fps, doc])
 
   // the wallpaper window gets no mouse events, so the shared pointer is relayed at a steady rate
   useEffect(() => {
