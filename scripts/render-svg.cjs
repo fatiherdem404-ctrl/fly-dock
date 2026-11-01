@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Renders an html page (with an svg in it) to a transparent PNG: npx electron scripts/render-svg.cjs page.html out.png width height
 // Used for src/assets/toys/boot.png and racket.png, made from the svgs in src/assets/toys/source.
 const { app, BrowserWindow } = require('electron')

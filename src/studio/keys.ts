@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 /** Every icon key the studio draws: [pack key, label shown under it, Lucide glyph]. The keys are the ones docs/ICON-NAMES.md lists. */
 export const STUDIO_KEYS: [string, string, string][] = [
   ['start', 'Başlat', 'layout-grid'],

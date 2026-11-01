@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Typed wrappers around ipcMain / webContents.send, driven by InvokeMap and EventMap in src/shared/types.ts.
 import { ipcMain, BrowserWindow, IpcMainInvokeEvent } from 'electron'
 import type { InvokeMap, InvokeChannel, EventMap, EventChannel } from '../src/shared/types'

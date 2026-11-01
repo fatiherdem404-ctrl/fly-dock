@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Interface sounds, synthesised on the fly (no audio files to ship or license). Every window that wants sounds
 // calls initSound() once; playSound() then follows the user's settings: master switch, volume, theme and groups.
 import { SOUND_GROUP_OF, SoundEvent, SoundTheme, DockSettings } from '@/shared/types'

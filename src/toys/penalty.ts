@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // The penalty game of the football toy, on the same pitch seen from above as the free kicks: the goal with the keeper is
 // at the far end (right, or at the top on a vertical pitch). The ball is pulled back like a sling (the pull sets
 // direction and power), the mouse wheel sets the curve ("falso") and the keeper moves along his line after it.

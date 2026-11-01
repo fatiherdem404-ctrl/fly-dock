@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import { useCallback, useEffect, useState } from 'react'
 import Dock from '@/components/Dock'
 import { invoke, useActiveTheme, useEvent } from '@/api'

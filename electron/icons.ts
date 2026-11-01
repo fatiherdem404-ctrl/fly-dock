@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Icon resolution for dock items: custom file > active icon pack > shell icon of the target.
 import fs from 'node:fs'
 import { shellIcon, fileIcon } from './iconService'

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Custom desk textures: only real images are stored, under a name made from their content, and only those names
 // can be read back.
 import { build } from 'esbuild'

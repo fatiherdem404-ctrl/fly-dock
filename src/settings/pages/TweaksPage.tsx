@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import { useState } from 'react'
 import { invoke, useRemote } from '@/api'
 import Icon from '@/icons'

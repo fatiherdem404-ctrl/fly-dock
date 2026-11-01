@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // The penalty game: the pull sets the shot, the flight is predictable, and every shot ends one way or another.
 import { build } from 'esbuild'
 import { mkdtempSync } from 'node:fs'

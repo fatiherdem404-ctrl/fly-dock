@@ -54,3 +54,5 @@ Fly Dock ücretsiz ve açık kaynaklıdır. İşine yaradıysa geliştirmeyi [Ko
 ## Lisans
 
 GPL-3.0-only — bkz. [LICENSE](LICENSE). Telif © 2026 Fatih Erdem.
+
+Kod serbestçe kullanılabilir ve değiştirilebilir. "Fly Dock" adı ve logo lisansın parçası değildir: resmî sürümü belirtir. Değiştirilmiş bir sürüm yayımlarsan başka bir ad ve logo kullan, telif notlarını koru ve değiştirildiğini belirt — ayrıntılar [NOTICE](NOTICE) dosyasında.

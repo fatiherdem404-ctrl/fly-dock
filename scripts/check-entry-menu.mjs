@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Check of rename / delete from the folder window's context menu, on a throwaway folder and profile.
 import { spawn } from 'node:child_process'
 import { mkdtempSync, writeFileSync, existsSync, readdirSync, mkdirSync } from 'node:fs'

@@ -1,0 +1,43 @@
+Fly Dock
+Copyright (C) 2026 Fatih Erdem
+
+The source code of Fly Dock is free software under the GNU General Public License, version 3 (see LICENSE).
+You may use, study, change and share it, as the licence says. Three things the licence leaves open are settled here.
+
+1. AUTHORSHIP
+   Copyright notices and author credits in the source files and in this NOTICE stay as they are in every copy and
+   every modified version. A modified version has to say that it is modified and must not present itself as the
+   original work of its author or as the official Fly Dock.
+
+2. NAME AND LOGO
+   The name "Fly Dock" and the logo (build/logo-mark.svg, build/logo-1024.png, build/logo-source.png, build/icon.ico,
+   build/tray-icon.png, src/assets/logo.png) are NOT part of what the GPL gives you. They identify the official
+   release published by Fatih Erdem. If you publish a changed version, give it another name and another logo
+   (src/config/brand.config.json holds the name, the links and the logo paths for exactly that purpose).
+   Plain, truthful mentions ("based on Fly Dock", "a fork of Fly Dock") are welcome.
+
+3. NO WARRANTY
+   As in the GPL, the software comes without any warranty.
+
+----------------------------------------------------------------------------------------------------------------
+
+Fly Dock
+Telif (C) 2026 Fatih Erdem
+
+Fly Dock'un kaynak kodu GNU Genel Kamu Lisansı sürüm 3 (GPLv3) ile özgür yazılımdır (bkz. LICENSE). Lisansın dediği
+gibi kullanabilir, inceleyebilir, değiştirebilir ve paylaşabilirsin. Lisansın açık bıraktığı üç şey burada belli:
+
+1. YAZARLIK
+   Kaynak dosyalardaki ve bu NOTICE dosyasındaki telif notları ve yazar bilgisi her kopyada ve her değiştirilmiş
+   sürümde olduğu gibi kalır. Değiştirilmiş sürüm, değiştirildiğini belirtmeli; yazarın özgün işiymiş ya da resmî
+   Fly Dock'muş gibi görünmemelidir.
+
+2. AD VE LOGO
+   "Fly Dock" adı ve logo (build/logo-mark.svg, build/logo-1024.png, build/logo-source.png, build/icon.ico,
+   build/tray-icon.png, src/assets/logo.png) GPL'in sana verdikleri arasında DEĞİLDİR. Fatih Erdem'in yayımladığı
+   resmî sürümü belirtirler. Değiştirilmiş bir sürüm yayımlarsan başka bir ad ve başka bir logo kullan
+   (src/config/brand.config.json adı, bağlantıları ve logo yollarını tam bunun için tutar).
+   "Fly Dock'a dayanır", "Fly Dock'un bir çatalı" gibi doğru ve açık anmalar serbesttir.
+
+3. GARANTİ YOK
+   GPL'deki gibi yazılım hiçbir garanti olmadan verilir.

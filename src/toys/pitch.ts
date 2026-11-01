@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // The football pitch seen from above: two goals, drawn in full inside the screen, either one on each side (horizontal)
 // or one at the bottom and one at the top (vertical), like a real pitch. The ball slides and slows down on its own.
 import type { Ball, Segment } from './ball'

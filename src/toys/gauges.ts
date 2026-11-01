@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // The meters every aiming game shares: a green-yellow-red power gauge and a round dial for the curl (or the height).
 import { TAU } from './mini'
 

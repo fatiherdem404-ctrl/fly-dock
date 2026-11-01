@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Checks the dock maths: falloff shape, spring behaviour (no overshoot, frame-rate independence), row anchoring.
 import { build } from 'esbuild'
 import { mkdtempSync } from 'node:fs'

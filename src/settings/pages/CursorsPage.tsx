@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import { useEffect, useState } from 'react'
 import { invoke, useRemote } from '@/api'
 import { CursorStatus, DockSettings } from '@/shared/types'

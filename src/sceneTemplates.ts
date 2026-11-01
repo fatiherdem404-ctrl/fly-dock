@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 /** Starting points for a scene written by the user. Every one shows the same three hooks: init, draw, click. */
 
 export const SCENE_HELP = `// Sahne kodu: aşağıdaki işlevlerden istediğini yaz.

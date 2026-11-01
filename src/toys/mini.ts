@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // The small self-contained games of the desktop toys (Pong, bowling, darts). Each one lives in a panel in the middle
 // of the screen, so the rest of the desktop stays usable, and talks to the toy window through this small interface.
 

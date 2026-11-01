@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // The built-in live wallpapers: canvas scenes that need no files. Each one is tinted from the theme's accent colour
 // (hue 0..360), runs at 30 fps and stops completely when stopped, so a paused wallpaper costs nothing.
 // Every scene reacts to the mouse and to clicks. The wallpaper sits behind the desktop icons and cannot be clicked, so the

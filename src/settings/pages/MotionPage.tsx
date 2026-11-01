@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import Icon from '@/icons'
 import { DockSettings, AnimationCurve, HoverAnimation, IndicatorStyle, LaunchAnimation, ShowAnimation, SpeedPreset, WindowAnimation } from '@/shared/types'
 import { Card, Cards, Pages, Row, Slider, Segmented, Update } from '../ui'

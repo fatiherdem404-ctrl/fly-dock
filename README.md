@@ -54,3 +54,5 @@ Fly Dock is free and open source. If it is useful to you, you can support develo
 ## License
 
 GPL-3.0-only — see [LICENSE](LICENSE). Copyright © 2026 Fatih Erdem.
+
+The code is free to use and change. The name "Fly Dock" and the logo are not part of the licence: they mark the official release. If you publish a changed version, give it another name and logo, keep the copyright notices and say that it is modified — details in [NOTICE](NOTICE).

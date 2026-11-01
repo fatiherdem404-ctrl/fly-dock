@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import { invoke, useRemote } from '@/api'
 import Icon from '@/icons'
 import { DockSettings, LIVE_WALLPAPERS, WallpaperMode, WallpaperFit } from '@/shared/types'

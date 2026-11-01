@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Ball physics for the desktop toys (basketball, football, tennis). Pure functions on plain objects so the maths can be
 // tested without a window. Units are pixels and seconds; y grows downwards and the floor is a horizontal line.
 

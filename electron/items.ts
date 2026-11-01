@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Dock item logic: adding, removing, launching, and matching items to open windows.
 import { shell, app } from 'electron'
 import path from 'node:path'

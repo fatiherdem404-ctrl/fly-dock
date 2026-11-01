@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Windows cursor files, written by hand so no tool has to be installed: .cur (a list of PNG images with hot spots)
 // and .ani (a RIFF list of .cur frames with a frame rate). Nothing in here touches Electron or the system.
 

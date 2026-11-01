@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 namespace DockHelper;
 
 internal record WindowInfo(long hwnd, uint pid, string exePath, string title, bool minimized);

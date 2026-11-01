@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import { Children, isValidElement, ReactElement, ReactNode, useState } from 'react'
 import { playSound } from '@/sound'
 import Icon, { IconName } from '@/icons'

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Runs the tweak engine against a private registry key (HKCU\Software\FlyDockTweakTest) with the real reg.exe:
 // apply, revert, restoring a pre-existing value, double apply, key tweaks, and refusal to leave HKCU.
 import { build } from 'esbuild'

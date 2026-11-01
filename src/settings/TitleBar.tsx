@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import logoUrl from '@/assets/logo.png'
 import Icon, { IconName } from '@/icons'

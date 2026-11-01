@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Client for the C# helper process (helper/): newline-delimited JSON over stdin/stdout.
 // Requests carry an id and get a {id,result|error} reply; everything else is an {event,data} push.
 import { spawn, ChildProcessWithoutNullStreams } from 'node:child_process'

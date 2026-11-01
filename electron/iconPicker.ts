@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // The icon picker window (RocketDock's "Icon Settings"): opened from a dock icon's menu or the gear-menu settings,
 // it shows the whole icon library and applies the chosen picture to one target.
 import { BrowserWindow, nativeImage, screen } from 'electron'

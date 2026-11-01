@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // The dock's context menu is a small themed window (glass, icons, open animation) instead of the native menu.
 import { BrowserWindow, screen } from 'electron'
 import { baseWebPreferences, loadRoute, OFFSCREEN } from './windows'

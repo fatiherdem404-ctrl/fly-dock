@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 /** Browser only: draws an SVG to a PNG (base64, no prefix) at the given size. */
 export async function rasterize(svg: string, size = 256): Promise<string> {
   const img = new Image()

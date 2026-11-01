@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Checks that nothing is ever cut off by the dock window: for every edge, several extreme settings and several
 // display scale factors, the pointer sweeps the whole dock and on every animation frame every icon, label and
 // the desk must lie inside the window. Run after `npx vite build`:  node scripts/fit-dock.mjs [--scales=1,1.25,1.5,2]

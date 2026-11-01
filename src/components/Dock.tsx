@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { DockItem, DockSettings, RunningState } from '@/shared/types'
 import { invoke } from '@/api'

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Validates the pack importer against hostile and valid archives. Run with `npm test`.
 import { build } from 'esbuild'
 import { mkdtempSync, writeFileSync } from 'node:fs'

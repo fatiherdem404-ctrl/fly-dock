@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Turns the extra icon libraries used by the icon studio's picker into one lazy-loaded file each, with every glyph
 // already drawn in a 24 x 24 box (so the picker and the card renderer treat them like Lucide):
 //   Tabler (MIT)               node_modules/@tabler/icons/icons/outline      -> stroke icons

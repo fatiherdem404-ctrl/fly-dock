@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Right-click menus for the entries inside the dock's own windows (folder, group and gear windows), modelled on the
 // Windows context menu: open, show location, rename, copy path, delete. Every action runs here in the main process
 // on a path or id that the window itself listed.

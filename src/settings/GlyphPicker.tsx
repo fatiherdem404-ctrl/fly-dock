@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Icon from '@/icons'

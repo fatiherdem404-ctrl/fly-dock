@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Desktop toys (basketball, football, rally): one transparent window over the work area of the main display.
 // It lets every click through except where a toy is (the page tells us with toys:capture), never takes focus, and goes
 // away while a program runs full screen.

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Pure dock maths, kept free of React and the DOM so it can be unit-tested (see tests/physics.test.mjs).
 import type { AnimationCurve, FalloffCurve, SpeedPreset } from './shared/types'
 

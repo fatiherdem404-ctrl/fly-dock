@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import type { IconName } from '@/icons'
 
 export type Tab = 'dock' | 'desk' | 'theme' | 'wallpaper' | 'icons' | 'studio' | 'cursors' | 'motion' | 'windows' | 'sound' | 'items' | 'wheel' | 'widgets' | 'toys' | 'tweaks' | 'general'

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Pong against the computer on the whole screen, drawn like the football pitch (translucent grass, white lines): your
 // paddle follows the pointer, the ball speeds up with every return, first to seven wins. The desktop stays usable:
 // the window only takes the mouse on the "Başla" button between games.

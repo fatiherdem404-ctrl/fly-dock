@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import { ReactNode, useEffect, useRef, useState } from 'react'
 import type { WidgetType } from '@/shared/types'
 import { widgetBase, widgetScale, widgetStyle, WidgetOptions } from '@/shared/widgets'

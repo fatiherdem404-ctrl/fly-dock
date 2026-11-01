@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import { useEffect } from 'react'
 import Icon from '@/icons'
 import { initSound, previewSound, SOUND_THEMES } from '@/sound'

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Checks the toy physics: balls bounce, rest and never tunnel; kicks, throws and solid movers; scoring.
 import { build } from 'esbuild'
 import { mkdtempSync } from 'node:fs'

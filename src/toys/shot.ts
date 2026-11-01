@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // The basketball's "hoop across the screen" mode: the ball waits on a spot, the pull sets power and (through its
 // direction) the height of the arc, and a dotted line can show where it will go.
 

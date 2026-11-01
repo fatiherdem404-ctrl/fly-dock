@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import { useEffect, useState } from 'react'
 import { invoke, useActiveTheme } from '@/api'
 import Icon from '@/icons'

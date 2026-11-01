@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Starts the built app with a throw-away profile, drives the dock with synthetic mouse moves over the
 // DevTools protocol and measures what a person would see: frame times, jitter once the pointer rests,
 // overshoot, and whether icons ever poke out of the glass. Needs `npx vite build` first.

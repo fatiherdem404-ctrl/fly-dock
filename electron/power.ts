@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Power menu: a full-screen overlay with lock, sleep, restart, shut down and sign out. Every action is a fixed
 // command; the real Windows lock screen is used for "lock" (LockWorkStation), nothing pretends to be it.
 import { BrowserWindow, screen } from 'electron'

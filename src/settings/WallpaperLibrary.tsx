@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { invoke, useRemote } from '@/api'

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Icons come from the C# helper (shell icon at up to 256px, with alpha) and are cached on disk
 // per path + modification time, so an updated exe gets a fresh icon.
 import { app, nativeImage } from 'electron'

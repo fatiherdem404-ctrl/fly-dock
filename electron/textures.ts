@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Custom desk textures: the user picks an image, it is copied into the app's own folder under a name made from its
 // content, and only that name is kept in the settings. Nothing outside the folder is ever read back.
 import { app, dialog } from 'electron'

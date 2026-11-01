@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // WI Tweaks: a small, reversible set of Windows settings, described as data.
 // Every tweak is a registry value (or key) under HKCU, so nothing needs administrator rights. Before a tweak is
 // applied the previous state is saved, and reverting restores exactly that state. Commands are fixed argument lists

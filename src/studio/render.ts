@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import { GLYPHS } from './glyphs.generated'
 
 /** Everything the studio can change about a card. All sizes are on the 256 px picture. */

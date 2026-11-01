@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Ready-made dock items, like RocketDock's "add item" list: the usual places of the PC and the dock's own menus.
 // Every place is a normal dock item (so it can be renamed, re-iconed and removed); this file only knows how to make one.
 import { app } from 'electron'

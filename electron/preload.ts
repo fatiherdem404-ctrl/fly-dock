@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { InvokeMap, InvokeChannel, EventMap, EventChannel } from '../src/shared/types'
 

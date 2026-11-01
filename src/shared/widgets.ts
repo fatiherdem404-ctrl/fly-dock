@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // What the desktop widgets are: their types, looks and sizes. Shared by the main process (which sizes the windows)
 // and the pages (which draw the widgets and their previews), so both always agree.
 import type { WidgetInstance, WidgetType } from './types'

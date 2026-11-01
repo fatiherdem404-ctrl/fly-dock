@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Draws the built-in icon pack (resources/icon-packs/fly-default) with the icon studio's "Dock önizlemesi" card: coloured
 // rounded squares with a soft gradient and a white glyph, the colours of the dock preview in the settings.
 // Needs no network: the glyphs are already in src/studio. Run after changing the studio's look or key list.

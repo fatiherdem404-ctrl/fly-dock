@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Cursor files: the .cur and .ani writers are checked by reading them back, and the built-in pack is turned into real
 // files by Electron's own image code (headless, nothing is applied to the system).
 import { build } from 'esbuild'

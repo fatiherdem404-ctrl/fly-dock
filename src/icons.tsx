@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import type { CSSProperties, ReactNode } from 'react'
 
 // One consistent 24px stroke icon set, drawn with currentColor so it follows the theme.

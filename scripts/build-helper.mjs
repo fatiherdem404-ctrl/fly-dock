@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Builds the C# helper into helper/bin. Skips quietly (with a warning) when the .NET SDK is missing,
 // so the JS side can still be worked on.
 import { spawnSync } from 'node:child_process'

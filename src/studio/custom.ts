@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 /** A glyph the user brought: markup in a 24 x 24 box, and whether it is made of filled shapes (true) or strokes (false). */
 export interface CustomGlyph {
   art: string

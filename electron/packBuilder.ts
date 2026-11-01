@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Icon pack builder: the user assigns pictures to the keys a pack can replace (every dock item and gear-menu entry),
 // then the result is written as an ordinary .flypack and installed through the same validation as an imported one.
 // Only pictures from the icon library or chosen in a system dialog can be used.

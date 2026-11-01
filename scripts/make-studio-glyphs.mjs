@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Reads the Lucide glyphs the icon studio uses (named in src/studio/keys.ts) out of node_modules/lucide-static and writes
 // them, trimmed to their drawing elements, to src/studio/glyphs.generated.ts. Run after changing the key list.
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'

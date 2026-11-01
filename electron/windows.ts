@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Window creation helpers shared by every BrowserWindow the app opens.
 import { BrowserWindow, BrowserWindowConstructorOptions } from 'electron'
 import path from 'node:path'

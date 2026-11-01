@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import DockView from './views/DockView'

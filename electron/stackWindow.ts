@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // The dock's own window for a folder (stack) or an app group: opens from the icon, scrolls when long,
 // closes on Esc or when the user clicks elsewhere. The open/close animation runs in the renderer.
 import { BrowserWindow, screen } from 'electron'

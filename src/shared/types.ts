@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Types shared by the main process, the preload bridge and every renderer view.
 
 /** Everything the app can play a sound for. Each belongs to one switchable group, see SOUND_GROUPS. */

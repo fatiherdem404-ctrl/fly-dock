@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import { ReactNode } from 'react'
 import Icon, { IconName } from '@/icons'
 import Panel, { usePanelClose, usePanelDrag } from './Panel'

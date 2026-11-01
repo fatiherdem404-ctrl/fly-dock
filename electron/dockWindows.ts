@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // One dock window per target display. The window has a fixed size for a given layout (items + settings) so
 // magnification never resizes it; auto-hide and fullscreen hiding only flip click-through and visibility.
 import { BrowserWindow, Display, screen } from 'electron'

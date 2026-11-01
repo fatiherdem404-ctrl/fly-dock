@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Fetches the pictures the desktop toys use and writes them as PNGs into src/assets/toys:
 //  - hand, fist, basketball, soccer ball: Microsoft Fluent Emoji 3D (MIT)
 //  - football boot (Football_shoe.svg, public domain) and tennis racket (Tennis_racket.svg, CC0) from Wikimedia Commons,

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // The icon library: pictures from folders the user added plus the images of every installed icon pack, shown as one
 // grid in the icon picker and the pack builder. A picture can only be read back if it lives in one of those places
 // or was chosen in a system dialog this session.

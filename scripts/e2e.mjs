@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // End-to-end smoke test: runs the built app with a throw-away profile and drives it through the same IPC
 // the UI uses (over the DevTools protocol). Needs `npx vite build` and the helper built. Run: node scripts/e2e.mjs
 import { spawn } from 'node:child_process'

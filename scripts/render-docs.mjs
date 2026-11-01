@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Renders README.md, README.tr.md and .github/FUNDING.yml from docs/templates/*.tpl + src/config/brand.config.json.
 // `--check` only compares and exits 1 when a generated file is out of date.
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'

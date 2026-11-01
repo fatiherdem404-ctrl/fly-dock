@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Size of the dock window, worked out from the settings so that nothing can ever be cut off:
 // the biggest icon, its lift, the label above it, the desk padding and the 3D desk all fit, for every
 // pointer position and on every side of the screen. Pure maths, unit-tested in tests/physics.test.mjs.

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Theme and icon packs: a .flypack file is a zip with pack.json plus either theme.json or icons.json + images.
 // Everything coming out of a pack is validated here before it is written to disk or reaches the renderer.
 import { app, dialog } from 'electron'

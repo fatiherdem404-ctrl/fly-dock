@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Cursor packs: a folder of PNGs (one per Windows cursor role, two of them may be animation strips). The pictures are
 // turned into .cur / .ani files in the app's own data folder and handed to the helper, which swaps the system cursors
 // for this Windows session only. "Windows' own cursors" and quitting the app both put the user's pointers back.

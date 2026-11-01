@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Desktop widgets: each instance is its own small frameless window; data providers live here in main.
 import { BrowserWindow, screen } from 'electron'
 import os from 'node:os'

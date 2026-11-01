@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Draws a temporary logo (rounded square in brand.iconColor) as build/logo-mark.svg and build/icon.ico.
 // Replace both files with the real logo later; the paths come from brand.config.json.
 import { writeFileSync, readFileSync, mkdirSync } from 'node:fs'

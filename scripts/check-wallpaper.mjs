@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Real-desktop check of the wallpaper layer: starts a second copy of the app on a throwaway profile (so your own dock
 // and settings are untouched), turns a live wallpaper on for a few seconds, and confirms the window attached behind
 // the icons, that turning it off removes it, and that a folder slideshow advances. Your screen shows the animated

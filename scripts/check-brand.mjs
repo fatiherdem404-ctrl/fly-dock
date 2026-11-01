@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Fails when the product name, ids or links are hardcoded in code, or when package.json / generated docs
 // disagree with src/config/brand.config.json. Placeholder values only produce warnings.
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Starts one job of the helper in administrator mode. The Windows confirmation prompt (UAC) is shown by Windows
 // itself; this app never sees a password and never runs elevated. Only the fixed job ids below are accepted.
 import { execFile } from 'node:child_process'

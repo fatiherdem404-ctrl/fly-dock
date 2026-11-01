@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Screenshots one window of the real app without putting anything on the user's screen (headless profile,
 // DevTools Page.captureScreenshot). Usage:
 //   node scripts/shot-page.mjs <route> <out.png> [--tab=N] [--setting=key:value ...] [--size=WxH] [--wait=ms]

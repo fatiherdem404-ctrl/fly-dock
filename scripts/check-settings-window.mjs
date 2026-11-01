@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Real-window check of the settings window: it opens without a system frame at the default size, the title-bar
 // buttons work, and the size is remembered after closing. Runs a second copy of the app on a throwaway profile, so your
 // own dock stays untouched; a window flashes on screen for a few seconds.

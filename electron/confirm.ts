@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // The app's own question windows, in the dock's theme, used instead of system message boxes: a yes/no confirmation
 // and a one-line text prompt (rename). The question is a plain value object; the answer comes back as an id plus
 // true/false and, for a prompt, the text, nothing else crosses over.

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Wallpapers: one borderless window per display, parked behind the desktop icons by the helper. It shows the current
 // picture, video or built-in live scene, and a folder can rotate on a timer. Nothing in Windows is changed: when the
 // app closes the windows go with it and the user's own wallpaper is back. Pictures and videos reach the window through
