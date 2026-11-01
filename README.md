@@ -40,6 +40,10 @@ Planned: sound packs, community pack sharing. See [ROADMAP.md](ROADMAP.md).
   <img src="docs/screenshots/toys.png" width="49%" alt="toys" />
 </p>
 
+## Download
+
+Get the latest installer from the [Releases](https://github.com/fatiherdem404-ctrl/fly-dock/releases) page and run it. The installer is not code-signed yet, so Windows SmartScreen may say "Windows protected your PC": click **More info**, then **Run anyway**. The source is all here, and you can build it yourself (see below).
+
 ## Getting started
 
 Requires Node.js, the .NET 10 SDK (builds the helper process) and Windows 10/11.

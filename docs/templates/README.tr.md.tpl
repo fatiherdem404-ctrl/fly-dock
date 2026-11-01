@@ -40,6 +40,10 @@ Planlananlar: ses paketleri, topluluk paketleri. Bkz. [ROADMAP.md](ROADMAP.md).
   <img src="docs/screenshots/toys.png" width="49%" alt="toys" />
 </p>
 
+## İndir
+
+Son kurulum dosyasını [Releases]({{repoUrl}}/releases) sayfasından indirip çalıştır. Kurulum dosyası henüz kod imzalı değil; Windows SmartScreen "Windows bilgisayarınızı korudu" diyebilir: **Daha fazla bilgi**, ardından **Yine de çalıştır**. Kaynak kodun tamamı burada, istersen kendin de derleyebilirsin (aşağıya bak).
+
 ## Başlarken
 
 Node.js, .NET 10 SDK (yardımcı süreci derler) ve Windows 10/11 gerekir.
