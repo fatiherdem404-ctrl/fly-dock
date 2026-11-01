@@ -128,6 +128,8 @@ export interface DrawOptions {
   /** Ready-made glyph markup (24 x 24 box) that replaces the key's own Lucide glyph; `glyphFilled` for solid shapes instead of strokes. */
   glyphArt?: string
   glyphFilled?: boolean
+  /** Draw the markup with its own colours (brand logos), no stroke or fill of the studio's. */
+  glyphColored?: boolean
   /** A real program icon (data URL) drawn instead of a glyph. */
   appIcon?: string
   /** Unique prefix for ids, so many cards can share one page. */
@@ -184,7 +186,7 @@ export function cardSvg(d: Design, glyph: string, o: DrawOptions = {}): string {
   if (glow > 0) defs.push(`<filter id="${u}w" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${2 + glow / 12}"/></filter>`)
   const art = o.glyphArt ?? GLYPHS[glyph] ?? ''
   const transform = `translate(${gx} ${gy}) scale(${k})`
-  const paint = o.glyphFilled ? `fill="url(#${u}k)" stroke="none"` : `fill="none" stroke="url(#${u}k)" stroke-width="${d.glyphStroke}" stroke-linecap="round" stroke-linejoin="round"`
+  const paint = o.glyphColored ? '' : o.glyphFilled ? `fill="url(#${u}k)" stroke="none"` : `fill="none" stroke="url(#${u}k)" stroke-width="${d.glyphStroke}" stroke-linecap="round" stroke-linejoin="round"`
   if (o.appIcon) {
     const ps = (256 * d.appIconSize) / 100
     body.push(`<image href="${o.appIcon}" x="${(256 - ps) / 2}" y="${(256 - ps) / 2}" width="${ps}" height="${ps}"${filters.length ? ` filter="url(#${u}t)"` : ''}/>`)

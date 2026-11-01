@@ -29,18 +29,17 @@ const write = (key: string, value: unknown) => {
 const SAMPLE_APP = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a5a"/><stop offset="1" stop-color="#d9482a"/></linearGradient></defs><circle cx="32" cy="32" r="28" fill="url(#a)"/><path d="M20 38c4 8 20 8 24 0M24 25v4M40 25v4" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg>')
 
 /** Marks for the studio to find a glyph again: the library name, or the pasted markup. */
-async function artOf(choice: GlyphChoice): Promise<{ glyphArt?: string; glyphFilled?: boolean }> {
+async function artOf(choice: GlyphChoice): Promise<{ glyphArt?: string; glyphFilled?: boolean; glyphColored?: boolean }> {
   if (!choice) return {}
-  if ('custom' in choice) return { glyphArt: choice.custom.art, glyphFilled: choice.custom.filled }
+  if ('custom' in choice) return { glyphArt: choice.custom.art, glyphFilled: choice.custom.filled, glyphColored: choice.custom.colored }
   const { LUCIDE } = await import('@/studio/lucide.generated')
   return LUCIDE[choice.lucide] ? { glyphArt: LUCIDE[choice.lucide] } : {}
 }
 
-const indexOfKey = (k: string) => STUDIO_KEYS.findIndex(([x]) => x === k)
-const GROUPS: [string, string, (k: string) => boolean][] = [
-  ['main', 'Ana öğeler', (k) => !k.startsWith('wheel-') && !['belgeler', 'indirilenler', 'resimler', 'videolar'].includes(k) && indexOfKey(k) < 38],
+const GROUPS: [string, string, (k: string, i: number) => boolean][] = [
+  ['main', 'Ana öğeler', (k, i) => !k.startsWith('wheel-') && !['belgeler', 'indirilenler', 'resimler', 'videolar'].includes(k) && i < 38],
   ['wheel', 'Kontrol paneli', (k) => k.startsWith('wheel-') || k === 'wheel'],
-  ['apps', 'Programlar', (k) => indexOfKey(k) >= 38 && !k.startsWith('wheel-')],
+  ['apps', 'Programlar', (k, i) => i >= 38 && !k.startsWith('wheel-')],
 ]
 const BACKDROPS: [string, string][] = [['dark', 'Koyu'], ['light', 'Açık'], ['check', 'Dama']]
 
@@ -66,7 +65,12 @@ export function StudioTab({ set }: { set: Update }) {
   useEffect(() => write('fallback', fallback), [fallback])
   const newName = useRef('')
   const [picks, setPicks] = useState<Record<string, GlyphChoice>>(() => read('picks', {}))
-  const [arts, setArts] = useState<Record<string, { glyphArt?: string; glyphFilled?: boolean }>>({})
+  const [arts, setArts] = useState<Record<string, { glyphArt?: string; glyphFilled?: boolean; glyphColored?: boolean }>>({})
+  const [extras, setExtras] = useState<{ key: string; label: string }[]>(() => read('extras', []))
+  const [addKey, setAddKey] = useState('')
+  const [addLabel, setAddLabel] = useState('')
+  useEffect(() => write('extras', extras), [extras])
+  const all = useMemo(() => [...STUDIO_KEYS, ...extras.map((e) => [e.key, e.label, 'app-window'] as [string, string, string])], [extras])
   const [editing, setEditing] = useState<string | null>(null)
   useEffect(() => write('picks', picks), [picks])
   useEffect(() => {
@@ -81,16 +85,16 @@ export function StudioTab({ set }: { set: Update }) {
 
   const cards = useMemo(() => {
     const test = GROUPS.find(([id]) => id === group)![2]
-    return STUDIO_KEYS.filter(([k]) => test(k)).map(([key, label, glyph], i) => ({ key, label, svg: cardSvg(design, glyph, { index: indexOfKey(key), badge: key === 'trash-full', uid: `s${i}`, ...arts[key] }) }))
-  }, [design, group, arts])
+    return all.map((x, idx) => [...x, idx] as [string, string, string, number]).filter(([k, , , idx]) => test(k, idx)).map(([key, label, glyph, idx], i) => ({ key, label, extra: idx >= STUDIO_KEYS.length, svg: cardSvg(design, glyph, { index: idx, badge: key === 'trash-full', uid: `s${i}`, ...arts[key] }) }))
+  }, [design, group, arts, all])
 
   const make = async () => {
     setBusy(true)
     setMsg(null)
     try {
       const images: Record<string, string> = {}
-      for (let i = 0; i < STUDIO_KEYS.length; i++) {
-        const [key, , glyph] = STUDIO_KEYS[i]
+      for (let i = 0; i < all.length; i++) {
+        const [key, , glyph] = all[i]
         images[key] = await rasterize(cardSvg(design, glyph, { index: i, badge: key === 'trash-full', uid: 'x', ...(await artOf(picks[key] ?? null)) }), 256)
       }
       const r = await invoke('studio:make-pack', name, 'İkon stüdyosu', images, fallback ? { ...design } : null)
@@ -126,9 +130,26 @@ export function StudioTab({ set }: { set: Update }) {
           {cards.map((c) => (
             <figure key={c.key} className="sd__card" onClick={() => setEditing(c.key)} title="Simgeyi değiştirmek için tıkla">
               <span dangerouslySetInnerHTML={{ __html: c.svg }} />
-              <figcaption>{c.label}{picks[c.key] ? ' ✎' : ''}</figcaption>
+              <figcaption>{c.label}{picks[c.key] ? ' ✎' : ''}{c.extra && <button className="sd__x" title="Bu programı listeden çıkar" onClick={(e) => { e.stopPropagation(); setExtras((cur) => cur.filter((x) => x.key !== c.key)) }}>✕</button>}</figcaption>
             </figure>
           ))}
+          {group === 'apps' && (
+            <form className="sd__add" onSubmit={(e) => {
+              e.preventDefault()
+              const key = addKey.trim().toLowerCase().replace(/\.exe$/, '').replace(/[^a-z0-9._-]/g, '').slice(0, 40)
+              if (!key || all.some(([k]) => k === key)) return
+              setExtras((cur) => [...cur, { key, label: addLabel.trim() || key }])
+              setAddKey('')
+              setAddLabel('')
+              setEditing(key)
+            }}>
+              <b>Kendi programını ekle</b>
+              <input className="st-input" placeholder="exe adı, örn. claude" value={addKey} onChange={(e) => setAddKey(e.target.value)} />
+              <input className="st-input" placeholder="Görünen ad (isteğe bağlı)" value={addLabel} onChange={(e) => setAddLabel(e.target.value)} />
+              <button className="st-btn st-btn--accent" type="submit" disabled={!addKey.trim()}>Ekle ve simge seç</button>
+              <small>Programın exe dosyasının adı (uzantısız) paketteki anahtarı olur. Simgesini Lucide’dan seçebilir ya da SVG kodu yapıştırabilirsin.</small>
+            </form>
+          )}
           {fallback && group === 'apps' && (
             <figure>
               <span dangerouslySetInnerHTML={{ __html: cardSvg(design, '', { appIcon: SAMPLE_APP, uid: 'smp' }) }} />
@@ -139,7 +160,7 @@ export function StudioTab({ set }: { set: Update }) {
       </div>
       {editing && (
         <GlyphPicker
-          title={STUDIO_KEYS.find(([k]) => k === editing)?.[1] ?? editing}
+          title={all.find(([k]) => k === editing)?.[1] ?? editing}
           current={picks[editing] ?? null}
           onClose={() => setEditing(null)}
           onPick={(g) => {
@@ -205,7 +226,7 @@ export function StudioTab({ set }: { set: Update }) {
           <Row label="Neon ışıma">{num('glyphGlow', 0, 100, 1, '%')}</Row>
           <Row label="Renk çeşitliliği" hint="Her simgenin rengi çarkta biraz ileri döner; 0 hepsini aynı yapar">{num('hueSpread', 0, 120, 1, '°')}</Row>
         </Card>
-        <Card icon="pack" title="Paketi oluştur" hint={`${STUDIO_KEYS.length} simge, 256 piksel PNG olarak ayrı bir simge paketine yazılır; sonra Simge paketleri sayfasından dışa aktarabilirsin.`}>
+        <Card icon="pack" title="Paketi oluştur" hint={`${all.length} simge, 256 piksel PNG olarak ayrı bir simge paketine yazılır; sonra Simge paketleri sayfasından dışa aktarabilirsin.`}>
           <Row label="Paket adı"><input className="st-input" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} /></Row>
           <Row label="Eksik programlara kart ekle" hint="Pakette resmi olmayan programların (Claude, WhatsApp…) kendi simgesi bu kartın içine konur. Önizlemesi Programlar sekmesinin sonunda"><Switch label="Eksik programlara kart ekle" value={fallback} onChange={setFallback} /></Row>
           {fallback && <Row label="Program simgesi boyutu">{num('appIconSize', 40, 90, 1, '%')}</Row>}

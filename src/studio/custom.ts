@@ -2,17 +2,21 @@
 export interface CustomGlyph {
   art: string
   filled: boolean
+  /** The pasted colours are kept (a brand logo) instead of being replaced by the studio's. */
+  colored?: boolean
 }
 
 const SHAPES = new Set(['path', 'circle', 'rect', 'line', 'polyline', 'polygon', 'ellipse', 'g'])
 const ATTRS = ['d', 'cx', 'cy', 'r', 'rx', 'ry', 'x', 'y', 'x1', 'y1', 'x2', 'y2', 'width', 'height', 'points', 'transform', 'fill-rule', 'clip-rule', 'opacity']
+// colours only: names, #hex, rgb()/hsl(); never url(...) references
+const SAFE_PAINT = /^(#[0-9a-fA-F]{3,8}|[a-zA-Z]{3,20}|(rgb|hsl)a?\([0-9.,%\s]+\)|[0-9.]+|butt|round|square|miter|bevel)$/
 const num = /^[-+0-9.,\sA-Za-z]*$/
 
 /**
  * Turns pasted SVG code (Tabler, Lucide, Feather, Heroicons, Font Awesome…) into glyph markup. Only plain drawing
  * shapes survive: scripts, styles, images, links and every colour are dropped, so the code cannot do anything but draw.
  */
-export function parseGlyph(code: string): CustomGlyph | { error: string } {
+export function parseGlyph(code: string, keepColors = false): CustomGlyph | { error: string } {
   const text = code.trim()
   if (!text) return { error: 'SVG kodunu buraya yapıştır.' }
   if (text.length > 60_000) return { error: 'Kod çok uzun.' }
@@ -40,14 +44,20 @@ export function parseGlyph(code: string): CustomGlyph | { error: string } {
         if (v !== null && num.test(v)) attrs += ` ${a}="${v}"`
       }
       // shapes that are meant to be see-through stay that way; every other colour is replaced by the studio's own
-      if (child.getAttribute('fill') === 'none') attrs += ' fill="none"'
-      if (child.getAttribute('stroke') === 'none') attrs += ' stroke="none"'
+      for (const a of keepColors ? ['fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'fill-opacity', 'stroke-opacity'] : ['fill', 'stroke']) {
+        const v = child.getAttribute(a)
+        if (v === null) continue
+        if (v === 'none' || (keepColors && SAFE_PAINT.test(v))) attrs += ` ${a}="${v}"`
+      }
       out += tag === 'g' ? `<g${attrs}>${walk(child)}</g>` : `<${tag}${attrs}/>`
     }
     return out
   }
   const inner = walk(svg)
   if (!inner) return { error: 'SVG içinde çizilecek bir şekil bulunamadı.' }
-  const art = k === 1 && vx === 0 && vy === 0 ? inner : `<g transform="scale(${+k.toFixed(5)}) translate(${-vx} ${-vy})">${inner}</g>`
-  return { art, filled }
+  // a root paint is inherited by every shape without its own
+  const rootPaint = keepColors ? [['fill', rootFill], ['stroke', rootStroke]].filter(([, v]) => v && v !== 'none' && SAFE_PAINT.test(v)).map(([a, v]) => ` ${a}="${v}"`).join('') : ''
+  const art0 = rootPaint ? `<g${rootPaint}>${inner}</g>` : inner
+  const art = k === 1 && vx === 0 && vy === 0 ? art0 : `<g transform="scale(${+k.toFixed(5)}) translate(${-vx} ${-vy})">${art0}</g>`
+  return { art, filled, ...(keepColors ? { colored: true } : {}) }
 }

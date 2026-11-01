@@ -16,7 +16,8 @@ export function GlyphPicker({ title, current, onPick, onClose }: { title: string
   const [tab, setTab] = useState<'lucide' | 'svg'>(current && 'custom' in current ? 'svg' : 'lucide')
   const [query, setQuery] = useState('')
   const [lib, setLib] = useState<Record<string, string> | null>(null)
-  const [code, setCode] = useState('')
+  const [code, setCode] = useState(current && 'custom' in current ? '' : '')
+  const [colors, setColors] = useState(false)
   useEffect(() => {
     let live = true
     import('@/studio/lucide.generated').then((m) => live && setLib(m.LUCIDE))
@@ -35,7 +36,7 @@ export function GlyphPicker({ title, current, onPick, onClose }: { title: string
     const q = query.trim().toLowerCase().replace(/\s+/g, '-')
     return Object.keys(lib).filter((n) => !q || n.includes(q)).slice(0, MAX_SHOWN)
   }, [lib, query])
-  const parsed = useMemo(() => (code.trim() ? parseGlyph(code) : null), [code])
+  const parsed = useMemo(() => (code.trim() ? parseGlyph(code, colors) : null), [code, colors])
 
   return createPortal(
     <div className="wl-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
@@ -63,8 +64,9 @@ export function GlyphPicker({ title, current, onPick, onClose }: { title: string
             <div className="gp__svg">
               <textarea className="wl-code" spellCheck={false} value={code} placeholder={'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">…</svg>'} onChange={(e) => setCode(e.target.value)} />
               <div className="gp__side">
-                <div className="gp__preview">{parsed && !('error' in parsed) ? <span dangerouslySetInnerHTML={{ __html: svgOf(parsed.art, parsed.filled) }} /> : <small>Önizleme</small>}</div>
+                <div className="gp__preview">{parsed && !('error' in parsed) ? <span dangerouslySetInnerHTML={{ __html: parsed.colored ? `<svg viewBox="0 0 24 24">${parsed.art}</svg>` : svgOf(parsed.art, parsed.filled) }} /> : <small>Önizleme</small>}</div>
                 {parsed && 'error' in parsed && <Message error text={parsed.error} />}
+                <label className="st-check"><input type="checkbox" checked={colors} onChange={(e) => setColors(e.target.checked)} />Renkleri koru (marka logosu için)</label>
                 <p className="st-prose">Tabler, Lucide, Feather, Heroicons ya da Font Awesome’dan kopyaladığın SVG kodunu yapıştır. Yalnızca çizim şekilleri alınır; renkleri stüdyo kendi verir.</p>
                 <button className="st-btn st-btn--accent" disabled={!parsed || 'error' in parsed} onClick={() => parsed && !('error' in parsed) && onPick({ custom: parsed })}>Bu simgeyi kullan</button>
               </div>
