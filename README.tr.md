@@ -11,7 +11,7 @@ Masaüstün için modern dock — RocketDock'tan ilham alan, açık kaynaklı Wi
 
 ## Özellikler
 
-Şu an çalışan (iskelet):
+Şu an çalışan:
 
 - Şeffaf, her zaman üstte dock penceresi (alt/üst/sol/sağ)
 - Yay fiziğiyle büyütme, sürükle-bırakla ekleme, sıralama ve kaldırma, çöp kutusu
@@ -21,8 +21,23 @@ Masaüstün için modern dock — RocketDock'tan ilham alan, açık kaynaklı Wi
 - Masaüstü widget'ları: saat, hava durumu, CPU/RAM/disk, medya tuşları, takvim
 - JSON temalar ve simge paketleri (`.flypack`, içe/dışa aktarma, doğrulamalı)
 - Canlı önizlemeli ayarlar penceresi, 10 raf stili, animasyon kütüphanesi, yedekle ve geri yükle
+- Duvar kâğıtları: resim, video, canlı arka planlar ve kendi yazdığın JavaScript canvas sahneleri
+- İmleç paketleri, simge ve simge paketi tasarlayabileceğin ikon stüdyosu
+- Mini masaüstü oyunları: basketbol, futbol, top sektirme ve pong
 
-Planlananlar: duvar kağıtları, canlı arka planlar, ses paketleri, topluluk paketleri. Bkz. [ROADMAP.md](ROADMAP.md).
+Planlananlar: ses paketleri, topluluk paketleri. Bkz. [ROADMAP.md](ROADMAP.md).
+
+## Ekran görüntüleri
+
+<p>
+  <img src="docs/screenshots/dock.png" width="49%" alt="dock" />
+  <img src="docs/screenshots/themes.png" width="49%" alt="themes" />
+  <img src="docs/screenshots/desk.png" width="49%" alt="desk" />
+  <img src="docs/screenshots/icons.png" width="49%" alt="icons" />
+  <img src="docs/screenshots/studio.png" width="49%" alt="studio" />
+  <img src="docs/screenshots/cursors.png" width="49%" alt="cursors" />
+  <img src="docs/screenshots/toys.png" width="49%" alt="toys" />
+</p>
 
 ## Başlarken
 

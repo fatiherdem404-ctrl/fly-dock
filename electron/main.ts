@@ -387,7 +387,7 @@ function registerIpc() {
   handle('tweaks:set', (_e, id, enabled) => tweakEngine.set(id, enabled))
   handle('tweaks:restore-point', () => tweakEngine.restorePoint())
   handle('tweaks:revert-all', async () => {
-    const yes = await askConfirm({ title: 'Tüm tweakler geri alınsın mı?', message: 'Fly Dock’un değiştirdiği her Windows ayarı eski değerine döner. Yönetici gerektirenler için Windows onay isteyebilir.', confirmLabel: 'Geri al', danger: true })
+    const yes = await askConfirm({ title: 'Tüm tweakler geri alınsın mı?', message: `${brand.name}’un değiştirdiği her Windows ayarı eski değerine döner. Yönetici gerektirenler için Windows onay isteyebilir.`, confirmLabel: 'Geri al', danger: true })
     return yes ? tweakEngine.revertAll() : 0
   })
   handle('tweaks:log', () => tweakEngine.log())

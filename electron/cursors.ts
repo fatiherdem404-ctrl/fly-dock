@@ -9,6 +9,7 @@ import { app, dialog, nativeImage } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import crypto from 'node:crypto'
+import brand from './brand'
 import { getSettings } from './store'
 import { helper } from './helper'
 import { broadcast } from './ipc'
@@ -41,7 +42,7 @@ const ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,40}$/
 const MAX_PNG_BYTES = 8 * 1024 * 1024
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47])
 
-const BUILTIN = [{ id: 'mac-neon', name: 'Mac Neon', author: 'Fly Dock' }]
+const BUILTIN = [{ id: 'mac-neon', name: 'Mac Neon', author: brand.name }]
 const builtinRoot = () => (app.isPackaged ? path.join(process.resourcesPath, 'cursor-packs') : path.join(app.getAppPath(), 'resources', 'cursor-packs'))
 const userRoot = () => path.join(app.getPath('userData'), 'cursor-packs')
 const outRoot = () => path.join(app.getPath('userData'), 'cursors')

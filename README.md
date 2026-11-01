@@ -11,7 +11,7 @@ A modern dock for your desktop — An open-source Windows dock inspired by Rocke
 
 ## Features
 
-Working today (skeleton):
+Working today:
 
 - Transparent, always-on-top dock window per monitor (bottom/top/left/right), auto-hide, hides over fullscreen apps
 - Spring-physics magnification, drag & drop to add, reorder and remove, recycle bin
@@ -21,8 +21,23 @@ Working today (skeleton):
 - Desktop widgets: clock, weather, CPU/RAM/disk, media keys, calendar
 - JSON themes and icon packs (`.flypack`, import/export, validated)
 - Settings window with live preview, 10 desk styles, animation library, backup and restore
+- Wallpapers: images, video, live backgrounds and your own JavaScript canvas scenes
+- Cursor packs, an icon studio for designing icons and whole icon packs
+- Mini desktop games: basketball, football, ball juggling and pong
 
-Planned: wallpapers, live backgrounds, sound packs, community pack sharing. See [ROADMAP.md](ROADMAP.md).
+Planned: sound packs, community pack sharing. See [ROADMAP.md](ROADMAP.md).
+
+## Screenshots
+
+<p>
+  <img src="docs/screenshots/dock.png" width="49%" alt="dock" />
+  <img src="docs/screenshots/themes.png" width="49%" alt="themes" />
+  <img src="docs/screenshots/desk.png" width="49%" alt="desk" />
+  <img src="docs/screenshots/icons.png" width="49%" alt="icons" />
+  <img src="docs/screenshots/studio.png" width="49%" alt="studio" />
+  <img src="docs/screenshots/cursors.png" width="49%" alt="cursors" />
+  <img src="docs/screenshots/toys.png" width="49%" alt="toys" />
+</p>
 
 ## Getting started
 

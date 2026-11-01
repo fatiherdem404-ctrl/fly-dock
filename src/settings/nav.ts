@@ -21,7 +21,7 @@ export const TAB_INFO: Record<Tab, TabInfo> = {
   theme: { id: 'theme', label: 'Temalar', icon: 'theme', blurb: 'Renkler, cam, yazı tipi ve eşlik eden raf ile arka plan' },
   wallpaper: { id: 'wallpaper', label: 'Duvar kâğıdı', icon: 'image', blurb: 'Canlı arka planlar, resim, video ve slayt' },
   icons: { id: 'icons', label: 'Simge paketleri', icon: 'pack', blurb: 'Programların simgelerini toplu değiştir' },
-  studio: { id: 'studio', label: 'İkon stüdyosu', icon: 'edit', blurb: 'Geliştirme sürümüne özel: kart, renk ve derinlikle kendi simge paketini tasarla' },
+  studio: { id: 'studio', label: 'İkon stüdyosu', icon: 'edit', blurb: 'Kart, renk ve derinlikle kendi simge paketini tasarla' },
   cursors: { id: 'cursors', label: 'İmleçler', icon: 'cursor', blurb: 'Fare imleçlerini bir paketle değiştir' },
   motion: { id: 'motion', label: 'Animasyonlar', icon: 'motion', blurb: 'Hız, hareket, açılış ve pencere efektleri' },
   windows: { id: 'windows', label: 'Dock pencereleri', icon: 'window', blurb: 'Klasör, grup ve kontrol paneli penceresinin boyutu ve yeri' },

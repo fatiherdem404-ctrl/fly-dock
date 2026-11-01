@@ -6,6 +6,7 @@ import Icon from '@/icons'
 import DockPreview from '@/components/DockPreview'
 import { initSound } from '@/sound'
 import type { DockSettings } from '@/shared/types'
+import brand from '@/brand'
 import TitleBar from '@/settings/TitleBar'
 import { NAV_GROUPS, PREVIEW_TABS, SearchEntry, Tab, TAB_INFO } from '@/settings/nav'
 import type { Update } from '@/settings/ui'
@@ -90,7 +91,7 @@ export default function SettingsView() {
   return (
     <div className="st" data-tab={tab}>
       <TitleBar
-        name={info?.name ?? 'Fly Dock'}
+        name={info?.name ?? brand.name}
         pageLabel={page.label}
         pageIcon={page.icon}
         onControl={(action) => invoke('window:control', action)}
