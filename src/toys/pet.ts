@@ -3,7 +3,7 @@
 // passed in) so the rules can be tested.
 
 export type PetState = 'idle' | 'walk' | 'run' | 'sit' | 'sleep' | 'held' | 'fall' | 'happy' | 'play' | 'carry'
-export type PetKind = 'cat' | 'dog' | 'rabbit'
+export type PetKind = 'cat' | 'dog'
 /** Things the pet did this step that the page must act on: bat the yarn, pick the stick up, put it down. */
 export type PetEvent = 'swat' | 'pickup' | 'drop' | null
 

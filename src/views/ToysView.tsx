@@ -1056,7 +1056,7 @@ function Toys({ s }: { s: DockSettings }) {
         const moved = Math.abs(pet.x - st.lastPetX)
         st.lastPetX = pet.x
         if (pet.state === 'walk' || pet.state === 'run' || pet.state === 'carry') {
-          const cycle = cur.toyPetKind === 'rabbit' ? size * (pet.state === 'walk' ? 0.55 : 0.95) : size * (pet.state === 'walk' ? 0.62 : 0.85)
+          const cycle = size * (pet.state === 'walk' ? 0.62 : 0.85)
           st.gait += moved / cycle
         }
       }

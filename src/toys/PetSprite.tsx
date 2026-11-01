@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import type { PetKind } from './pet'
 import { drawPet } from './petDraw'
 
-export const PET_NAMES: Record<PetKind, string> = { cat: 'Kedi', dog: 'Köpek', rabbit: 'Tavşan' }
+export const PET_NAMES: Record<PetKind, string> = { cat: 'Kedi', dog: 'Köpek' }
 
 /** One still picture of a pet for the settings page: the same drawing the desktop pet is made from, standing at rest. */
 export default function PetSprite({ kind }: { kind: PetKind }) {

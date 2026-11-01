@@ -105,7 +105,7 @@ const world = { width: 1000, floor: 800, gravity: 1800, restitution: 0.7, rollin
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296
   }
-  const ctx = { width: 1000, floor: 800, pointer: null, chase: false, size: 64, rand, kind: 'rabbit', home: 0 }
+  const ctx = { width: 1000, floor: 800, pointer: null, chase: false, size: 64, rand, kind: 'cat', home: 0 }
   const p = pet.makePet(500, 800)
   const seen = new Set()
   for (let i = 0; i < 60 * 120; i++) {

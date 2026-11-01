@@ -82,10 +82,10 @@ export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
     <Pages id="toys">
       <Card icon="toys" tab="Evcil hayvan" title="Evcil hayvan" hint="Masaüstünde, dock’un üstünde gezen küçük bir dost. Uyur, oturur, seni takip eder; tutup fırlatabilir, tıklayıp sevebilirsin.">
         <Row label="Evcil hayvan açık"><Switch label="Evcil hayvan" value={s.toyPet} onChange={(toyPet) => set({ toyPet })} /></Row>
-        <Cards<PetKind> value={s.toyPetKind} onChange={(toyPetKind) => set({ toyPetKind })} options={(['cat', 'dog', 'rabbit'] as PetKind[]).map((k) => ({
+        <Cards<PetKind> value={s.toyPetKind} onChange={(toyPetKind) => set({ toyPetKind })} options={(['cat', 'dog'] as PetKind[]).map((k) => ({
           id: k,
           label: PET_NAMES[k],
-          hint: k === 'cat' ? 'Sakin ve tembel' : k === 'dog' ? 'Neşeli, hep peşinde' : 'Ürkek ve sevimli',
+          hint: k === 'cat' ? 'Sakin ve tembel' : 'Neşeli, hep peşinde',
           preview: <span className="st-petpic"><PetSprite kind={k} /></span>,
         }))} />
       </Card>

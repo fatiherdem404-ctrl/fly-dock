@@ -89,7 +89,7 @@ export const SEARCH_INDEX: SearchEntry[] = [
   e('Dock’taki öğeler, kısayollar', 'items', undefined, 'hotkey'),
   e('Kontrol paneli girdileri', 'wheel', undefined, 'denetim masası çark ekle araçlar'),
   e('Widget ekle (analog saat, takvim, hava, not…)', 'widgets', 'Ekle', 'saat hava pil sistem medya not'),
-  e('Evcil hayvan (kedi, köpek, tavşan)', 'toys', 'Evcil hayvan', 'pet oyuncak peşimden'),
+  e('Evcil hayvan (kedi, köpek)', 'toys', 'Evcil hayvan', 'pet oyuncak peşimden'),
   e('Basketbol, futbol, tenis, sektirme', 'toys', 'Oyunlar', 'oyun top pota gol seri skor serbest süreye karşı rekor'),
   e('Windows tweak’leri', 'tweaks', undefined, 'gizli dosya uzantı klasik menü'),
   e('Windows ile başlat', 'general', undefined, 'startup login'),

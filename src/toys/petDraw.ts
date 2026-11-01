@@ -1,4 +1,4 @@
-// Draws the desktop pets (cat, dog, rabbit) as animated side-view animals. Nothing here is a fixed picture: every frame the
+// Draws the desktop pets (cat, dog) as animated side-view animals. Nothing here is a fixed picture: every frame the
 // pose is worked out from the pet's state and an animation clock, each leg is a two-bone limb whose knee is solved from
 // where the foot has to be, and the gait follows the distance the pet really walked so the feet never slide.
 import type { PetKind, PetState } from './pet'
@@ -30,12 +30,10 @@ interface Dims {
 const LOOKS: Record<PetKind, Look> = {
   cat: { body: '#f2a65a', shade: '#cf7f34', belly: '#fff0dc', inner: '#f7b6aa', nose: '#e5767f', mark: '#b86a26' },
   dog: { body: '#c99159', shade: '#98643a', belly: '#f1d9b5', inner: '#8c5a32', nose: '#2b2b2b', mark: '#7b4a28' },
-  rabbit: { body: '#f4f4f7', shade: '#cfcfdc', belly: '#ffffff', inner: '#f6b6c6', nose: '#e5767f', mark: '#d6d6e2' },
 }
 const DIMS: Record<PetKind, Dims> = {
   cat: { hip: [-24, -33], chest: [14, -34], rHip: 12.5, rChest: 13.5, head: [34, -50], rHead: 12, up: 15, low: 16, stride: 9, lift: 6 },
   dog: { hip: [-28, -37], chest: [16, -39], rHip: 14, rChest: 16, head: [40, -57], rHead: 13, up: 17, low: 18, stride: 11, lift: 7 },
-  rabbit: { hip: [-20, -25], chest: [12, -25], rHip: 16, rChest: 12, head: [27, -37], rHead: 11.5, up: 12, low: 13, stride: 7, lift: 4 },
 }
 
 export interface PetPose {
@@ -108,22 +106,6 @@ function skeleton(kind: PetKind, state: PetState, time: number, gait: number): S
     case 'run':
     case 'carry': {
       const fast = state !== 'walk'
-      if (kind === 'rabbit') {
-        // a rabbit hops: it gathers itself on the ground, springs, stretches out in the air and lands again
-        const t = ((gait % 1) + 1) % 1
-        const air = t < 0.55
-        const arc = air ? Math.sin((t / 0.55) * Math.PI) : 0
-        const rise = arc * (fast ? 20 : 12)
-        sk.hip[1] -= rise - (air ? 0 : 3)
-        sk.chest[1] -= rise + (air ? 3 : -1)
-        sk.head[1] -= rise + (air ? 4 : 0)
-        sk.lean = air ? -0.1 + 0.2 * (t / 0.55) : 0
-        sk.feet = air
-          ? [[D.hip[0] - 14, -rise + 2 - arc * 3], [D.hip[0] - 10, -rise + 1 - arc * 3], [D.chest[0] + 8, -rise * 0.9 - 2], [D.chest[0] + 12, -rise * 0.9 - 4]]
-          : [[D.hip[0] - 2, 0], [D.hip[0] + 6, 0], [D.chest[0] + 1, 0], [D.chest[0] + 8, 0]]
-        sk.tail = 0.2
-        break
-      }
       const stride = D.stride * (fast ? 1.55 : 1)
       const lift = D.lift * (fast ? 1.5 : 1)
       const offsets = fast ? [0.03, 0, 0.5, 0.55] : [0.5, 0, 0.75, 0.25]
@@ -145,10 +127,9 @@ function skeleton(kind: PetKind, state: PetState, time: number, gait: number): S
       break
     }
     case 'sit': {
-      const rabbit = kind === 'rabbit'
       sk.hip = [D.hip[0] + 2, -D.rHip * 0.95]
-      sk.chest = [D.chest[0] - (rabbit ? 8 : 12), D.chest[1] - (rabbit ? 4 : 12)]
-      sk.head = [D.head[0] - (rabbit ? 6 : 12), D.head[1] - (rabbit ? 4 : 14)]
+      sk.chest = [D.chest[0] - 12, D.chest[1] - 12]
+      sk.head = [D.head[0] - 12, D.head[1] - 14]
       sk.headTilt = -0.08
       sk.feet = [[D.hip[0] + 12, 0], [D.hip[0] + 19, 0], [sk.chest[0] + 1, 0], [sk.chest[0] + 8, 0]]
       sk.tail = -0.35 + Math.sin(time * 2) * 0.12
@@ -249,15 +230,7 @@ function tail(c: CanvasRenderingContext2D, kind: PetKind, base: V, swing: number
   c.save()
   c.translate(base[0], base[1])
   c.lineCap = 'round'
-  if (kind === 'rabbit') {
-    c.fillStyle = '#ffffff'
-    c.strokeStyle = look.shade
-    c.lineWidth = 1.2
-    c.beginPath()
-    c.arc(-5, -2, 7.5, 0, TAU)
-    c.fill()
-    c.stroke()
-  } else if (kind === 'cat') {
+  if (kind === 'cat') {
     c.rotate(-0.5 + swing * 0.9)
     c.strokeStyle = look.body
     c.lineWidth = 6.2
@@ -302,19 +275,6 @@ function head(c: CanvasRenderingContext2D, kind: PetKind, sk: Skeleton, D: Dims,
       c.beginPath(); c.moveTo(-6, 2); c.lineTo(0, -15); c.lineTo(6, 2); c.closePath(); c.fill()
       c.fillStyle = look.inner
       c.beginPath(); c.moveTo(-3.2, 1); c.lineTo(0, -10); c.lineTo(3.2, 1); c.closePath(); c.fill()
-      c.restore()
-    }
-  } else if (kind === 'rabbit') {
-    for (const side of [-1, 1]) {
-      c.save()
-      c.translate(side * r * 0.42 - 2, -r * 0.7)
-      c.rotate(side * 0.12 - 0.15 - ear * 1.5 + Math.sin(time * 1.6 + side) * 0.03)
-      c.fillStyle = look.body
-      c.strokeStyle = look.shade
-      c.lineWidth = 1
-      c.beginPath(); c.ellipse(0, -13, 4.8, 15, 0, 0, TAU); c.fill(); c.stroke()
-      c.fillStyle = look.inner
-      c.beginPath(); c.ellipse(0, -12, 2.3, 11, 0, 0, TAU); c.fill()
       c.restore()
     }
   }
@@ -394,8 +354,8 @@ export function drawPet(c: CanvasRenderingContext2D, x: number, footY: number, s
   if (sk.lean) c.rotate(sk.lean)
   const hipJoint: V = add(sk.hip, [-1, sk.hip[1] < -D.rHip * 1.3 ? D.rHip * 0.55 : 0])
   const chestJoint: V = add(sk.chest, [1, D.rChest * 0.45])
-  const hindThick = pose.kind === 'rabbit' ? 10.5 : 8.4
-  const frontThick = pose.kind === 'rabbit' ? 5.8 : 6.6
+  const hindThick = 8.4
+  const frontThick = 6.6
   // far legs first, a shade darker, then the tail and the body
   leg(c, add(hipJoint, [2, 0]), sk.feet[0], D, look, look.shade, true, hindThick)
   leg(c, add(chestJoint, [-2, 0]), sk.feet[2], D, look, look.shade, false, frontThick)

@@ -246,7 +246,7 @@ export interface DockSettings {
   iconFolders: string[]
   // desktop toys
   toyPet: boolean
-  toyPetKind: 'cat' | 'dog' | 'rabbit'
+  toyPetKind: 'cat' | 'dog'
   toyPetName: string
   /** The pet runs to the pointer when it is near the floor. */
   toyPetChase: boolean
