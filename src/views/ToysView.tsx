@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { invoke, useEvent } from '@/api'
 import type { DockSettings, ToyMode, ToyScores } from '@/shared/types'
 import { DEFAULT_TOY_SCORES } from '@/shared/types'
+import { PEN_GOAL_D, PEN_GOAL_H, PEN_MAX_PULL, Pen, goalX, keeperShot, launch, makePen, path as penPath, shoot as penShoot, spotOf, step as penStep } from '@/toys/penalty'
 import { Ball, Segment, World, bounceOffMover, inGoal, makeBall, scoredThroughRim, stepBall, throwVelocity } from '@/toys/ball'
 import handUrl from '@/assets/toys/hand.png'
 import fistUrl from '@/assets/toys/fist.png'
@@ -92,6 +93,9 @@ interface Sim {
   struck: Record<string, number>
   /** Where the basketball was let go from (x), for the three-point line. */
   shotFrom: number
+  /** The penalty game of the football toy, and whether its ball has been put on the spot. */
+  pen: Pen
+  penOn: boolean
   /** Racket and tennis ball: a rally is on, the pointer is the racket, and hits in a row are counted. */
   bounce: { playing: boolean; combo: number; respawn: number }
   cursor: string
@@ -305,6 +309,146 @@ function drawFist(c: CanvasRenderingContext2D, x: number, y: number) {
   c.restore()
 }
 
+/** The goalkeeper: a little figure in the goal, stretching up or down after the ball. */
+function drawKeeper(c: CanvasRenderingContext2D, x: number, y: number, rest: number) {
+  const stretch = Math.max(-1, Math.min(1, (rest - y) / 70))
+  c.save()
+  c.translate(x, y)
+  shadowed(c)
+  // legs
+  c.fillStyle = '#23304f'
+  c.beginPath()
+  c.roundRect(-13, 12, 11, 30 + Math.max(0, -stretch) * 6, 4)
+  c.roundRect(2, 12, 11, 30 + Math.max(0, -stretch) * 6, 4)
+  c.fill()
+  // jersey
+  c.fillStyle = '#ffc83d'
+  c.beginPath()
+  c.roundRect(-16, -22, 32, 38, 9)
+  c.fill()
+  c.fillStyle = 'rgba(0,0,0,0.12)'
+  c.fillRect(-16, 2, 32, 4)
+  // arms reach up when he jumps
+  c.strokeStyle = '#ffc83d'
+  c.lineWidth = 9
+  c.lineCap = 'round'
+  const up = 0.5 + Math.max(0, stretch) * 0.9
+  for (const s of [-1, 1]) {
+    c.beginPath()
+    c.moveTo(s * 15, -16)
+    c.lineTo(s * (24 + up * 8), -16 - up * 28)
+    c.stroke()
+    c.fillStyle = '#34c759'
+    c.beginPath()
+    c.arc(s * (24 + up * 8), -16 - up * 28, 7, 0, TAU)
+    c.fill()
+  }
+  // head, looking at the ball
+  c.fillStyle = '#f2c9a0'
+  c.beginPath()
+  c.arc(0, -34, 11, 0, TAU)
+  c.fill()
+  c.fillStyle = '#3a2a1c'
+  c.beginPath()
+  c.arc(0, -38, 11, Math.PI, TAU)
+  c.fill()
+  c.restore()
+}
+
+/** Everything the penalty game draws besides the ball: goal, keeper, the pull, the power, the curl. */
+function drawPenalty(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, width: number, floor: number) {
+  const pen = sim.pen
+  const gx = goalX(width)
+  const top = floor - PEN_GOAL_H
+  // goal on the right: net, bar and posts
+  c.fillStyle = 'rgba(255,255,255,0.1)'
+  c.fillRect(gx, top, PEN_GOAL_D, PEN_GOAL_H)
+  c.strokeStyle = 'rgba(255,255,255,0.4)'
+  c.lineWidth = 1
+  c.beginPath()
+  for (let i = 1; i < 8; i++) {
+    c.moveTo(gx, top + (PEN_GOAL_H / 8) * i); c.lineTo(gx + PEN_GOAL_D, top + (PEN_GOAL_H / 8) * i)
+    c.moveTo(gx + (PEN_GOAL_D / 7) * i, top); c.lineTo(gx + (PEN_GOAL_D / 7) * i, floor)
+  }
+  c.stroke()
+  c.strokeStyle = '#ffffff'
+  c.lineWidth = 6
+  c.lineCap = 'round'
+  c.beginPath()
+  c.moveTo(gx, floor); c.lineTo(gx, top); c.lineTo(gx + PEN_GOAL_D, top)
+  c.stroke()
+  const rest = floor - 46
+  drawKeeper(c, gx + 34, pen.keeper.y || rest, rest)
+  // your own goal on the left, defended with the pointer, when the keeper shoots back
+  if (s.toyKeeperShoots) {
+    c.fillStyle = 'rgba(255,255,255,0.08)'
+    c.fillRect(0, top, 60, PEN_GOAL_H)
+    c.strokeStyle = 'rgba(255,255,255,0.8)'
+    c.lineWidth = 5
+    c.beginPath()
+    c.moveTo(60, floor); c.lineTo(60, top); c.lineTo(0, top)
+    c.stroke()
+    const gy = pen.phase === 'return' || pen.phase === 'returned' ? pen.glove : floor - PEN_GOAL_H / 2
+    c.fillStyle = '#34c759'
+    c.strokeStyle = 'rgba(0,0,0,0.35)'
+    c.lineWidth = 2
+    c.beginPath()
+    c.roundRect(34, gy - 48, 20, 96, 9)
+    c.fill()
+    c.stroke()
+    if (pen.back && ready(PICS.football)) c.drawImage(PICS.football, pen.back.x - 15, pen.back.y - 15, 30, 30)
+  }
+  // the pull
+  const ball = sim.balls.football
+  if (ball && pen.aim) {
+    const l = launch(pen.aim)
+    const len = Math.min(Math.hypot(pen.aim.x, pen.aim.y), PEN_MAX_PULL)
+    const ang = Math.atan2(pen.aim.y, pen.aim.x)
+    c.strokeStyle = 'rgba(255,255,255,0.55)'
+    c.lineWidth = 3
+    c.setLineDash([2, 7])
+    c.beginPath()
+    c.moveTo(ball.x, ball.y)
+    c.lineTo(ball.x + Math.cos(ang) * len, ball.y + Math.sin(ang) * len)
+    c.stroke()
+    c.setLineDash([])
+    // where it would go
+    if (l.power > 0.04) {
+      c.fillStyle = 'rgba(255,255,255,0.75)'
+      for (const [px, py] of penPath(ball.x, ball.y, l.vx, l.vy, pen.spin, floor, ball.r)) {
+        c.beginPath()
+        c.arc(px, py, 2.6, 0, TAU)
+        c.fill()
+      }
+    }
+    // power bar
+    const bx = ball.x - 46, by = ball.y + 38
+    c.fillStyle = 'rgba(10,14,28,0.75)'
+    c.beginPath(); c.roundRect(bx, by, 92, 12, 6); c.fill()
+    const grd = c.createLinearGradient(bx, 0, bx + 92, 0)
+    grd.addColorStop(0, '#46d36b'); grd.addColorStop(0.6, '#ffcc33'); grd.addColorStop(1, '#ff4d4d')
+    c.fillStyle = grd
+    c.beginPath(); c.roundRect(bx + 2, by + 2, Math.max(4, 88 * l.power), 8, 4); c.fill()
+    c.fillStyle = '#fff'
+    c.font = "700 11px 'Segoe UI', system-ui, sans-serif"
+    c.textAlign = 'center'
+    c.fillText('GÜÇ', ball.x, by + 26)
+    // curl meter
+    const cy = by + 40
+    c.fillStyle = 'rgba(10,14,28,0.75)'
+    c.beginPath(); c.roundRect(bx, cy, 92, 12, 6); c.fill()
+    c.fillStyle = '#6aa6ff'
+    c.beginPath(); c.arc(bx + 46 + pen.spin * 40, cy + 6, 6, 0, TAU); c.fill()
+    c.fillStyle = '#fff'
+    c.fillText('FALSO  (fare tekerleği)', ball.x, cy + 26)
+  } else if (ball && pen.phase === 'ready') {
+    c.fillStyle = 'rgba(255,255,255,0.9)'
+    c.font = "600 12px 'Segoe UI', system-ui, sans-serif"
+    c.textAlign = 'center'
+    c.fillText('Topu geri çek ve bırak', ball.x, ball.y - ball.r - 14)
+  }
+}
+
 function drawScene(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, width: number, floor: number) {
   if (s.toyBasket) {
     const h = hoop(width, floor, s.toyHoopSide)
@@ -341,7 +485,8 @@ function drawScene(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, width
     c.lineTo(h.hi, h.rimY)
     c.stroke()
   }
-  if (s.toyFootball) {
+  if (s.toyFootball && s.toyFootballStyle === 'penalty') drawPenalty(c, s, sim, width, floor)
+  else if (s.toyFootball) {
     const top = floor - GOAL_HEIGHT
     const goal = (x: number, w: number) => {
       c.fillStyle = 'rgba(255,255,255,0.1)'
@@ -457,7 +602,7 @@ function Toys({ s }: { s: DockSettings }) {
   const [hud, setHud] = useState<{ cards: HudCard[]; result: HudResult | null }>({ cards: [], result: null })
   const newGame = () => ({ round: { active: false, left: 0, score: 0 }, session: 0 })
   const sim = useRef<Sim>({
-    balls: {}, pointer: null, samples: [], drag: null, capture: false, scores: { ...DEFAULT_TOY_SCORES }, shotFrom: 0,
+    balls: {}, pointer: null, samples: [], drag: null, capture: false, scores: { ...DEFAULT_TOY_SCORES }, shotFrom: 0, pen: makePen(), penOn: false,
     games: { basket: newGame(), football: newGame(), bounce: newGame() },
     result: null, flash: null, respawn: 0, hover: false, size: '', armed: null, toolDir: 1, toolTilt: 0, toolPos: null, toolVx: 0, toolVy: 0, struck: {},
     bounce: { playing: false, combo: 0, respawn: 0 }, cursor: '',
@@ -518,8 +663,9 @@ function Toys({ s }: { s: DockSettings }) {
       return null
     }
     /** Is the pointer close enough to a ball to turn into a hand, a boot or a racket? */
+    const penaltyOn = () => settingsRef.current.toyFootball && settingsRef.current.toyFootballStyle === 'penalty'
     const armedFor = (x: number, y: number): 'basket' | 'football' | null => {
-      for (const kind of ['football', 'basket'] as const) {
+      for (const kind of penaltyOn() ? (['basket'] as const) : (['football', 'basket'] as const)) {
         const b = st.balls[kind]
         if (b && !b.grabbed && Math.hypot(b.x - x, b.y - y) <= b.r + AURA[kind]) return kind
       }
@@ -539,8 +685,11 @@ function Toys({ s }: { s: DockSettings }) {
       st.armed = playing || st.drag ? null : armedFor(x, y)
       const over = playing || st.drag ? null : grabAt(x, y)
       const close = st.drag ? null : closeAt(x, y)
-      setCapture(!!over || !!st.armed || !!st.drag || playing || !!close)
-      setCursor(close ? 'pointer' : st.drag || st.armed || playing ? (settingsRef.current.toyShowCursor ? '' : 'none') : over ? 'grab' : '')
+      const pb = st.balls.football
+      const penHover = penaltyOn() && st.pen.phase === 'ready' && !!pb && Math.hypot(pb.x - x, pb.y - y) <= pb.r + 18
+      const penBusy = penaltyOn() && (!!st.pen.aim || st.pen.phase === 'return')
+      setCapture(!!over || !!st.armed || !!st.drag || playing || !!close || penHover || penBusy)
+      setCursor(close ? 'pointer' : penBusy ? (settingsRef.current.toyShowCursor ? '' : 'none') : penHover ? 'grab' : st.drag || st.armed || playing ? (settingsRef.current.toyShowCursor ? '' : 'none') : over ? 'grab' : '')
     }
     /** A rally of the racket and the baseball has ended: the ball touched the floor. */
     const dropBounce = () => {
@@ -564,6 +713,10 @@ function Toys({ s }: { s: DockSettings }) {
         vy = prev.vy * 0.4 + ((e.clientY - prev.y) / dt) * 0.6
       }
       st.pointer = { x: e.clientX, y: e.clientY, vx, vy, t: now }
+      if (st.pen.aim && st.balls.football) {
+        st.pen.aim = { x: e.clientX - st.balls.football.x, y: e.clientY - st.balls.football.y }
+        return
+      }
       const d = st.drag
       if (d) {
         st.samples.push([e.clientX, e.clientY, now])
@@ -586,6 +739,12 @@ function Toys({ s }: { s: DockSettings }) {
       if (closing) {
         if (closing.act === 'cursor') invoke('settings:update', { toyShowCursor: !settingsRef.current.toyShowCursor })
         else invoke('settings:update', { [closing.game === 'basket' ? 'toyBasket' : closing.game === 'football' ? 'toyFootball' : 'toyBounce']: false })
+        return
+      }
+      const fb = st.balls.football
+      if (penaltyOn() && st.pen.phase === 'ready' && fb && Math.hypot(fb.x - e.clientX, fb.y - e.clientY) <= fb.r + 18) {
+        st.pen.aim = { x: e.clientX - fb.x, y: e.clientY - fb.y }
+        setCapture(true)
         return
       }
       const over = st.bounce.playing ? null : grabAt(e.clientX, e.clientY)
@@ -616,6 +775,19 @@ function Toys({ s }: { s: DockSettings }) {
       }
     }
     const onUp = () => {
+      if (st.pen.aim) {
+        const fb = st.balls.football
+        const l = launch(st.pen.aim)
+        st.pen.aim = null
+        if (fb && l.power > 0.06) {
+          startRound('football')
+          penShoot(st.pen, fb, window.innerWidth, floorOf(settingsRef.current, window.innerHeight), l.vx, l.vy)
+          tone(settingsRef.current.toySound, 220, 90, 0.11, 'triangle', 0.18)
+        }
+        const q = st.pointer
+        if (q) refresh(q.x, q.y)
+        return
+      }
       const d = st.drag
       if (!d) return
       st.drag = null
@@ -648,6 +820,11 @@ function Toys({ s }: { s: DockSettings }) {
     window.addEventListener('mousedown', onDown)
     window.addEventListener('mouseup', onUp)
     window.addEventListener('contextmenu', onContext)
+    const onWheel = (e: WheelEvent) => {
+      if (!penaltyOn() || !(st.pen.aim || st.pen.phase === 'ready')) return
+      st.pen.spin = Math.max(-1, Math.min(1, Math.round((st.pen.spin + (e.deltaY < 0 ? 0.2 : -0.2)) * 10) / 10))
+    }
+    window.addEventListener('wheel', onWheel, { passive: true })
 
     // the scoreboard is plain page content, refreshed a few times a second
     let lastHud = ''
@@ -662,9 +839,9 @@ function Toys({ s }: { s: DockSettings }) {
         let best = ''
         if (timed) best = `Rekor ${sc[BEST_KEY[id]]}`
         else if (id === 'basket') best = `Toplam ${sc.basket} sayı`
-        else if (id === 'football') best = `Toplam ${sc.football}`
+        else if (id === 'football') best = cur.toyFootballStyle === 'penalty' ? `Gol ${st.pen.goals}  ·  Kurtarılan ${st.pen.saves}${cur.toyKeeperShoots ? `  ·  Yenilen ${st.pen.conceded}` : ''}` : `Toplam ${sc.football}`
         else best = `Seri ${st.bounce.combo}  ·  Rekor ${sc.bounceCombo}`
-        const hint = id === 'basket' ? 'Hazır: topu tutunca başlar' : id === 'bounce' ? 'Hazır: topa tıkla ve başla' : 'Hazır: topa vurunca başlar'
+        const hint = id === 'basket' ? 'Hazır: topu tutunca başlar' : id === 'bounce' ? 'Hazır: topa tıkla ve başla' : cur.toyFootballStyle === 'penalty' ? 'Hazır: topu geri çek, bırak' : 'Hazır: topa vurunca başlar'
         cards.push({ id, title: GAME_INFO[id].title, unit: GAME_INFO[id].unit, timed, active: g.round.active, score: timed ? g.round.score : g.session, left: Math.round(g.round.left * 10) / 10, best, hint })
       }
       const result = st.result ? { game: st.result.game, title: st.result.title, score: st.result.score, unit: st.result.unit, best: st.result.best, record: st.result.record } : null
@@ -758,9 +935,44 @@ function Toys({ s }: { s: DockSettings }) {
         return true
       }
 
+      // the penalty game takes over the football while it is the chosen kind of football
+      const penalty = cur.toyFootball && cur.toyFootballStyle === 'penalty'
+      if (penalty !== st.penOn) {
+        st.penOn = penalty
+        const fb = st.balls.football
+        st.pen = makePen()
+        if (fb) {
+          const [sx, sy] = penalty ? spotOf(w, floor, fb.r) : startPosition('football', w, floor, side)
+          Object.assign(fb, { x: sx, y: sy, vx: 0, vy: 0, floorHits: 0, touches: 0 })
+        }
+      }
       for (const kind of ALL) {
         const ball = st.balls[kind]
         if (!ball) continue
+        if (kind === 'football' && penalty) {
+          const was = st.pen.phase
+          penStep(st.pen, ball, dt, w, floor, {
+            goal: () => {
+              saveScores({ football: st.scores.football + 1 })
+              point('football')
+              st.flash = { text: 'GOL!', left: 1.4 }
+              tone(cur.toySound, 523, 523, 0.14, 'square', 0.07)
+              tone(cur.toySound, 659, 659, 0.14, 'square', 0.07, 0.12)
+              tone(cur.toySound, 784, 784, 0.3, 'square', 0.07, 0.24)
+            },
+            save: () => { st.flash = { text: 'KURTARDI!', left: 1.2 }; tone(cur.toySound, 200, 120, 0.2, 'sawtooth', 0.08) },
+            miss: () => { st.flash = { text: 'DIŞARI', left: 1 }; tone(cur.toySound, 300, 150, 0.2, 'triangle', 0.08) },
+            conceded: () => { st.flash = { text: 'GOL YEDİN', left: 1.3 }; tone(cur.toySound, 300, 110, 0.4, 'sawtooth', 0.1) },
+            blocked: () => { st.flash = { text: 'KURTARDIN!', left: 1.2 }; tone(cur.toySound, 660, 990, 0.2, 'triangle', 0.1) },
+          }, st.pointer?.y ?? floor - 60)
+          // a shot is over: with the return shot on, it is the keeper's turn before the ball is put on the spot again
+          if (was === 'result' && st.pen.phase === 'ready' && cur.toyKeeperShoots) {
+            keeperShot(st.pen, w, floor)
+            const [sx, sy] = spotOf(w, floor, ball.r)
+            Object.assign(ball, { x: sx, y: sy, vx: 0, vy: 0 })
+          }
+          continue
+        }
         const spec = SPEC[kind]
         const world: World = { width: w, floor, gravity: spec.gravity, restitution: spec.restitution, rolling: spec.rolling }
         const hitsBefore = ball.floorHits
@@ -915,6 +1127,7 @@ function Toys({ s }: { s: DockSettings }) {
       window.removeEventListener('mousedown', onDown)
       window.removeEventListener('mouseup', onUp)
       window.removeEventListener('contextmenu', onContext)
+      window.removeEventListener('wheel', onWheel)
     }
   }, [])
 

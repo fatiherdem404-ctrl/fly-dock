@@ -258,6 +258,10 @@ export interface DockSettings {
   /** 'free': just play and keep count; 'timed': a 60-second round with a record. */
   toyBasketMode: ToyMode
   toyFootballMode: ToyMode
+  /** What football is: free kicking at two goals, a penalty against a keeper, or keeping the ball up. */
+  toyFootballStyle: 'free' | 'penalty' | 'juggle'
+  /** In the penalty game the keeper shoots back at a goal on the left that the pointer defends. */
+  toyKeeperShoots: boolean
   toyBounceMode: ToyMode
   toySound: boolean
   /** Keep the system pointer visible while a game turns it into a hand, boot or racket. */
@@ -583,6 +587,8 @@ export const DEFAULT_SETTINGS: DockSettings = {
   toyBounce: false,
   toyBasketMode: 'timed',
   toyFootballMode: 'timed',
+  toyFootballStyle: 'free',
+  toyKeeperShoots: false,
   toyBounceMode: 'timed',
   toySound: true,
   toyShowCursor: false,

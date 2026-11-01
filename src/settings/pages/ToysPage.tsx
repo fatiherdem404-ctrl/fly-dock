@@ -72,12 +72,13 @@ function Scores(_props: { tab: string }) {
 }
 
 export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
-  const game = (key: 'toyBasket' | 'toyFootball' | 'toyBounce', modeKey: 'toyBasketMode' | 'toyFootballMode' | 'toyBounceMode', pic: 'basket' | 'football' | 'bounce', title: string, hint: string, how: string) => (
+  const game = (key: 'toyBasket' | 'toyFootball' | 'toyBounce', modeKey: 'toyBasketMode' | 'toyFootballMode' | 'toyBounceMode', pic: 'basket' | 'football' | 'bounce', title: string, hint: string, how: string, extra?: React.ReactNode) => (
     <Card glyph={<GameGlyph game={pic} />} icon="toys" tab="Oyunlar" title={title} hint={hint}>
       <div className="st-toygame">
         <Frame className="st-toygame__pic"><GamePic game={pic} /></Frame>
         <p className="st-prose">{how}</p>
       </div>
+      {extra}
       <Row label={`${title} açık`}><Switch label={title} value={s[key]} onChange={(v) => set({ [key]: v })} /></Row>
       <Row label="Mod" hint="Serbest: sadece oyna, sayaç tutulur. Süreye karşı: 60 saniyede en yüksek skor, rekor kaydedilir."><Segmented<ToyMode> value={s[modeKey]} onChange={(v) => set({ [modeKey]: v })} options={[['free', 'Serbest'], ['timed', 'Süreye karşı']]} /></Row>
     </Card>
@@ -85,7 +86,12 @@ export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
   return (
     <Pages id="toys">
       {game('toyBasket', 'toyBasketMode', 'basket', 'Basketbol', 'Sağ kenarda bir pota, yerde bir top.', 'İmleç topun yanına gelince ele dönüşür: topu tutup fırlat, potadan geçerse basket sayılır. Uzaktan atış üç sayı, hiçbir yere değmeden giren atış deliksiz.')}
-      {game('toyFootball', 'toyFootballMode', 'football', 'Futbol', 'İki yanda kale, ortada bir top.', 'İmleç topun yanına gelince krampon\'a dönüşür: topa hızlıca vur, iki kenardaki kalelerden birine girerse gol olur.')}
+      {game('toyFootball', 'toyFootballMode', 'football', 'Futbol', 'Serbest vuruş ya da penaltı.', 'Serbest vuruşta imleç topun yanına gelince krampona dönüşür: topa hızlıca vur, kenardaki kalelere sok. Penaltıda topu sapan gibi geri çek, yön ve gücü çekişin belirler; fare tekerleği falsoyu ayarlar, kaleci seni durdurmaya çalışır.', (
+        <>
+          <Row label="Futbol türü" hint="Serbest vuruş: iki kale. Penaltı: tek kale ve kaleci"><Segmented<'free' | 'penalty'> value={s.toyFootballStyle === 'penalty' ? 'penalty' : 'free'} onChange={(toyFootballStyle) => set({ toyFootballStyle })} options={[['free', 'Serbest vuruş'], ['penalty', 'Penaltı']]} /></Row>
+          {s.toyFootballStyle === 'penalty' && <Row label="Kaleci de sana atsın" hint="Sen attıktan sonra kaleci karşı kaleye şut çeker; imleçle kalenin önünde eldiven olarak savunursun"><Switch label="Kaleci sana da atsın" value={s.toyKeeperShoots} onChange={(toyKeeperShoots) => set({ toyKeeperShoots })} /></Row>}
+        </>
+      ))}
       {game('toyBounce', 'toyBounceMode', 'bounce', 'Top sektirme', 'Raketle tenis topunu havada tut.', 'Topa tıkla, havaya fırlasın; imleç yatay bir raket olur. Topu yere düşürmeden sektir, her vuruş bir puan. Top düşünce seri biter; sağ tık oyunu bırakır.')}
       <Scores tab="Oyunlar" />
       <Card icon="window" tab="Yerleşim" title="Pencere katmanı" hint="Oyunlar diğer pencerelerin üstünde mi dursun, onlar gibi davransın mı, yoksa masaüstü gibi altta mı kalsın.">
