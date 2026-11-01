@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import logoUrl from '@/assets/logo.png'
 import Icon, { IconName } from '@/icons'
 import { SEARCH_INDEX, SearchEntry, TAB_INFO } from './nav'
 
@@ -48,7 +49,7 @@ export default function TitleBar({ name, pageLabel, pageIcon, onControl, onJump 
   return (
     <header className="st-title">
       <div className="st-title__brand">
-        <span className="st-title__logo"><Icon name="dock" size={16} /></span>
+        <span className="st-title__logo"><img src={logoUrl} alt="" /></span>
         <b>{name}</b>
         <span className="st-title__crumb"><Icon name="arrowRight" size={12} /><Icon name={pageIcon} size={14} />{pageLabel}</span>
       </div>
