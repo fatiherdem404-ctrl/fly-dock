@@ -9,6 +9,7 @@ import { addItem } from './items'
 import { iconForItem } from './icons'
 import type { DockItem, PlaceInfo } from '../src/shared/types'
 
+import { t } from '../src/i18n'
 interface Place {
   id: string
   label: string
@@ -30,19 +31,19 @@ const folderPlace = (id: string, label: string, name: Parameters<typeof app.getP
 const special = (id: string, label: string, type: DockItem['type']): Place => ({ id, label, make: () => ({ type, label }), has: (i) => i.type === type })
 
 const PLACES: Place[] = [
-  shellPlace('computer', 'Bilgisayarım', 'shell:MyComputerFolder'),
-  shellPlace('profile', 'Kullanıcı klasörüm', 'shell:Profile'),
-  folderPlace('documents', 'Belgelerim', 'documents'),
-  folderPlace('desktop', 'Masaüstü', 'desktop'),
-  folderPlace('downloads', 'İndirilenler', 'downloads'),
-  folderPlace('pictures', 'Resimler', 'pictures'),
-  folderPlace('music', 'Müzik', 'music'),
-  folderPlace('videos', 'Videolar', 'videos'),
-  shellPlace('network', 'Ağ', 'shell:NetworkPlacesFolder'),
-  special('controlpanel', 'Kontrol paneli', 'wheel'),
-  special('trash', 'Geri Dönüşüm Kutusu', 'trash'),
-  special('power', 'Güç menüsü', 'power'),
-  special('start', 'Başlat düğmesi', 'start'),
+  shellPlace('computer', t('Bilgisayarım'), 'shell:MyComputerFolder'),
+  shellPlace('profile', t('Kullanıcı klasörüm'), 'shell:Profile'),
+  folderPlace('documents', t('Belgelerim'), 'documents'),
+  folderPlace('desktop', t('Masaüstü'), 'desktop'),
+  folderPlace('downloads', t('İndirilenler'), 'downloads'),
+  folderPlace('pictures', t('Resimler'), 'pictures'),
+  folderPlace('music', t('Müzik'), 'music'),
+  folderPlace('videos', t('Videolar'), 'videos'),
+  shellPlace('network', t('Ağ'), 'shell:NetworkPlacesFolder'),
+  special('controlpanel', t('Kontrol paneli'), 'wheel'),
+  special('trash', t('Geri Dönüşüm Kutusu'), 'trash'),
+  special('power', t('Güç menüsü'), 'power'),
+  special('start', t('Başlat düğmesi'), 'start'),
 ]
 
 export function listPlaces(): PlaceInfo[] {

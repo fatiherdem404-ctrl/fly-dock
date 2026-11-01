@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import './lang'
+import { getLang } from '../src/i18n'
 import { app, BrowserWindow, Menu, Tray, nativeImage, dialog, shell, screen, globalShortcut, MenuItemConstructorOptions } from 'electron'
 import path from 'node:path'
 import { execFile, spawn } from 'node:child_process'
@@ -41,6 +42,7 @@ import { popupMenu, menuItemsForRenderer, pickMenuItem, closeMenu, MenuSpec } fr
 import { initWidgets, addWidget, removeWidget, updateWidget, moveWidget, systemStats, weatherFor, nowPlaying, disposeWidgets } from './widgets'
 import type { DockItem, DockSettings, StackEntry } from '../src/shared/types'
 
+import { t as tl } from '../src/i18n'
 // A dock that is covered by a full-screen window (or parked off-screen in tests) must keep animating.
 app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion')
 app.commandLine.appendSwitch('disable-renderer-backgrounding')
@@ -80,7 +82,7 @@ function openSettings() {
     ...SETTINGS_LIMITS,
     maximizable: false,
     fullscreenable: false,
-    title: `${brand.name} — Ayarlar`,
+    title: tl('{name} — Ayarlar', { name: brand.name }),
     // our own title bar is drawn by the page
     frame: false,
     // tests keep the window alive but far off-screen: a hidden window gets no animation frames to capture
@@ -144,11 +146,11 @@ function createTray() {
   const rebuild = () =>
     tray?.setContextMenu(
       Menu.buildFromTemplate([
-        { label: 'Ayarlar', icon: menuIcon('settings'), click: openSettings },
-        { label: 'Dock’u göster / gizle', icon: menuIcon('toggle'), click: toggleDockVisibility },
-        { label: 'Otomatik gizle', icon: menuIcon('autohide'), type: 'checkbox', checked: getSettings().autoHide, click: (m) => applySettings({ autoHide: m.checked }) },
+        { label: tl('Ayarlar'), icon: menuIcon('settings'), click: openSettings },
+        { label: tl('Dock’u göster / gizle'), icon: menuIcon('toggle'), click: toggleDockVisibility },
+        { label: tl('Otomatik gizle'), icon: menuIcon('autohide'), type: 'checkbox', checked: getSettings().autoHide, click: (m) => applySettings({ autoHide: m.checked }) },
         { type: 'separator' },
-        { label: `${brand.name} uygulamasından çık`, icon: menuIcon('quit'), click: () => app.quit() },
+        { label: tl('{name} uygulamasından çık', { name: brand.name }), icon: menuIcon('quit'), click: () => app.quit() },
       ]),
     )
   rebuild()
@@ -253,42 +255,42 @@ function showMenu(_e: Electron.IpcMainInvokeEvent, payload: { kind: 'empty' | 'i
   const locked = getSettings().lockItems
 
   if (payload.kind === 'icon' && item && isRunningItem(item.id)) {
-    add('Aç', 'open', () => activateItem(item.id, showStackAtCursor))
-    add("Dock'ta tut", 'pin', () => addPaths([item.targetPath!], getItems().length), { disabled: locked })
-    add('Pencereyi kapat', 'close', () => closeWindowsOf(item))
+    add(tl('Aç'), 'open', () => activateItem(item.id, showStackAtCursor))
+    add(tl('Dock\'ta tut'), 'pin', () => addPaths([item.targetPath!], getItems().length), { disabled: locked })
+    add(tl('Pencereyi kapat'), 'close', () => closeWindowsOf(item))
   } else if (payload.kind === 'icon' && item && item.type !== 'separator') {
     if (item.type === 'trash') {
-      add('Aç', 'open', openRecycleBin)
-      add('Çöp kutusunu boşalt', 'trash', async () => {
-        const yes = await askConfirm({ title: 'Çöp kutusu boşaltılsın mı?', message: 'İçindeki her şey kalıcı olarak silinir. Bu geri alınamaz.', confirmLabel: 'Boşalt', danger: true })
+      add(tl('Aç'), 'open', openRecycleBin)
+      add(tl('Çöp kutusunu boşalt'), 'trash', async () => {
+        const yes = await askConfirm({ title: tl('Çöp kutusu boşaltılsın mı?'), message: tl('İçindeki her şey kalıcı olarak silinir. Bu geri alınamaz.'), confirmLabel: tl('Boşalt'), danger: true })
         if (!yes) return
         await helper.emptyTrash().catch(() => {})
         broadcast('sound:play', 'trashEmpty')
       }, { danger: true })
     } else {
-      add('Aç', 'open', () => activateItem(item.id, showStackAtCursor))
-      if (item.type === 'app') add('Çalışan pencereyi kapat', 'close', () => closeWindowsOf(item))
-      if (item.type === 'folder') add('Yığın olarak göster', 'stack', () => updateItem(item.id, { type: 'stack' }))
-      if (item.type === 'stack') add('Klasör olarak göster', 'folder', () => updateItem(item.id, { type: 'folder' }))
-      if (item.type === 'group') add('Gruba ekle…', 'plus', () => pickForGroup(item.id))
-      if (item.targetPath) add('Konumunu göster', 'location', () => shell.showItemInFolder(item.targetPath!))
+      add(tl('Aç'), 'open', () => activateItem(item.id, showStackAtCursor))
+      if (item.type === 'app') add(tl('Çalışan pencereyi kapat'), 'close', () => closeWindowsOf(item))
+      if (item.type === 'folder') add(tl('Yığın olarak göster'), 'stack', () => updateItem(item.id, { type: 'stack' }))
+      if (item.type === 'stack') add(tl('Klasör olarak göster'), 'folder', () => updateItem(item.id, { type: 'folder' }))
+      if (item.type === 'group') add(tl('Gruba ekle…'), 'plus', () => pickForGroup(item.id))
+      if (item.targetPath) add(tl('Konumunu göster'), 'location', () => shell.showItemInFolder(item.targetPath!))
       separator()
-      add('Simge değiştir…', 'image', () => showIconPicker(item.id))
-      if (item.customIconPath) add('Simgeyi sıfırla', 'refresh', () => updateItem(item.id, { customIconPath: undefined }))
-      add("Dock'tan kaldır", 'trash', () => removeItem(item.id), { danger: true, disabled: locked })
+      add(tl('Simge değiştir…'), 'image', () => showIconPicker(item.id))
+      if (item.customIconPath) add(tl('Simgeyi sıfırla'), 'refresh', () => updateItem(item.id, { customIconPath: undefined }))
+      add(tl('Dock\'tan kaldır'), 'trash', () => removeItem(item.id), { danger: true, disabled: locked })
     }
   } else {
-    add('Program ekle…', 'plus', () => pickAndAdd(['openFile'], [{ name: 'Programlar', extensions: ['exe', 'lnk'] }]), { disabled: locked })
-    add('Klasör ekle…', 'folder', () => pickAndAdd(['openDirectory']), { disabled: locked })
-    add('Yeni grup', 'group', () => createGroup(), { disabled: locked })
-    add('Hazır öğe ekle…', 'apps', showPlacesMenu, { disabled: locked })
-    add('Ayraç ekle', 'minus', addSeparator, { disabled: locked })
+    add(tl('Program ekle…'), 'plus', () => pickAndAdd(['openFile'], [{ name: tl('Programlar'), extensions: ['exe', 'lnk'] }]), { disabled: locked })
+    add(tl('Klasör ekle…'), 'folder', () => pickAndAdd(['openDirectory']), { disabled: locked })
+    add(tl('Yeni grup'), 'group', () => createGroup(), { disabled: locked })
+    add(tl('Hazır öğe ekle…'), 'apps', showPlacesMenu, { disabled: locked })
+    add(tl('Ayraç ekle'), 'minus', addSeparator, { disabled: locked })
   }
   separator()
-  add('Ayarlar', 'settings', openSettings)
-  add('Otomatik gizle', 'eyeOff', () => applySettings({ autoHide: !getSettings().autoHide }), { checked: getSettings().autoHide })
-  add('Simgeleri kilitle', 'lock', () => applySettings({ lockItems: !locked }), { checked: locked })
-  add('Çıkış', 'power', () => app.quit(), { danger: true })
+  add(tl('Ayarlar'), 'settings', openSettings)
+  add(tl('Otomatik gizle'), 'eyeOff', () => applySettings({ autoHide: !getSettings().autoHide }), { checked: getSettings().autoHide })
+  add(tl('Simgeleri kilitle'), 'lock', () => applySettings({ lockItems: !locked }), { checked: locked })
+  add(tl('Çıkış'), 'power', () => app.quit(), { danger: true })
   popupMenu(specs)
 }
 
@@ -298,7 +300,7 @@ const PLACE_MENU_ICON: Record<string, string> = { computer: 'monitor', profile: 
 function showPlacesMenu() {
   const missing = listPlaces().filter((p) => !p.added)
   const specs: MenuSpec[] = missing.map((p) => ({ label: p.label, icon: PLACE_MENU_ICON[p.id] ?? 'folder', action: () => void addPlace(p.id) }))
-  if (specs.length === 0) specs.push({ label: 'Hepsi zaten dockta', icon: 'check', action: () => {}, disabled: true })
+  if (specs.length === 0) specs.push({ label: tl('Hepsi zaten dockta'), icon: 'check', action: () => {}, disabled: true })
   popupMenu(specs)
 }
 
@@ -390,7 +392,7 @@ function registerIpc() {
   handle('tweaks:set', (_e, id, enabled) => tweakEngine.set(id, enabled))
   handle('tweaks:restore-point', () => tweakEngine.restorePoint())
   handle('tweaks:revert-all', async () => {
-    const yes = await askConfirm({ title: 'Tüm tweakler geri alınsın mı?', message: `${brand.name}’un değiştirdiği her Windows ayarı eski değerine döner. Yönetici gerektirenler için Windows onay isteyebilir.`, confirmLabel: 'Geri al', danger: true })
+    const yes = await askConfirm({ title: tl('Tüm tweakler geri alınsın mı?'), message: tl('{name}’un değiştirdiği her Windows ayarı eski değerine döner. Yönetici gerektirenler için Windows onay isteyebilir.', { name: brand.name }), confirmLabel: tl('Geri al'), danger: true })
     return yes ? tweakEngine.revertAll() : 0
   })
   handle('tweaks:log', () => tweakEngine.log())
@@ -431,7 +433,7 @@ function registerIpc() {
   handle('cursors:remove', async (_e, id) => {
     const pack = cursorPacks().find((p) => p.id === id)
     if (!pack || pack.builtin) return false
-    if (!(await askConfirm({ title: `"${pack.name}" silinsin mi?`, message: 'İmleç paketi bu bilgisayardan kaldırılır. Dışa aktarmadıysan geri getiremezsin.', confirmLabel: 'Sil', danger: true }))) return false
+    if (!(await askConfirm({ title: tl('"{name}" silinsin mi?', { name: pack.name }), message: tl('İmleç paketi bu bilgisayardan kaldırılır. Dışa aktarmadıysan geri getiremezsin.'), confirmLabel: tl('Sil'), danger: true }))) return false
     await removeCursorPack(id)
     if (getSettings().cursorPack === id) applySettings({ cursorPack: '' })
     return true
@@ -503,7 +505,7 @@ function registerIpc() {
   })
   handle('packs:remove', async (_e, id) => {
     const info = listInstalled().find((p) => p.id === id)
-    if (info && (await askConfirm({ title: `"${info.name}" silinsin mi?`, message: 'Paket bu bilgisayardan kaldırılır. Dışa aktarmadıysan geri getiremezsin.', confirmLabel: 'Sil', danger: true }))) {
+    if (info && (await askConfirm({ title: tl('"{name}" silinsin mi?', { name: info.name }), message: tl('Paket bu bilgisayardan kaldırılır. Dışa aktarmadıysan geri getiremezsin.'), confirmLabel: tl('Sil'), danger: true }))) {
       removePack(info.type, id)
       if (info.type === 'theme' && getSettings().theme === id) applySettings({ theme: 'glass-dark' })
       if (info.type === 'icons' && getSettings().iconPack === id) applySettings({ iconPack: '' })
@@ -528,7 +530,7 @@ function registerIpc() {
     const url = target === 'repo' ? brand.repoUrl : brand.issuesUrl
     return shell.openExternal(url)
   })
-  handle('app:info', () => ({ name: brand.name, version: app.getVersion(), tagline: brand.tagline.tr, loginSupported: app.isPackaged, loginEnabled: loginEnabled() }))
+  handle('app:info', () => ({ name: brand.name, version: app.getVersion(), tagline: brand.tagline[getLang()], loginSupported: app.isPackaged, loginEnabled: loginEnabled() }))
   handle('backup:export', exportBackup)
   handle('backup:import', importBackup)
   handle('app:quit', () => app.quit())
@@ -550,7 +552,7 @@ async function importBackup() {
   if (result.canceled || !result.filePaths[0]) return { ok: false, message: 'cancelled' }
   try {
     const data = JSON.parse(fs.readFileSync(result.filePaths[0], 'utf8'))
-    if (!(await askConfirm({ title: 'Yedek geri yüklensin mi?', message: 'Şu anki ayarların, dock öğelerin ve widget’ların yedektekilerle değiştirilir. Uygulama yeniden başlar.', confirmLabel: 'Geri yükle', danger: true }))) return { ok: false, message: 'cancelled' }
+    if (!(await askConfirm({ title: tl('Yedek geri yüklensin mi?'), message: tl('Şu anki ayarların, dock öğelerin ve widget’ların yedektekilerle değiştirilir. Uygulama yeniden başlar.'), confirmLabel: tl('Geri yükle'), danger: true }))) return { ok: false, message: 'cancelled' }
     if (data?.app !== brand.slug || !Array.isArray(data.items) || typeof data.settings !== 'object') throw new Error('this is not a backup of this app')
     const defaults = getSettings() as unknown as Record<string, unknown>
     const settings: Record<string, unknown> = {}
@@ -606,8 +608,8 @@ if (!app.requestSingleInstanceLock()) {
     initCursors()
     initToys()
     // screenshot runs ask for the confirmation window so it can be looked at
-    if (HEADLESS && process.env.FLY_DOCK_TEST_CONFIRM === 'input') setTimeout(() => void askInput({ title: 'Yeniden adlandır', message: 'Yeni adı yaz.', confirmLabel: 'Adlandır', value: 'rapor-2026.docx' }), 1500)
-    else if (HEADLESS && process.env.FLY_DOCK_TEST_CONFIRM) setTimeout(() => void askConfirm({ title: 'Çöp kutusu boşaltılsın mı?', message: 'İçindeki her şey kalıcı olarak silinir. Bu geri alınamaz.', confirmLabel: 'Boşalt', danger: true }), 1500)
+    if (HEADLESS && process.env.FLY_DOCK_TEST_CONFIRM === 'input') setTimeout(() => void askInput({ title: tl('Yeniden adlandır'), message: tl('Yeni adı yaz.'), confirmLabel: tl('Adlandır'), value: 'rapor-2026.docx' }), 1500)
+    else if (HEADLESS && process.env.FLY_DOCK_TEST_CONFIRM) setTimeout(() => void askConfirm({ title: tl('Çöp kutusu boşaltılsın mı?'), message: tl('İçindeki her şey kalıcı olarak silinir. Bu geri alınamaz.'), confirmLabel: tl('Boşalt'), danger: true }), 1500)
     initWidgets()
     createTray()
     registerHotkeys()

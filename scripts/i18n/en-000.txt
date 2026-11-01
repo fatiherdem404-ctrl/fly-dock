@@ -1,0 +1,400 @@
+0|Recycle Bin
+1|Close
+2|Close (Esc)
+3|Search icons…
+4|Icon pack
+5|All packs and folders
+6|Add folder…
+7|Choose picture…
+8|Remove folder from the list
+9|No icons yet. Add a folder with icon pictures in it; installed icon packs show up here too.
+10|No matching icons.
+11|Show more (
+12|No shelf (empty)
+13|Dark glass
+14|Blue frame
+15|Frosted glass
+16|Wood
+17|Light wood
+18|Walnut
+19|Brushed metal
+20|Marble
+21|Black marble
+22|Concrete
+23|Neon
+24|Crystal
+25|Matte black
+26|Reflective floor
+27|Brick
+28|Custom texture
+29|Scene
+30|Card second colour
+31|Line colour
+32|Line second colour
+33|Choose icon
+34|” – choose an icon
+35|Colours for this icon only
+36|Reset colours
+37|Search {length} icons (e.g. {hint})
+38|Loading…
+39|No icon matches that name. Search in English: “folder”, “music”, “heart”…
+40|Preview
+41|Keep colours (for brand logos)
+42|Paste SVG code copied from another library (Heroicons, Phosphor, Bootstrap…). Only the drawing shapes are taken; the studio applies its own colours.
+43|Use this icon
+44|=
+45|Back to default
+46|Dock position (bottom, top, left, right)
+47|Position
+48|=
+49|Distance from the edge
+50|=
+51|Horizontal position / alignment
+52|=
+53|Monitor choice
+54|=
+55|Icon size
+56|Icons
+57|=
+58|Zoom on hover
+59|Icons and zoom
+60|=
+61|Icon spacing
+62|=
+63|Separator look, thickness, colour
+64|Separator
+65|=
+66|Labels (names)
+67|Labels
+68|=
+69|Auto-hide
+70|Behaviour
+71|=
+72|Lock icons
+73|Show running apps
+74|Dock layer (on top, behind)
+75|=
+76|Shelf style (wood, marble, glass…)
+77|Shelf
+78|=
+79|Shelf colour, opacity, depth
+80|=
+81|Shelf texture, custom picture
+82|Texture
+83|Corner roundness
+84|Shape
+85|Shelf padding
+86|Choose a theme
+87|Themes
+88|=
+89|Create a theme
+90|=
+91|Import / export themes
+92|=
+93|Wallpaper mode
+94|Source
+95|=
+96|Live background
+97|=
+98|Slideshow from a folder
+99|=
+100|Wallpaper behaviour (battery, full screen)
+101|Choose an icon pack
+102|Packs
+103|=
+104|Create an icon pack
+105|Create pack
+106|Cursor pack
+107|=
+108|Speed and motion type
+109|Speed
+110|Hover animation
+111|Icon effects
+112|App launch animation
+113|=
+114|Running app indicator
+115|=
+116|Dock show and hide effect
+117|Dock and windows
+118|Window effect (genie)
+119|Window size
+120|Windows
+121|Where windows open
+122|Turn sounds on, volume, style
+123|Sounds
+124|Which events play a sound
+125|Try the sounds
+126|Try
+127|Items in the dock, shortcuts
+128|Control panel entries
+129|=
+130|Add a widget (analog clock, calendar, weather, note…)
+131|Add
+132|=
+133|Basketball, football, tennis, juggling
+134|Games
+135|=
+136|Windows tweaks
+137|=
+138|Start with Windows
+139|=
+140|Back up and restore
+141|Shortcut: show / hide the dock
+142|About, version
+143|=
+144|The cursors of the pack you pick replace the arrow, the hand, the text cursor and the others. This only lasts for this Windows session; when you close the app, your own cursors come back.
+145|” is running now. You will see the cursors change when you move over another window.
+146|What is in the pack
+147|Windows’ own cursor is used for any cursor the pack does not have.
+148|Texture size
+149|How big the pattern is on the shelf. Make it smaller and the grain, bricks and lines get denser.
+150|Pattern size
+151|100% = the designed size
+152|Reset
+153|Use your own picture as the shelf surface. PNG, JPEG or WebP, up to 4 MB. The picture is copied to the app’s own folder and is included in backups.
+154|Choose another picture…
+155|Remove
+156|No picture chosen yet; the shelf looks plain grey.
+157|Layout
+158|Tile (repeat)
+159|Fit (single piece)
+160|Size
+161|Picture is {w}×{h} px; when tiled this size is multiplied by the slider
+162|Multiplier of the picture’s own size when tiled
+163|Shift horizontally
+164|Shift vertically
+165|Rotate
+166|Reset size and position
+167|Top left
+168|Top right
+169|Bottom right
+170|Top
+171|Right
+172|Choose a picture for the shelf…
+173|See the Texture tab for size, shift and rotation.
+174|A custom texture needs a picture; until you choose one the shelf looks plain grey.
+175|Shelf style
+176|The surface the icons stand on. Choosing a style applies its best depth and opacity; you can change them afterwards.
+177|Appearance
+178|Tint
+179|If empty, the theme’s colour is used
+180|Back to the theme
+181|Opacity
+182|Bottom thickness
+183|The front face of the shelf that faces the screen edge; the thickness under 3D shelves
+184|3D depth
+185|0 = flat; the higher it goes, the more the shelf tilts in perspective
+186|Shelf grows with the icons
+187|When off, icons stick out of the shelf (like macOS)
+188|Shelf growth
+189|The four corners of the shelf, one by one. When the bottom corners are rounded, the front face is rounded with them.
+190|Ready-made shapes
+191|Pill
+192|Round
+193|Square
+194|Link all
+195|Moving one slider changes all four together
+196|Link corners
+197|The space between the shelf edges and the icons, separately for each side of the screen. The window grows on its own to fit.
+198|Primary monitor
+199|All monitors (one dock on each)
+200|Monitor {label}{v1}
+201|Choose which edge of the screen the dock sits on, how far from it and where along it. Changes apply to the dock right away.
+202|The gap between the dock and the screen edge
+203|Horizontal position
+204|Vertical position
+205|Slide along the edge: start, middle or end
+206|Reset position
+207|Centre
+208|Monitor
+209|With more than one monitor, each can have its own dock
+210|The icon’s own size and its zoom on hover are separate settings.
+211|Zoom on hover
+212|Zoom
+213|Largest size
+214|As a multiple of the icon size
+215|Spread
+216|How many neighbouring icons are affected
+217|Effect curve
+218|How the zoom spreads to the neighbours
+219|Soft
+220|Bell
+221|Linear
+222|The line between the groups in the dock. Automatic picks what reads well for the shelf and theme: a groove on wood and metal, a glowing bar on neon, a clear line on glass.
+223|Line
+224|Dotted
+225|Glowing
+226|Separator details
+227|Applied on top of the look you chose. A setting you leave empty stays automatic for the shelf and theme.
+228|Thickness
+229|0 = the look’s own thickness
+230|Height
+231|Percent of the icon size
+232|Colour
+233|Automatic if empty
+234|Automatic
+235|Left edge
+236|0 = no border
+237|Left edge colour
+238|Right edge
+239|Right edge colour
+240|Reset separator
+241|The name that appears above an icon
+242|On hover
+243|Always visible
+244|Never
+245|Text size
+246|Font
+247|Theme font
+248|=
+249|=
+250|Position relative to windows
+251|The order between other windows and the dock
+252|Running programs
+253|Open programs that are not pinned appear after the separator
+254|Running indicator
+255|A light under an open program
+256|Indicator
+257|Turns off dragging to reorder and removing
+258|Lock
+259|The dock appears when the pointer goes to the screen edge
+260|Hide delay
+261|Hide in full screen
+262|The dock stays out of the way while a game or video is full screen
+263|General
+264|Startup
+265|Only works in the installed version (off while developing)
+266|The dock starts by itself when the computer starts
+267|Show / hide the dock shortcut
+268|Electron format: Control+Alt+D
+269|Settings, items and widgets are in one JSON file. The app restarts after you restore.
+270|Back up
+271|Restore
+272|About
+273|Free and open source (GPLv3).
+274|Developed by
+275|. The name and logo belong to the official release (NOTICE).
+276|Source code
+277|Report a problem
+278|Quit
+279|Ready-made items
+280|Add the places you use often to the dock with one click. What you add drops into the list below; you can rename it, change its icon or remove it.
+281|In the dock
+282|Add to dock
+283|Added
+284|Pinned items
+285|Add files, programs or folders by dragging them onto the dock. Name and shortcut are edited here.
+286|Shortcut
+287|Example: Ctrl+Alt+1
+288|No pinned items in the dock yet. Drag a program onto the dock.
+289|How long every dock animation takes and how the motion feels
+290|Fast
+291|Slow
+292|Custom
+293|Duration
+294|Motion type
+295|Graph: how a value changes over time
+296|On hover
+297|What happens while the pointer passes over the icons
+298|App launch
+299|The icon’s motion when you start a program
+300|Try it in the live dock above
+301|The mark under an open program’s icon
+302|Dock entrance and exit
+303|How the dock comes onto the screen when auto-hide is on
+304|Dock windows
+305|The open and close effect of folder, group and control panel windows
+306|{n} icons matched.
+307|No pictures named like the items were found in this folder (e.g. chrome.png, folder.png, wheel-apps.png).
+308|"{message}" was created and is in use. To export it, use the list in the Icon packs tab.
+309|Choose an item on the left, then click its icon in the library on the right; it moves on to the next item by itself. You can add icon folders to the library or pick single pictures. Icons can also be changed from the dock: right-click an item and choose 'Icon…'.
+310|Clear selection
+311|Assign from a folder by name…
+312|Clear selections
+313|Pack name
+314|My icons
+315|Author
+316|Leave empty if you like
+317|Create the pack and use it (
+318|Use system icons
+319|System icons
+320|In use
+321|Windows’ own icons
+322|Use the {name} theme
+323|Ready
+324|Unknown author
+325|With shelf
+326|Background
+327|Selected
+328|Use
+329|Exported
+330|Export
+331|Delete
+332|Imported
+333|Import pack (.flypack)
+334|A small click while the pointer passes over an icon
+335|Click
+336|When you click an icon
+337|App launch
+338|When a closed program is started
+339|Dropping an icon, deleting, and the auto-hidden dock coming and going
+340|Folder, group and control panel windows opening and closing with the genie effect
+341|Menus
+342|Opening the right-click menu and choosing
+343|Dropping files and emptying the bin
+344|Question, confirm, cancel and warning sounds
+345|The switches in this window and the notification sound
+346|Hover
+347|Open
+348|Drop
+349|Window opens (genie)
+350|Window closes (genie)
+351|Menu opens
+352|Menu choice
+353|Throw away
+354|Empty bin
+355|Cancel
+356|Warning
+357|Sounds are made inside the app; no sound file is needed. They depend on Windows’ master volume and the volume mixer.
+358|Turn sounds on
+359|Volume
+360|Sound style
+361|The same events, played with a different character. Click a card to hear it.
+362|Every sound plays with the chosen style and volume; you can listen here even if the event is off.
+363|Main items
+364|Light
+365|My pack
+366| and is in use
+367|The pack could not be created
+368|My template {v0}
+369|Click to change the icon
+370|Remove this program from the list
+371|Add your own program
+372|exe name, e.g. photoshop
+373|Display name (optional)
+374|Add and choose icon
+375|The name of the program’s exe file (without extension) becomes its key in the pack. You can pick its icon from Lucide or paste SVG code.
+376|Program not in the pack
+377|Template
+378|Start with a template, then change it however you like.
+379|Your own template
+380|Template name
+381|Save template
+382|Card
+383|Fill
+384|Flat
+385|No card
+386|Second colour
+387|Gradient direction
+388|Padding
+389|How far the card is from the edge of the picture
+390|Pattern
+391|Pattern colour
+392|Pattern density
+393|Depth and edge
+394|3D emboss
+395|One edge catches the light, the opposite one stays in shadow
+396|Light direction
+397|Glossy surface
+398|Frame thickness
+399|Frame colour

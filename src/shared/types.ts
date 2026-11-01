@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // Types shared by the main process, the preload bridge and every renderer view.
@@ -353,16 +354,16 @@ export type ThemeDesk = Partial<Pick<DockSettings, DeskKey>>
 export type LiveWallpaperId = 'aurora' | 'flow' | 'stars' | 'waves' | 'bubbles' | 'network' | 'ripples' | 'fireflies' | 'galaxy' | 'fluid'
 /** The scenes the app draws itself; no file needed. [id, name, one line about it] */
 export const LIVE_WALLPAPERS: [LiveWallpaperId, string, string][] = [
-  ['aurora', 'Aurora', 'Yavaşça süzülen renkli ışık bulutları'],
-  ['flow', 'Akış', 'Yumuşak, sürekli değişen renk geçişi'],
-  ['stars', 'Yıldızlı gece', 'Parlayan yıldızlar ve ara sıra kayan bir yıldız'],
-  ['waves', 'Dalgalar', 'Katman katman, usulca sallanan dalgalar'],
-  ['bubbles', 'Baloncuklar', 'Yukarı süzülen saydam baloncuklar; fare yaklaşınca kaçışırlar'],
-  ['network', 'Ağ', 'Birbirine bağlanan noktalar; fare bir düğüm olup çevresini kendine çeker'],
-  ['ripples', 'Dalgacıklar', 'Sakin su; farenin geçtiği her yerde halkalar yayılır'],
-  ['fireflies', 'Ateş böcekleri', 'Karanlıkta uçuşan ışıklar; fareye gelip etrafında dönerler'],
-  ['galaxy', 'Galaksi', 'Dönen bir galaksi; merkezi fareyi izler, hızlı harekette parlar'],
-  ['fluid', 'Yağlı sıvı', 'Suya dökülmüş benzin gibi karışan renkler; fareyle akar, tıklayınca fışkırır'],
+  ['aurora', 'Aurora', t('Yavaşça süzülen renkli ışık bulutları')],
+  ['flow', t('Akış'), t('Yumuşak, sürekli değişen renk geçişi')],
+  ['stars', t('Yıldızlı gece'), t('Parlayan yıldızlar ve ara sıra kayan bir yıldız')],
+  ['waves', t('Dalgalar'), t('Katman katman, usulca sallanan dalgalar')],
+  ['bubbles', t('Baloncuklar'), t('Yukarı süzülen saydam baloncuklar; fare yaklaşınca kaçışırlar')],
+  ['network', t('Ağ'), t('Birbirine bağlanan noktalar; fare bir düğüm olup çevresini kendine çeker')],
+  ['ripples', t('Dalgacıklar'), t('Sakin su; farenin geçtiği her yerde halkalar yayılır')],
+  ['fireflies', t('Ateş böcekleri'), t('Karanlıkta uçuşan ışıklar; fareye gelip etrafında dönerler')],
+  ['galaxy', t('Galaksi'), t('Dönen bir galaksi; merkezi fareyi izler, hızlı harekette parlar')],
+  ['fluid', t('Yağlı sıvı'), t('Suya dökülmüş benzin gibi karışan renkler; fareyle akar, tıklayınca fışkırır')],
 ]
 
 export type WallpaperMode = 'off' | 'theme' | 'single' | 'folder'

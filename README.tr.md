@@ -24,6 +24,7 @@ Masaüstün için modern dock — RocketDock'tan ilham alan, açık kaynaklı Wi
 - Duvar kâğıtları: resim, video, canlı arka planlar ve kendi yazdığın JavaScript canvas sahneleri
 - İmleç paketleri, simge ve simge paketi tasarlayabileceğin ikon stüdyosu
 - Mini masaüstü oyunları: basketbol, futbol, top sektirme ve pong
+- İngilizce ve Türkçe arayüz; Windows’un diline uyar, Ayarlar → Genel’den değiştirilir
 
 Planlananlar: ses paketleri, topluluk paketleri. Bkz. [ROADMAP.md](ROADMAP.md).
 

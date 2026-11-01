@@ -20,6 +20,7 @@ import racketUrl from '@/assets/toys/racket.png'
 import basketballUrl from '@/assets/toys/basketball.png'
 import soccerUrl from '@/assets/toys/soccer.png'
 
+import { t as tl } from '../i18n'
 type GameId = 'basket' | 'football' | 'bounce'
 type BallKind = GameId
 /** The panel games (for now only Pong, played over the whole screen). */
@@ -37,9 +38,9 @@ const GAME_IDS: GameId[] = ['basket', 'football', 'bounce']
 const ROUND_SECONDS = 60
 
 const GAME_INFO: Record<GameId, { title: string; unit: string }> = {
-  basket: { title: 'Basketbol', unit: 'sayı' },
-  football: { title: 'Futbol', unit: 'gol' },
-  bounce: { title: 'Top sektirme', unit: 'vuruş' },
+  basket: { title: tl('Basketbol'), unit: tl('sayı') },
+  football: { title: tl('Futbol'), unit: tl('gol') },
+  bounce: { title: tl('Top sektirme'), unit: tl('vuruş') },
 }
 const BEST_KEY: Record<GameId, keyof ToyScores> = { basket: 'basketBest', football: 'footballBest', bounce: 'bounceBest' }
 
@@ -47,7 +48,7 @@ const BEST_KEY: Record<GameId, keyof ToyScores> = { basket: 'basketBest', footba
 const jugglingOf = (s: DockSettings) => s.toyFootball && s.toyFootballStyle === 'juggle'
 /** The record each game keeps for a timed round (juggling has its own, apart from the goals). */
 const bestKeyOf = (s: DockSettings, id: GameId): keyof ToyScores => (id === 'football' && jugglingOf(s) ? 'juggleBest' : BEST_KEY[id])
-const unitOf = (s: DockSettings, id: GameId) => (id === 'football' && jugglingOf(s) ? 'vuruş' : GAME_INFO[id].unit)
+const unitOf = (s: DockSettings, id: GameId) => (id === 'football' && jugglingOf(s) ? tl('vuruş') : GAME_INFO[id].unit)
 
 const modeOf = (s: DockSettings, id: GameId): ToyMode => (id === 'basket' ? s.toyBasketMode : id === 'football' ? s.toyFootballMode : s.toyBounceMode)
 const enabledOf = (s: DockSettings, id: GameId): boolean => (id === 'basket' ? s.toyBasket : id === 'football' ? s.toyFootball : s.toyBounce)
@@ -413,12 +414,12 @@ function drawPenalty(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, wid
     }
     const spot = gaugeSpot(ball.x, ball.y, floor)
     powerGauge(c, spot.px, spot.py, l.power)
-    dial(c, spot.dx, spot.dy, pen.spin, 'FALSO · tekerlek')
+    dial(c, spot.dx, spot.dy, pen.spin, tl('FALSO · tekerlek'))
   } else if (ball && pen.phase === 'ready') {
     c.fillStyle = 'rgba(255,255,255,0.9)'
     c.font = "600 12px 'Segoe UI', system-ui, sans-serif"
     c.textAlign = 'center'
-    c.fillText('Topu geri çek ve bırak', ball.x, ball.y - ball.r - 14)
+    c.fillText(tl('Topu geri çek ve bırak'), ball.x, ball.y - ball.r - 14)
   }
 }
 
@@ -437,7 +438,7 @@ function drawShotAid(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, wid
   c.fillStyle = 'rgba(255,255,255,0.8)'
   c.font = "700 12px 'Segoe UI', system-ui, sans-serif"
   c.textAlign = 'center'
-  c.fillText('3 SAYI ÇİZGİSİ', lineX, floor - 96)
+  c.fillText(tl('3 SAYI ÇİZGİSİ'), lineX, floor - 96)
   const ball = sim.balls.basket
   const shot = sim.shot
   if (!ball) return
@@ -463,12 +464,12 @@ function drawShotAid(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, wid
     }
     const spot = gaugeSpot(ball.x, ball.y, floor)
     powerGauge(c, spot.px, spot.py, l.power)
-    dial(c, spot.dx, spot.dy, l.height, 'YÜKSEKLİK', 'height')
+    dial(c, spot.dx, spot.dy, l.height, tl('YÜKSEKLİK'), 'height')
   } else if (shot.state === 'ready') {
     c.fillStyle = 'rgba(255,255,255,0.9)'
     c.font = "600 12px 'Segoe UI', system-ui, sans-serif"
     c.textAlign = 'center'
-    c.fillText('Topu geri çek ve bırak', ball.x, ball.y - ball.r - 14)
+    c.fillText(tl('Topu geri çek ve bırak'), ball.x, ball.y - ball.r - 14)
   }
 }
 
@@ -624,15 +625,15 @@ function GameIcon({ id }: { id: GameId | MiniId }) {
 function Hud({ cards, result, showCursor, corner }: { cards: HudCard[]; result: HudResult | null; showCursor: boolean; corner: boolean }) {
   return (
     <>
-      <div className={corner ? "hud hud--corner" : "hud"}>
+      <div className={corner ? 'hud hud--corner' : "hud"}>
         {cards.map((card) => (
           <div key={card.id} className={`hud-card${card.timed && card.active && card.left <= 10 ? ' hud-card--urgent' : ''}`} data-active={card.active}>
             <div className="hud-card__head">
               <span className="hud-card__icon"><GameIcon id={card.id} /></span>
               <b>{card.title}</b>
-              <span className="hud-chip">{card.timed ? 'Süreye karşı' : 'Serbest'}</span>
-              <button className="hud-card__cursor" data-game={card.id} aria-label="İmleci göster ya da gizle" title="İmleci göster / gizle">{showCursor ? '🖱' : '◌'}</button>
-              <button className="hud-card__close" data-game={card.id} aria-label="Oyunu kapat" title="Oyunu kapat">✕</button>
+              <span className="hud-chip">{card.timed ? tl('Süreye karşı') : tl('Serbest')}</span>
+              <button className="hud-card__cursor" data-game={card.id} aria-label={tl('İmleci göster ya da gizle')} title={tl('İmleci göster / gizle')}>{showCursor ? '🖱' : '◌'}</button>
+              <button className="hud-card__close" data-game={card.id} aria-label={tl('Oyunu kapat')} title={tl('Oyunu kapat')}>✕</button>
             </div>
             <div className="hud-card__main">
               <strong>{card.score}</strong>
@@ -647,9 +648,9 @@ function Hud({ cards, result, showCursor, corner }: { cards: HudCard[]; result: 
       {result && (
         <div className={`hud-result${result.record ? ' hud-result--record' : ''}`}>
           <small>{result.game}</small>
-          <h2>{result.record ? 'Yeni rekor!' : 'Süre doldu'}</h2>
+          <h2>{result.record ? tl('Yeni rekor!') : tl('Süre doldu')}</h2>
           <strong>{result.score}<span> {result.unit}</span></strong>
-          <p>{result.record ? 'Önceki rekorunu geçtin' : `Rekor: ${result.best}`}</p>
+          <p>{result.record ? tl('Önceki rekorunu geçtin') : tl('Rekor: {best}', { best: result.best })}</p>
         </div>
       )}
     </>
@@ -708,7 +709,7 @@ function Toys({ s }: { s: DockSettings }) {
       const wins = id === 'pong'
       const record = !wins && score > best
       if (record) saveScores({ [key]: score })
-      st.result = { game: MINI_INFO[id].title, title: wins ? 'Kazandın!' : record ? 'Yeni rekor!' : 'Oyun bitti', score, unit: 'sayı', best: wins ? st.scores.pongBest + 1 : record ? score : best, record, left: 4.5 }
+      st.result = { game: MINI_INFO[id].title, title: wins ? tl('Kazandın!') : record ? tl('Yeni rekor!') : tl('Oyun bitti'), score, unit: tl('sayı'), best: wins ? st.scores.pongBest + 1 : record ? score : best, record, left: 4.5 }
       const sound = settingsRef.current.toySound
       if (record || wins) [523, 659, 784, 1047].forEach((f, i) => tone(sound, f, f, 0.2, 'triangle', 0.1, i * 0.12))
     }
@@ -753,7 +754,7 @@ function Toys({ s }: { s: DockSettings }) {
       const best = st.scores[key]
       const record = g.round.score > best
       if (record) saveScores({ [key]: g.round.score })
-      st.result = { game: GAME_INFO[id].title, title: record ? 'Yeni rekor!' : 'Süre doldu', score: g.round.score, unit: unitOf(settingsRef.current, id), best: record ? g.round.score : best, record, left: 4.5 }
+      st.result = { game: GAME_INFO[id].title, title: record ? tl('Yeni rekor!') : tl('Süre doldu'), score: g.round.score, unit: unitOf(settingsRef.current, id), best: record ? g.round.score : best, record, left: 4.5 }
       const sound = settingsRef.current.toySound
       if (record) [523, 659, 784, 1047].forEach((f, i) => tone(sound, f, f, 0.2, 'triangle', 0.1, i * 0.12))
       else tone(sound, 400, 200, 0.4, 'triangle', 0.1)
@@ -996,12 +997,12 @@ function Toys({ s }: { s: DockSettings }) {
         const g = st.games[id]
         const sc = st.scores
         let best = ''
-        if (timed) best = `Rekor ${sc[bestKeyOf(cur, id)]}`
-        else if (id === 'basket') best = `Toplam ${sc.basket} sayı`
-        else if (id === 'football' && jugglingOf(cur)) best = `Seri ${st.bounce.combo}  ·  Rekor ${sc.juggleCombo}`
-        else if (id === 'football') best = cur.toyFootballStyle === 'penalty' ? `Gol ${st.pen.goals}  ·  Kurtarılan ${st.pen.saves}${cur.toyKeeperShoots ? `  ·  Yenilen ${st.pen.conceded}` : ''}` : `Toplam ${sc.football}`
-        else best = `Seri ${st.bounce.combo}  ·  Rekor ${sc.bounceCombo}`
-        const hint = id === 'basket' ? (cur.toyBasketStyle === 'far' ? 'Hazır: topu geri çek, bırak' : 'Hazır: topu tutunca başlar') : id === 'bounce' || jugglingOf(cur) ? 'Hazır: topa tıkla ve başla' : cur.toyFootballStyle === 'penalty' ? 'Hazır: topu geri çek, bırak' : 'Hazır: topa vurunca başlar'
+        if (timed) best = tl('Rekor {v0}', { v0: sc[bestKeyOf(cur, id)] })
+        else if (id === 'basket') best = tl('Toplam {basket} sayı', { basket: sc.basket })
+        else if (id === 'football' && jugglingOf(cur)) best = tl('Seri {combo}  ·  Rekor {juggleCombo}', { combo: st.bounce.combo, juggleCombo: sc.juggleCombo })
+        else if (id === 'football') best = cur.toyFootballStyle === 'penalty' ? tl('Gol {goals}  ·  Kurtarılan {saves}{v2}', { goals: st.pen.goals, saves: st.pen.saves, v2: cur.toyKeeperShoots ? `  ·  Yenilen ${st.pen.conceded}` : '' }) : tl('Toplam {football}', { football: sc.football })
+        else best = tl('Seri {combo}  ·  Rekor {bounceCombo}', { combo: st.bounce.combo, bounceCombo: sc.bounceCombo })
+        const hint = id === 'basket' ? (cur.toyBasketStyle === 'far' ? tl('Hazır: topu geri çek, bırak') : tl('Hazır: topu tutunca başlar')) : id === 'bounce' || jugglingOf(cur) ? tl('Hazır: topa tıkla ve başla') : cur.toyFootballStyle === 'penalty' ? tl('Hazır: topu geri çek, bırak') : tl('Hazır: topa vurunca başlar')
         cards.push({ id, title: GAME_INFO[id].title, unit: unitOf(cur, id), timed, active: g.round.active, score: timed ? g.round.score : g.session, left: Math.round(g.round.left * 10) / 10, best, hint })
       }
       for (const id of MINI_IDS) {
@@ -1143,15 +1144,15 @@ function Toys({ s }: { s: DockSettings }) {
             goal: () => {
               saveScores({ football: st.scores.football + 1 })
               point('football')
-              st.flash = { text: 'GOL!', left: 1.4 }
+              st.flash = { text: tl('GOL!'), left: 1.4 }
               tone(cur.toySound, 523, 523, 0.14, 'square', 0.07)
               tone(cur.toySound, 659, 659, 0.14, 'square', 0.07, 0.12)
               tone(cur.toySound, 784, 784, 0.3, 'square', 0.07, 0.24)
             },
-            save: () => { st.flash = { text: 'KURTARDI!', left: 1.2 }; tone(cur.toySound, 200, 120, 0.2, 'sawtooth', 0.08) },
-            miss: () => { st.flash = { text: 'DIŞARI', left: 1 }; tone(cur.toySound, 300, 150, 0.2, 'triangle', 0.08) },
-            conceded: () => { st.flash = { text: 'GOL YEDİN', left: 1.3 }; tone(cur.toySound, 300, 110, 0.4, 'sawtooth', 0.1) },
-            blocked: () => { st.flash = { text: 'KURTARDIN!', left: 1.2 }; tone(cur.toySound, 660, 990, 0.2, 'triangle', 0.1) },
+            save: () => { st.flash = { text: tl('KURTARDI!'), left: 1.2 }; tone(cur.toySound, 200, 120, 0.2, 'sawtooth', 0.08) },
+            miss: () => { st.flash = { text: tl('DIŞARI'), left: 1 }; tone(cur.toySound, 300, 150, 0.2, 'triangle', 0.08) },
+            conceded: () => { st.flash = { text: tl('GOL YEDİN'), left: 1.3 }; tone(cur.toySound, 300, 110, 0.4, 'sawtooth', 0.1) },
+            blocked: () => { st.flash = { text: tl('KURTARDIN!'), left: 1.2 }; tone(cur.toySound, 660, 990, 0.2, 'triangle', 0.1) },
           }, st.pointer ? { x: st.pointer.x, y: st.pointer.y } : null, cur.toyKeeperShoots)
           continue
         }
@@ -1229,7 +1230,7 @@ function Toys({ s }: { s: DockSettings }) {
             const points = far ? 3 : 2
             saveScores({ basket: st.scores.basket + points })
             for (let i = 0; i < points; i++) point('basket')
-            st.flash = { text: swish ? (far ? 'DELİKSİZ ÜÇLÜK!' : 'DELİKSİZ!') : far ? 'ÜÇLÜK!' : 'BASKET!', left: 1.4 }
+            st.flash = { text: swish ? (far ? tl('DELİKSİZ ÜÇLÜK!') : tl('DELİKSİZ!')) : far ? tl('ÜÇLÜK!') : 'BASKET!', left: 1.4 }
             st.shot.scored = true
             tone(cur.toySound, 660, 660, 0.12, 'sine', 0.12)
             tone(cur.toySound, 990, 990, 0.2, 'sine', 0.12, 0.1)
@@ -1239,7 +1240,7 @@ function Toys({ s }: { s: DockSettings }) {
           if (inWhichGoal(ball, w, floor, cur.toyPitch) >= 0) {
             saveScores({ football: st.scores.football + 1 })
             point('football')
-            st.flash = { text: 'GOL!', left: 1.4 }
+            st.flash = { text: tl('GOL!'), left: 1.4 }
             st.respawn = 1.2
             tone(cur.toySound, 523, 523, 0.14, 'square', 0.07)
             tone(cur.toySound, 659, 659, 0.14, 'square', 0.07, 0.12)

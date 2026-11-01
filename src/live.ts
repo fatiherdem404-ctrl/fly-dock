@@ -964,62 +964,16 @@ in vec2 vUv; in vec2 vL; in vec2 vR; in vec2 vT; in vec2 vB;
 out vec4 outColor;
 `
 const FLUID_FRAG: Record<string, string> = {
-  advection: `uniform sampler2D uVelocity; uniform sampler2D uSource; uniform vec2 texelSize; uniform float dt; uniform float dissipation;
-void main () { vec2 coord = vUv - dt * texture(uVelocity, vUv).xy * texelSize; outColor = texture(uSource, coord) / (1.0 + dissipation * dt); }`,
-  divergence: `uniform sampler2D uVelocity;
-void main () {
-  float L = texture(uVelocity, vL).x; float R = texture(uVelocity, vR).x; float T = texture(uVelocity, vT).y; float B = texture(uVelocity, vB).y;
-  vec2 C = texture(uVelocity, vUv).xy;
-  if (vL.x < 0.0) L = -C.x; if (vR.x > 1.0) R = -C.x; if (vT.y > 1.0) T = -C.y; if (vB.y < 0.0) B = -C.y;
-  outColor = vec4(0.5 * (R - L + T - B), 0.0, 0.0, 1.0);
-}`,
-  curl: `uniform sampler2D uVelocity;
-void main () {
-  float L = texture(uVelocity, vL).y; float R = texture(uVelocity, vR).y; float T = texture(uVelocity, vT).x; float B = texture(uVelocity, vB).x;
-  outColor = vec4(0.5 * (R - L - T + B), 0.0, 0.0, 1.0);
-}`,
-  vorticity: `uniform sampler2D uVelocity; uniform sampler2D uCurl; uniform float curl; uniform float dt;
-void main () {
-  float L = texture(uCurl, vL).x; float R = texture(uCurl, vR).x; float T = texture(uCurl, vT).x; float B = texture(uCurl, vB).x; float C = texture(uCurl, vUv).x;
-  vec2 force = 0.5 * vec2(abs(T) - abs(B), abs(R) - abs(L));
-  force /= length(force) + 0.0001; force *= curl * C; force.y *= -1.0;
-  vec2 velocity = texture(uVelocity, vUv).xy + force * dt;
-  outColor = vec4(clamp(velocity, -1000.0, 1000.0), 0.0, 1.0);
-}`,
-  pressure: `uniform sampler2D uPressure; uniform sampler2D uDivergence;
-void main () {
-  float L = texture(uPressure, vL).x; float R = texture(uPressure, vR).x; float T = texture(uPressure, vT).x; float B = texture(uPressure, vB).x;
-  outColor = vec4((L + R + B + T - texture(uDivergence, vUv).x) * 0.25, 0.0, 0.0, 1.0);
-}`,
-  gradient: `uniform sampler2D uPressure; uniform sampler2D uVelocity;
-void main () {
-  float L = texture(uPressure, vL).x; float R = texture(uPressure, vR).x; float T = texture(uPressure, vT).x; float B = texture(uPressure, vB).x;
-  vec2 velocity = texture(uVelocity, vUv).xy - vec2(R - L, T - B);
-  outColor = vec4(velocity, 0.0, 1.0);
-}`,
-  splat: `uniform sampler2D uTarget; uniform float aspect; uniform vec3 color; uniform vec2 point; uniform float radius;
-void main () {
-  vec2 p = vUv - point; p.x *= aspect;
-  outColor = vec4(texture(uTarget, vUv).xyz + exp(-dot(p, p) / radius) * color, 1.0);
-}`,
-  clear: `uniform sampler2D uTexture; uniform float value;
-void main () { outColor = value * texture(uTexture, vUv); }`,
+  advection: 'uniform sampler2D uVelocity; uniform sampler2D uSource; uniform vec2 texelSize; uniform float dt; uniform float dissipation;\nvoid main () { vec2 coord = vUv - dt * texture(uVelocity, vUv).xy * texelSize; outColor = texture(uSource, coord) / (1.0 + dissipation * dt); }',
+  divergence: 'uniform sampler2D uVelocity;\nvoid main () {\n  float L = texture(uVelocity, vL).x; float R = texture(uVelocity, vR).x; float T = texture(uVelocity, vT).y; float B = texture(uVelocity, vB).y;\n  vec2 C = texture(uVelocity, vUv).xy;\n  if (vL.x < 0.0) L = -C.x; if (vR.x > 1.0) R = -C.x; if (vT.y > 1.0) T = -C.y; if (vB.y < 0.0) B = -C.y;\n  outColor = vec4(0.5 * (R - L + T - B), 0.0, 0.0, 1.0);\n}',
+  curl: 'uniform sampler2D uVelocity;\nvoid main () {\n  float L = texture(uVelocity, vL).y; float R = texture(uVelocity, vR).y; float T = texture(uVelocity, vT).x; float B = texture(uVelocity, vB).x;\n  outColor = vec4(0.5 * (R - L - T + B), 0.0, 0.0, 1.0);\n}',
+  vorticity: 'uniform sampler2D uVelocity; uniform sampler2D uCurl; uniform float curl; uniform float dt;\nvoid main () {\n  float L = texture(uCurl, vL).x; float R = texture(uCurl, vR).x; float T = texture(uCurl, vT).x; float B = texture(uCurl, vB).x; float C = texture(uCurl, vUv).x;\n  vec2 force = 0.5 * vec2(abs(T) - abs(B), abs(R) - abs(L));\n  force /= length(force) + 0.0001; force *= curl * C; force.y *= -1.0;\n  vec2 velocity = texture(uVelocity, vUv).xy + force * dt;\n  outColor = vec4(clamp(velocity, -1000.0, 1000.0), 0.0, 1.0);\n}',
+  pressure: 'uniform sampler2D uPressure; uniform sampler2D uDivergence;\nvoid main () {\n  float L = texture(uPressure, vL).x; float R = texture(uPressure, vR).x; float T = texture(uPressure, vT).x; float B = texture(uPressure, vB).x;\n  outColor = vec4((L + R + B + T - texture(uDivergence, vUv).x) * 0.25, 0.0, 0.0, 1.0);\n}',
+  gradient: 'uniform sampler2D uPressure; uniform sampler2D uVelocity;\nvoid main () {\n  float L = texture(uPressure, vL).x; float R = texture(uPressure, vR).x; float T = texture(uPressure, vT).x; float B = texture(uPressure, vB).x;\n  vec2 velocity = texture(uVelocity, vUv).xy - vec2(R - L, T - B);\n  outColor = vec4(velocity, 0.0, 1.0);\n}',
+  splat: 'uniform sampler2D uTarget; uniform float aspect; uniform vec3 color; uniform vec2 point; uniform float radius;\nvoid main () {\n  vec2 p = vUv - point; p.x *= aspect;\n  outColor = vec4(texture(uTarget, vUv).xyz + exp(-dot(p, p) / radius) * color, 1.0);\n}',
+  clear: 'uniform sampler2D uTexture; uniform float value;\nvoid main () { outColor = value * texture(uTexture, vUv); }',
   // the dye is shown like a film of oil on water: its thickness picks an interference colour, its slope catches a highlight
-  display: `uniform sampler2D uTexture; uniform float time;
-vec3 pal (float t) { return 0.5 + 0.5 * cos(6.28318 * (t + vec3(0.0, 0.33, 0.67))); }
-float lum (vec3 c) { return max(c.r, max(c.g, c.b)); }
-void main () {
-  vec3 c = texture(uTexture, vUv).rgb;
-  float hL = lum(texture(uTexture, vL).rgb); float hR = lum(texture(uTexture, vR).rgb);
-  float hT = lum(texture(uTexture, vT).rgb); float hB = lum(texture(uTexture, vB).rgb);
-  vec3 n = normalize(vec3(hL - hR, hB - hT, 0.22));
-  float spec = pow(max(dot(n, normalize(vec3(-0.45, 0.55, 0.7))), 0.0), 28.0);
-  float l = lum(c);
-  vec3 iri = pal(l * 1.9 + (hL - hR) * 3.5 + (hB - hT) * 2.0 + time * 0.025);
-  vec3 col = mix(c, iri * min(l * 1.6 + 0.12, 1.0), 0.62) + spec * 0.4 * min(l * 3.0, 1.0);
-  vec3 bg = mix(vec3(0.012, 0.016, 0.045), vec3(0.035, 0.045, 0.10), vUv.y);
-  outColor = vec4(1.0 - exp(-(bg + col) * 1.5), 1.0);
-}`,
+  display: 'uniform sampler2D uTexture; uniform float time;\nvec3 pal (float t) { return 0.5 + 0.5 * cos(6.28318 * (t + vec3(0.0, 0.33, 0.67))); }\nfloat lum (vec3 c) { return max(c.r, max(c.g, c.b)); }\nvoid main () {\n  vec3 c = texture(uTexture, vUv).rgb;\n  float hL = lum(texture(uTexture, vL).rgb); float hR = lum(texture(uTexture, vR).rgb);\n  float hT = lum(texture(uTexture, vT).rgb); float hB = lum(texture(uTexture, vB).rgb);\n  vec3 n = normalize(vec3(hL - hR, hB - hT, 0.22));\n  float spec = pow(max(dot(n, normalize(vec3(-0.45, 0.55, 0.7))), 0.0), 28.0);\n  float l = lum(c);\n  vec3 iri = pal(l * 1.9 + (hL - hR) * 3.5 + (hB - hT) * 2.0 + time * 0.025);\n  vec3 col = mix(c, iri * min(l * 1.6 + 0.12, 1.0), 0.62) + spec * 0.4 * min(l * 3.0, 1.0);\n  vec3 bg = mix(vec3(0.012, 0.016, 0.045), vec3(0.035, 0.045, 0.10), vUv.y);\n  outColor = vec4(1.0 - exp(-(bg + col) * 1.5), 1.0);\n}',
 }
 
 /** Whether this machine can run the fluid scene (WebGL2 with float render targets). */

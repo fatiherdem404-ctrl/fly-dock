@@ -7,6 +7,7 @@ import IconLibrary from '@/components/IconLibrary'
 import { initSound, playSound } from '@/sound'
 import type { DockSettings } from '@/shared/types'
 
+import { t } from '../i18n'
 /** The icon picker window: the whole icon library, a preview, and Apply / Default. Opened for one dock item or gear entry. */
 export default function IconPickView() {
   const target = new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('target') ?? ''
@@ -47,22 +48,22 @@ export default function IconPickView() {
 
   return (
     <div className="confirm-shell">
-      <div className="iconpick" role="dialog" aria-label="Simge seç">
+      <div className="iconpick" role="dialog" aria-label={t('Simge seç')}>
         <header className="iconpick__head">
           <span className="iconpick__preview">{shown ? <img src={shown} alt="" /> : <Icon name="image" size={26} />}</span>
           <div className="iconpick__title">
             <h2>{info?.name ?? ''}</h2>
-            <p>{chosen ? 'Seçtiğin simge aşağıda önizleniyor. Uygula de.' : 'Aşağıdaki listeden bir simge seç.'}</p>
+            <p>{chosen ? t('Seçtiğin simge aşağıda önizleniyor. Uygula de.') : t('Aşağıdaki listeden bir simge seç.')}</p>
           </div>
-          <button className="confirm__btn" onClick={close} aria-label="Kapat">Kapat</button>
+          <button className="confirm__btn" onClick={close} aria-label={t('Kapat')}>{t('Kapat')}</button>
         </header>
         <div className="iconpick__body">
           <IconLibrary onPick={pick} selected={chosen?.path} />
         </div>
         {message && <div className="st-message st-message--error" style={{ margin: '0 18px 8px' }}>{message}</div>}
         <footer className="iconpick__foot">
-          <button className="confirm__btn" disabled={!info?.custom} onClick={() => apply(null)}>Varsayılan simge</button>
-          <button className="confirm__btn confirm__btn--ok" disabled={!chosen} onClick={() => chosen && apply(chosen.path)}>Uygula</button>
+          <button className="confirm__btn" disabled={!info?.custom} onClick={() => apply(null)}>{t('Varsayılan simge')}</button>
+          <button className="confirm__btn confirm__btn--ok" disabled={!chosen} onClick={() => chosen && apply(chosen.path)}>{t('Uygula')}</button>
         </footer>
       </div>
     </div>

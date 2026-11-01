@@ -1,0 +1,254 @@
+660|Start from a template…
+661|Line {line}:
+662|The code runs in a closed box: it cannot reach your files or the app. The result shows live on the left.
+663|Use this once saved
+664|Make it the wallpaper when added
+665|Saving…
+666|Save
+667|Slowly drifting clouds of coloured light
+668|Flow
+669|A soft, constantly changing colour blend
+670|Starry night
+671|Glowing stars and an occasional shooting star
+672|Layer upon layer of gently swaying waves
+673|Translucent bubbles floating upward; they dart away when the pointer comes near
+674|Network
+675|Dots that connect to each other; the pointer becomes a node and pulls its surroundings in
+676|Ripples
+677|Calm water; rings spread wherever the pointer passes
+678|Fireflies
+679|Lights flitting in the dark; they come to the pointer and circle it
+680|Galaxy
+681|A spinning galaxy; its centre follows the pointer and flares with fast movement
+682|Oil slick
+683|Colours that swirl like petrol on water; they flow with the pointer and burst out on click
+684|=
+685|Start
+686|Power
+687|Recycle bin
+688|Recycle bin (full)
+689|Folder
+690|File
+691|My computer
+692|User
+693|Desktop
+694|Downloads
+695|Downloads (Turkish name)
+696|Pictures
+697|Pictures (Turkish name)
+698|Music
+699|Calculator
+700|File Explorer
+701|Command Prompt
+702|Task Manager
+703|Registry
+704|Snipping tool
+705|Remote Desktop
+706|Control Panel
+707|Media player
+708|Voice recorder
+709|Management console
+710|Character map
+711|Magnifier
+712|System
+713|Power options
+714|Date and time
+715|Devices
+716|Network connections
+717|Personalisation
+718|Disks
+719|Computer management
+720|Code editor
+721|=
+722|=
+723|Lines
+724|Ray
+725|POWER
+726|=
+727|POST!
+728|OUT
+729|GOAL CONCEDED
+730|OPPONENT SCORED
+731|YOU LOST
+732|You won! Play again
+733|You lost. Play again
+734|START
+735|Streak {rally}
+736|OK
+737|The icon you chose is previewed below. Press Apply.
+738|Choose an icon from the list below.
+739|Apply
+740|Settings pages
+741|Hide preview
+742|Show live preview
+743|Extra large icons
+744|Large icons
+745|Medium icons
+746|Small icons
+747|List
+748|Details
+749|Date modified
+750|Type
+751|{v0} file
+752|Search this folder…
+753|Sort
+754|Sort:
+755|Descending
+756|Ascending
+757|Descending
+758|Ascending
+759|{length} results (in {v1} items)
+760|{length} items
+761|Nothing matches the search
+762|There is nothing here yet
+763|shot
+764|SPIN · wheel
+765|Pull the ball back and let go
+766|3-POINT LINE
+767|HEIGHT
+768|=
+769|Show or hide the pointer
+770|Show / hide the pointer
+771|Close the game
+772|New record!
+773|Time is up
+774|You beat your previous record
+775|Record: {best}
+776|You won!
+777|Game over
+778|Record {v0}
+779|{basket} points in total
+780|Streak {combo}  ·  Record {juggleCombo}
+781|Goals {goals}  ·  Saves {saves}{v2}
+782|{football} in total
+783|Streak {combo}  ·  Record {bounceCombo}
+784|Ready: pull the ball back and let go
+785|Ready: starts when you grab the ball
+786|Ready: click the ball to start
+787|Ready: starts when you hit the ball
+788|PERFECT THREE!
+789|SWISH!
+790|THREE POINTER!
+791|Search…
+792|{shown} results
+793|{shown} tools
+794|Enter: open the first · Right-click: options
+795|Nothing matches
+796|Close widget
+797|=
+798|Analog clock
+799|{v0} h {v1} min
+800|Charging
+801|Battery
+802|On battery
+803|{left} until full
+804|Plugged in
+805|About {left} left
+806|Time remaining unknown
+807|=
+808|=
+809|Nothing is playing
+810|Spotify, VLC and similar players
+811|Previous
+812|Play / pause
+813|Next
+814|Write a note here…
+815|CPU
+816|RAM
+817|Could not get the weather
+818|No internet
+819|· Wind
+820|km/h
+821|Normal select
+822|Help select
+823|Working in background
+824|Busy
+825|Precision select
+826|Handwriting
+827|Unavailable
+828|Vertical resize
+829|Horizontal resize
+830|Diagonal resize 1
+831|Diagonal resize 2
+832|Move
+833|Alternate select
+834|Link select
+835|Person select
+836|Cursor pack not found
+837|{failed} cursors could not be applied
+838|The helper program is an older version. Close the app and start it again (in development, npm run dev).
+839|Cursors could not be applied
+840|The picture is too big (8 MB at most).
+841|Only PNG pictures can be used.
+842|The picture could not be read.
+843|The strip must be made of square pictures side by side (2 to 64 frames, each square).
+844|The picture must be square (16 to 1024 pixels).
+845|My new cursor pack
+846|Animated cursor strip (PNG)
+847|Cursor picture (PNG)
+848|The pack could not be read.
+849|The folder could not be read.
+850|The name cannot be empty.
+851|The name cannot contain these characters: \ / : * ? " < > |
+852|An item with this name already exists.
+853|Open location
+854|Add to dock
+855|Copy path
+856|Rename
+857|Properties
+858|Remove from group
+859|Change icon…
+860|Remove from menu
+861|Hide in menu
+862|This picture could not be read or is larger than 2 MB.
+863|=
+864|Keep in dock
+865|Close window
+866|Empty the recycle bin
+867|Close the running window
+868|Show as folder
+869|Add to group…
+870|Show location
+871|Remove from dock
+872|Add a program…
+873|Add a ready-made item…
+874|Add separator
+875|Exit
+876|Start button
+877|Control panel icon
+878|Power menu icon
+879|Groups
+880|My user folder
+881|My documents
+882|Videos
+883|Recycle Bin
+884|Power menu
+885|Explorer
+886|Performance
+887|=
+888|=
+889|=
+890|=
+891|Untitled wallpaper
+892|The scene code is empty
+893|Programs and Features
+894|System properties
+895|Mouse
+896|Control Panel
+897|Hardware
+898|Display
+899|=
+900|Device Manager
+901|=
+902|Apps (Settings)
+903|Startup apps
+904|Storage
+905|Task Manager
+906|Tools
+907|Disk Management
+908|Services
+909|Event Viewer
+910|Computer Management
+911|My additions
+912|=
+913|=

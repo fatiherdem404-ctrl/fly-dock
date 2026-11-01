@@ -7,15 +7,16 @@ import {
   DockItem, DockSettings, Persisted, WidgetInstance,
 } from '../src/shared/types'
 
+import { t } from '../src/i18n'
 // schemaVersion is deliberately absent: a missing value means an old file that still needs migrating.
 const defaults: Omit<Persisted, 'schemaVersion'> = {
   // What a fresh install starts with: the usual places of the PC, the control panel and the bin.
   items: [
-    { id: 'start', type: 'start', label: 'Başlat' },
-    { id: 'computer', type: 'file', targetPath: 'shell:MyComputerFolder', label: 'Bilgisayarım' },
-    { id: 'documents', type: 'folder', targetPath: app.getPath('documents'), label: 'Belgelerim' },
-    { id: 'controlpanel', type: 'wheel', label: 'Kontrol paneli' },
-    { id: 'trash', type: 'trash', label: 'Geri Dönüşüm Kutusu' },
+    { id: 'start', type: 'start', label: t('Başlat') },
+    { id: 'computer', type: 'file', targetPath: 'shell:MyComputerFolder', label: t('Bilgisayarım') },
+    { id: 'documents', type: 'folder', targetPath: app.getPath('documents'), label: t('Belgelerim') },
+    { id: 'controlpanel', type: 'wheel', label: t('Kontrol paneli') },
+    { id: 'trash', type: 'trash', label: t('Geri Dönüşüm Kutusu') },
   ],
   settings: DEFAULT_SETTINGS,
   widgets: [],

@@ -26,6 +26,7 @@ import { ToysTab } from '@/settings/pages/ToysPage'
 import { TweaksTab } from '@/settings/pages/TweaksPage'
 import { GeneralTab } from '@/settings/pages/GeneralPage'
 
+import { t as tl } from '../i18n'
 const remembered = (key: string) => {
   try {
     return localStorage.getItem(key)
@@ -98,7 +99,7 @@ export default function SettingsView() {
         onJump={jump}
       />
       <div className="st-body">
-        <nav className="st-nav" role="tablist" aria-label="Ayar sayfaları">
+        <nav className="st-nav" role="tablist" aria-label={tl('Ayar sayfaları')}>
           {NAV_GROUPS.map((group) => (
             <div className="st-nav__group" key={group.title}>
               <small>{group.title}</small>
@@ -116,7 +117,7 @@ export default function SettingsView() {
             <div className={`st-preview${showPreview ? '' : ' st-preview--off'}`}>
               {showPreview && <DockPreview settings={settings} launchTick={launchTick} />}
               <button className="st-preview__tag" onClick={togglePreview} aria-pressed={showPreview}>
-                <Icon name={showPreview ? 'eyeOff' : 'play'} size={13} />{showPreview ? 'Önizlemeyi gizle' : 'Canlı önizlemeyi göster'}
+                <Icon name={showPreview ? 'eyeOff' : 'play'} size={13} />{showPreview ? tl('Önizlemeyi gizle') : tl('Canlı önizlemeyi göster')}
               </button>
             </div>
           )}

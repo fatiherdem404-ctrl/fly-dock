@@ -4,7 +4,7 @@
 // stays as written, so a missing translation shows Turkish instead of an empty label.
 // The language is fixed for the life of a process (changing it restarts the app), so t() can be used in module-level
 // constants too. Renderers learn it from the preload script, the main process from electron/lang.ts.
-import en from './en'
+import en from './en.json'
 
 export type Lang = 'tr' | 'en'
 export type LangSetting = 'auto' | Lang
@@ -27,7 +27,8 @@ export function getLang(): Lang { return current }
 export function locale(): string { return current === 'tr' ? 'tr-TR' : 'en-US' }
 
 export function t(text: string, vars?: Record<string, string | number>): string {
-  let out = current === 'en' ? en[text] ?? text : text
+  // "Kapat||güç": the part after || only tells two meanings of the same Turkish word apart; it is never shown
+  let out = current === 'en' ? (en as Record<string, string>)[text] ?? text.split('||')[0] : text.split('||')[0]
   if (vars) out = out.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m))
   return out
 }

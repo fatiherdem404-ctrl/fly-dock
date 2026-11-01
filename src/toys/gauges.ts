@@ -3,10 +3,11 @@
 // The meters every aiming game shares: a green-yellow-red power gauge and a round dial for the curl (or the height).
 import { TAU } from './mini'
 
+import { t } from '../i18n'
 const FONT = "700 11px 'Segoe UI', system-ui, sans-serif"
 
 /** A segmented power gauge, centred on (x, y): green at the bottom of the range, red at the top. */
-export function powerGauge(c: CanvasRenderingContext2D, x: number, y: number, power: number, label = 'GÜÇ') {
+export function powerGauge(c: CanvasRenderingContext2D, x: number, y: number, power: number, label = t('GÜÇ')) {
   const w = 118, h = 16, n = 12
   const left = x - w / 2
   c.save()

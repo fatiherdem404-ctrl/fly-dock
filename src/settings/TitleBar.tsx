@@ -5,6 +5,7 @@ import logoUrl from '@/assets/logo.png'
 import Icon, { IconName } from '@/icons'
 import { SEARCH_INDEX, SearchEntry, TAB_INFO } from './nav'
 
+import { t, getLang } from '../i18n'
 interface Props {
   name: string
   pageLabel: string
@@ -13,7 +14,7 @@ interface Props {
   onJump: (entry: SearchEntry) => void
 }
 
-const fold = (s: string) => s.toLocaleLowerCase('tr').normalize('NFD').replace(/[̀-ͯ]/g, '')
+const fold = (s: string) => s.toLocaleLowerCase(getLang()).normalize('NFD').replace(/[̀-ͯ]/g, '')
 
 /** The app's own title bar: brand, current page, a settings search, and the window buttons. The empty parts drag the window. */
 export default function TitleBar({ name, pageLabel, pageIcon, onControl, onJump }: Props) {
@@ -61,7 +62,7 @@ export default function TitleBar({ name, pageLabel, pageIcon, onControl, onJump 
         <input
           ref={input}
           value={query}
-          placeholder="Ayarlarda ara…  (Ctrl+F)"
+          placeholder={t('Ayarlarda ara…  (Ctrl+F)')}
           spellCheck={false}
           onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
           onFocus={() => setOpen(true)}
@@ -75,7 +76,7 @@ export default function TitleBar({ name, pageLabel, pageIcon, onControl, onJump 
         />
         {open && query.trim() && (
           <div className="st-search__results" role="listbox">
-            {results.length === 0 && <div className="st-search__none">Eşleşen ayar yok</div>}
+            {results.length === 0 && <div className="st-search__none">{t('Eşleşen ayar yok')}</div>}
             {results.map((r, i) => (
               <button key={r.label} role="option" aria-selected={i === active} className="st-search__item" onMouseEnter={() => setActive(i)} onMouseDown={(e) => { e.preventDefault(); pick(r) }}>
                 <Icon name={TAB_INFO[r.tab].icon} size={16} />
@@ -88,8 +89,8 @@ export default function TitleBar({ name, pageLabel, pageIcon, onControl, onJump 
       </div>
 
       <div className="st-title__buttons">
-        <button aria-label="Küçült" title="Küçült" onClick={() => onControl('minimize')}><Icon name="minimize" size={16} /></button>
-        <button className="st-title__close" aria-label="Kapat" title="Kapat" onClick={() => onControl('close')}><Icon name="cross" size={16} /></button>
+        <button aria-label={t('Küçült')} title={t('Küçült')} onClick={() => onControl('minimize')}><Icon name="minimize" size={16} /></button>
+        <button className="st-title__close" aria-label={t('Kapat')} title={t('Kapat')} onClick={() => onControl('close')}><Icon name="cross" size={16} /></button>
       </div>
     </header>
   )

@@ -24,6 +24,7 @@ Working today:
 - Wallpapers: images, video, live backgrounds and your own JavaScript canvas scenes
 - Cursor packs, an icon studio for designing icons and whole icon packs
 - Mini desktop games: basketball, football, ball juggling and pong
+- English and Turkish interface; it follows the language of Windows and can be changed in Settings → General
 
 Planned: sound packs, community pack sharing. See [ROADMAP.md](ROADMAP.md).
 

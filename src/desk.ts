@@ -3,6 +3,7 @@
 import type { CSSProperties } from 'react'
 import type { DeskStyle, DockPosition, DockSettings } from '@/shared/types'
 
+import { t } from './i18n'
 /** How a hover animation splits the pointer's influence between growing icons and raising them off the desk. */
 export function hoverProfile(s: Pick<DockSettings, 'hoverAnimation' | 'iconSize' | 'maxScale'>): { sizeGain: number; liftMax: number } {
   const grow = s.iconSize * (s.maxScale - 1)
@@ -17,24 +18,24 @@ export function hoverProfile(s: Pick<DockSettings, 'hoverAnimation' | 'iconSize'
 }
 
 export const DESK_LABELS: Record<DeskStyle, string> = {
-  none: 'Rafsız (boş)',
-  glass: 'Koyu cam',
-  azure: 'Mavi çerçeve',
-  macos: 'Buzlu cam',
-  glass3d: '3B cam raf',
-  wood: 'Ahşap',
-  birch: 'Açık ahşap',
-  walnut: 'Ceviz',
-  metal: 'Fırçalı metal',
-  marble: 'Mermer',
-  blackmarble: 'Siyah mermer',
-  concrete: 'Beton',
-  neon: 'Neon',
-  crystal: 'Kristal',
-  matte: 'Mat siyah',
-  mirror: 'Yansımalı zemin',
-  wall: 'Tuğla',
-  custom: 'Özel doku',
+  none: t('Rafsız (boş)'),
+  glass: t('Koyu cam'),
+  azure: t('Mavi çerçeve'),
+  macos: t('Buzlu cam'),
+  glass3d: t('3B cam raf'),
+  wood: t('Ahşap'),
+  birch: t('Açık ahşap'),
+  walnut: t('Ceviz'),
+  metal: t('Fırçalı metal'),
+  marble: t('Mermer'),
+  blackmarble: t('Siyah mermer'),
+  concrete: t('Beton'),
+  neon: t('Neon'),
+  crystal: t('Kristal'),
+  matte: t('Mat siyah'),
+  mirror: t('Yansımalı zemin'),
+  wall: t('Tuğla'),
+  custom: t('Özel doku'),
 }
 
 /** Depth and opacity each style looks best with; picking a style in settings applies these. */

@@ -13,6 +13,7 @@ import { DEFAULT_DESIGN } from '../src/studio/render'
 import type { Design } from '../src/studio/render'
 import brand from './brand'
 
+import { t } from '../src/i18n'
 export const PACK_EXTENSION = 'flypack'
 
 const LIMITS: ZipLimits = { maxEntries: 1000, maxEntryBytes: 8 * 1024 * 1024, maxTotalBytes: 100 * 1024 * 1024 }
@@ -23,7 +24,7 @@ const ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,40}$/
 
 const packsRoot = () => path.join(app.getPath('userData'), 'packs')
 /** Icon packs that ship with the app: plain folders next to the program, never copied to the user's data. */
-const BUILTIN_ICON_PACKS: { id: string; name: string; author: string }[] = [{ id: 'fly-default', name: 'Fly Varsayılan', author: brand.name }]
+const BUILTIN_ICON_PACKS: { id: string; name: string; author: string }[] = [{ id: 'fly-default', name: t('Fly Varsayılan'), author: brand.name }]
 export const builtinIconRoot = () => (app.isPackaged ? path.join(process.resourcesPath, 'icon-packs') : path.join(app.getAppPath(), 'resources', 'icon-packs'))
 const isBuiltinIconPack = (id: string) => BUILTIN_ICON_PACKS.some((p) => p.id === id)
 
@@ -515,7 +516,7 @@ export function themeDeskSettings(id: string): Partial<DockSettings> | null {
 /** Writes the theme made in the builder as a normal pack and installs it (same validation as an import). */
 export function createThemePack(name: string, author: string, vars: ThemeVars, shelf: DockSettings | null = null, wallpaper: { live?: string; file?: string } | null = null): { ok: boolean; message: string; pack?: PackInfo } {
   const title = String(name).trim().slice(0, 60)
-  if (!title) return { ok: false, message: 'Temaya bir ad ver.' }
+  if (!title) return { ok: false, message: t('Temaya bir ad ver.') }
   const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'tema'
   const id = `${slug}-${Date.now().toString(36).slice(-4)}`
   try {

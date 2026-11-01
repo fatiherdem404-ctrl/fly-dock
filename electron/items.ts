@@ -11,6 +11,7 @@ import { helper, HelperWindow, WindowsSnapshot } from './helper'
 import { broadcast } from './ipc'
 import type { DockItem, RunningState } from '../src/shared/types'
 
+import { t } from '../src/i18n'
 let snapshot: WindowsSnapshot = { windows: [], fullscreen: false, foreground: 0 }
 const linkTargets = new Map<string, string>()
 
@@ -180,13 +181,13 @@ export function addItem(item: DockItem): DockItem[] {
 export function addStartButton(): DockItem[] {
   const items = getItems()
   if (items.some((i) => i.type === 'start')) return items
-  return commit([{ id: crypto.randomUUID(), type: 'start', label: 'Başlat' }, ...items])
+  return commit([{ id: crypto.randomUUID(), type: 'start', label: t('Başlat') }, ...items])
 }
 
 export function createGroup(): DockItem[] {
   const items = [...getItems()]
   const trashAt = items.findIndex((i) => i.type === 'trash')
-  items.splice(trashAt >= 0 ? trashAt : items.length, 0, { id: crypto.randomUUID(), type: 'group', label: 'Grup', children: [] })
+  items.splice(trashAt >= 0 ? trashAt : items.length, 0, { id: crypto.randomUUID(), type: 'group', label: t('Grup'), children: [] })
   return commit(items)
 }
 

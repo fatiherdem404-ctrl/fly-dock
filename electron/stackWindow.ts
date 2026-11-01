@@ -10,6 +10,7 @@ import { dockWindowList } from './dockWindows'
 import { baseWebPreferences, loadRoute, OFFSCREEN } from './windows'
 import type { DockItem, StackEntry } from '../src/shared/types'
 
+import { t } from '../src/i18n'
 let stackWindow: BrowserWindow | null = null
 
 const SIZES = { small: [360, 300], medium: [520, 420] } as const
@@ -77,7 +78,7 @@ export function closeStack() {
 }
 
 export function showStack(item: DockItem, anchor: { x: number; y: number }) {
-  const title = item.label || (item.targetPath ? path.basename(item.targetPath) : '') || 'Klasör'
+  const title = item.label || (item.targetPath ? path.basename(item.targetPath) : '') || t('Klasör')
   showPanel(`/stack/${item.id}`, anchor, title)
 }
 

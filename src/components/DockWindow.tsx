@@ -5,6 +5,7 @@ import Icon, { IconName } from '@/icons'
 import Panel, { usePanelClose, usePanelDrag } from './Panel'
 import type { DockSettings } from '@/shared/types'
 
+import { t } from '../i18n'
 function Frame({ title, icon, toolbar, footer, children }: { title: string; icon: IconName; toolbar?: ReactNode; footer?: ReactNode; children: ReactNode }) {
   const close = usePanelClose()
   const startDrag = usePanelDrag()
@@ -13,7 +14,7 @@ function Frame({ title, icon, toolbar, footer, children }: { title: string; icon
       <header className="dw__head" onPointerDown={startDrag}>
         <span className="dw__icon"><Icon name={icon} size={16} /></span>
         <h2 title={title}>{title}</h2>
-        <button className="dw__close" aria-label="Kapat" title="Kapat (Esc)" onClick={close}><Icon name="cross" size={15} /></button>
+        <button className="dw__close" aria-label={t('Kapat')} title={t('Kapat (Esc)')} onClick={close}><Icon name="cross" size={15} /></button>
       </header>
       {toolbar && <div className="dw__bar">{toolbar}</div>}
       <div className="dw__body">{children}</div>

@@ -5,6 +5,7 @@
 import { SOUND_GROUP_OF, SoundEvent, SoundTheme, DockSettings } from '@/shared/types'
 import { invoke } from '@/api'
 
+import { t } from './i18n'
 interface Voice {
   wave: OscillatorType
   /** Multiplies every frequency. */
@@ -18,11 +19,11 @@ interface Voice {
 }
 
 export const SOUND_THEMES: Record<SoundTheme, Voice & { label: string }> = {
-  soft: { label: 'Yumuşak', wave: 'sine', pitch: 1, len: 1, air: 1, bell: 0 },
-  glass: { label: 'Cam', wave: 'sine', pitch: 1.5, len: 1.4, air: 0.5, bell: 0.45 },
-  wood: { label: 'Ahşap', wave: 'triangle', pitch: 0.65, len: 0.55, air: 0.7, bell: 0 },
-  retro: { label: 'Retro', wave: 'square', pitch: 1.1, len: 0.7, air: 0.2, bell: 0 },
-  bubble: { label: 'Baloncuk', wave: 'sine', pitch: 1.25, len: 0.9, air: 0.4, bell: 0.15 },
+  soft: { label: t('Yumuşak'), wave: 'sine', pitch: 1, len: 1, air: 1, bell: 0 },
+  glass: { label: t('Cam'), wave: 'sine', pitch: 1.5, len: 1.4, air: 0.5, bell: 0.45 },
+  wood: { label: t('Ahşap'), wave: 'triangle', pitch: 0.65, len: 0.55, air: 0.7, bell: 0 },
+  retro: { label: t('Retro'), wave: 'square', pitch: 1.1, len: 0.7, air: 0.2, bell: 0 },
+  bubble: { label: t('Baloncuk'), wave: 'sine', pitch: 1.25, len: 0.9, air: 0.4, bell: 0.15 },
 }
 
 let settings: DockSettings | null = null

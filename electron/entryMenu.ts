@@ -17,12 +17,13 @@ import { helper } from './helper'
 import { runWheelEntry, wheelEntries, setWheelState, removeWheelEntry, renameWheelEntry } from './wheel'
 import type { EntryMenuRequest } from '../src/shared/types'
 
+import { t } from '../src/i18n'
 const FORBIDDEN = /[\\/:*?"<>|]/
 
 function fileProblem(name: string, dir: string, old: string): string | null {
-  if (!name.trim()) return 'Ad boş olamaz.'
-  if (FORBIDDEN.test(name)) return 'Ad şu karakterleri içeremez: \\ / : * ? " < > |'
-  if (name !== old && fs.existsSync(path.join(dir, name))) return 'Bu adda bir öğe zaten var.'
+  if (!name.trim()) return t('Ad boş olamaz.')
+  if (FORBIDDEN.test(name)) return t('Ad şu karakterleri içeremez: \\ / : * ? " < > |')
+  if (name !== old && fs.existsSync(path.join(dir, name))) return t('Bu adda bir öğe zaten var.')
   return null
 }
 
@@ -31,20 +32,20 @@ async function rename(itemId: string, target: string) {
   const old = path.basename(target)
   let value = old
   for (;;) {
-    const answer = await askInput({ title: 'Yeniden adlandır', message: 'Yeni adı yaz.', confirmLabel: 'Adlandır', cancelLabel: 'Vazgeç', value })
+    const answer = await askInput({ title: t('Yeniden adlandır'), message: t('Yeni adı yaz.'), confirmLabel: t('Adlandır'), cancelLabel: t('Vazgeç'), value })
     if (answer === null) return
     value = answer.trim()
     if (value === old) return
     const problem = fileProblem(value, dir, old)
     if (!problem) break
-    const retry = await askConfirm({ title: 'Bu ad olmaz', message: problem, confirmLabel: 'Tekrar dene', cancelLabel: 'Vazgeç' })
+    const retry = await askConfirm({ title: t('Bu ad olmaz'), message: problem, confirmLabel: t('Tekrar dene'), cancelLabel: t('Vazgeç') })
     if (!retry) return
   }
   const next = path.join(dir, value)
   try {
     fs.renameSync(target, next)
   } catch (err) {
-    await askConfirm({ title: 'Adlandırılamadı', message: (err as Error).message, confirmLabel: 'Tamam', cancelLabel: 'Kapat' })
+    await askConfirm({ title: t('Adlandırılamadı'), message: (err as Error).message, confirmLabel: t('Tamam'), cancelLabel: t('Kapat') })
     return
   }
   if (getItems().find((i) => i.id === itemId)?.type === 'group') replaceInGroup(itemId, target, next)
@@ -54,12 +55,12 @@ async function rename(itemId: string, target: string) {
 
 async function remove(itemId: string, target: string) {
   const name = path.basename(target)
-  const yes = await askConfirm({ title: `"${name}" silinsin mi?`, message: 'Geri dönüşüm kutusuna taşınır; oradan geri alabilirsin.', confirmLabel: 'Sil', danger: true })
+  const yes = await askConfirm({ title: t('"{name}" silinsin mi?', { name }), message: t('Geri dönüşüm kutusuna taşınır; oradan geri alabilirsin.'), confirmLabel: t('Sil'), danger: true })
   if (!yes) return
   try {
     await shell.trashItem(target)
   } catch (err) {
-    await askConfirm({ title: 'Silinemedi', message: (err as Error).message, confirmLabel: 'Tamam', cancelLabel: 'Kapat' })
+    await askConfirm({ title: t('Silinemedi'), message: (err as Error).message, confirmLabel: t('Tamam'), cancelLabel: t('Kapat') })
     return
   }
   if (getItems().find((i) => i.id === itemId)?.type === 'group') removeFromGroup(itemId, target)
@@ -78,44 +79,44 @@ export function showEntryMenu(request: EntryMenuRequest) {
     const target = item && readEntries(item).find((e) => e.path === request.path)?.path
     if (!item || !target) return
     const inGroup = item.type === 'group'
-    add('Aç', 'open', () => {
+    add(t('Aç'), 'open', () => {
       closeStack()
       shell.openPath(target)
     })
-    add('Konumunu aç', 'location', () => shell.showItemInFolder(target))
-    add("Dock'a ekle", 'pin', () => addPaths([target], getItems().length), { disabled: getItems().some((i) => i.targetPath?.toLowerCase() === target.toLowerCase()) })
+    add(t('Konumunu aç'), 'location', () => shell.showItemInFolder(target))
+    add(t('Dock\'a ekle'), 'pin', () => addPaths([target], getItems().length), { disabled: getItems().some((i) => i.targetPath?.toLowerCase() === target.toLowerCase()) })
     separator()
-    add('Yolu kopyala', 'copy', () => clipboard.writeText(target))
-    add('Yeniden adlandır', 'edit', () => void rename(item.id, target))
-    add('Özellikler', 'list', () => void helper.properties(target).catch(() => {}))
-    if (inGroup) add('Gruptan çıkar', 'minus', () => (removeFromGroup(item.id, target), broadcast('stack:changed', null)))
+    add(t('Yolu kopyala'), 'copy', () => clipboard.writeText(target))
+    add(t('Yeniden adlandır'), 'edit', () => void rename(item.id, target))
+    add(t('Özellikler'), 'list', () => void helper.properties(target).catch(() => {}))
+    if (inGroup) add(t('Gruptan çıkar'), 'minus', () => (removeFromGroup(item.id, target), broadcast('stack:changed', null)))
     separator()
-    add('Sil', 'trash', () => void remove(item.id, target), { danger: true })
+    add(t('Sil'), 'trash', () => void remove(item.id, target), { danger: true })
   } else {
     const entry = wheelEntries().entries.find((e) => e.id === request.id)
     if (!entry) return
-    add('Aç', 'open', () => {
+    add(t('Aç'), 'open', () => {
       closeStack()
       void runWheelEntry(entry.id)
     })
-    if (entry.path) add('Konumunu aç', 'location', () => shell.showItemInFolder(entry.path!))
-    if (entry.path) add('Özellikler', 'list', () => void helper.properties(entry.path!).catch(() => {}))
+    if (entry.path) add(t('Konumunu aç'), 'location', () => shell.showItemInFolder(entry.path!))
+    if (entry.path) add(t('Özellikler'), 'list', () => void helper.properties(entry.path!).catch(() => {}))
     separator()
-    add('Simge değiştir…', 'image', () => showIconPicker(`wheel:${entry.id}`))
+    add(t('Simge değiştir…'), 'image', () => showIconPicker(`wheel:${entry.id}`))
     if (entry.path) {
-      add('Yeniden adlandır', 'edit', async () => {
-        const name = await askInput({ title: 'Yeniden adlandır', message: 'Menüde görünecek adı yaz.', confirmLabel: 'Adlandır', value: entry.name })
+      add(t('Yeniden adlandır'), 'edit', async () => {
+        const name = await askInput({ title: t('Yeniden adlandır'), message: t('Menüde görünecek adı yaz.'), confirmLabel: t('Adlandır'), value: entry.name })
         if (name?.trim() && renameWheelEntry(entry.id, name.trim())) broadcast('stack:changed', null)
       })
     }
     separator()
     if (entry.path) {
-      add('Menüden kaldır', 'trash', () => {
+      add(t('Menüden kaldır'), 'trash', () => {
         removeWheelEntry(entry.id)
         broadcast('stack:changed', null)
       }, { danger: true })
     } else {
-      add('Menüde gizle', 'eyeOff', () => {
+      add(t('Menüde gizle'), 'eyeOff', () => {
         const state = wheelEntries()
         setWheelState({ hidden: [...state.hidden, entry.id], order: state.entries.map((e) => e.id) })
         broadcast('stack:changed', null)

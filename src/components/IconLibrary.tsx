@@ -5,6 +5,7 @@ import { invoke, useEvent } from '@/api'
 import Icon from '@/icons'
 import type { LibraryIcon } from '@/shared/types'
 
+import { t, getLang } from '../i18n'
 const PAGE = 150
 
 /** One library picture; the preview is fetched only when the tile scrolls into view. */
@@ -56,8 +57,8 @@ export default function IconLibrary({ onPick, selected }: { onPick: (file: strin
   const sources = useMemo(() => [...new Set((data?.icons ?? []).map((i) => i.source))], [data])
   const source = chosen ?? (sources.includes(activePack) ? activePack : '')
   const filtered = useMemo(() => {
-    const q = query.trim().toLocaleLowerCase('tr')
-    return (data?.icons ?? []).filter((i) => (!source || i.source === source) && (!q || i.name.toLocaleLowerCase('tr').includes(q)))
+    const q = query.trim().toLocaleLowerCase(getLang())
+    return (data?.icons ?? []).filter((i) => (!source || i.source === source) && (!q || i.name.toLocaleLowerCase(getLang()).includes(q)))
   }, [data, query, source])
   useEffect(() => setShown(PAGE), [query, source])
 
@@ -74,23 +75,23 @@ export default function IconLibrary({ onPick, selected }: { onPick: (file: strin
       <div className="iconlib__bar">
         <label className="iconlib__search">
           <Icon name="image" size={14} />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Simge ara…" spellCheck={false} />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('Simge ara…')} spellCheck={false} />
         </label>
         {sources.length > 1 && (
-          <select className="iconlib__select" value={source} onChange={(e) => setSource(e.target.value)} aria-label="Simge paketi">
-            <option value="">Tüm paketler ve klasörler</option>
+          <select className="iconlib__select" value={source} onChange={(e) => setSource(e.target.value)} aria-label={t('Simge paketi')}>
+            <option value="">{t('Tüm paketler ve klasörler')}</option>
             {sources.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         )}
-        <button className="iconlib__btn" onClick={addFolder}><Icon name="folder" size={14} />Klasör ekle…</button>
-        <button className="iconlib__btn" onClick={pickFile}><Icon name="image" size={14} />Resim seç…</button>
+        <button className="iconlib__btn" onClick={addFolder}><Icon name="folder" size={14} />{t('Klasör ekle…')}</button>
+        <button className="iconlib__btn" onClick={pickFile}><Icon name="image" size={14} />{t('Resim seç…')}</button>
       </div>
       {data && data.folders.length > 0 && (
         <div className="iconlib__folders">
           {data.folders.map((f) => (
             <span key={f} className="iconlib__chip" title={f}>
               {f.split(/[\\/]/).filter(Boolean).pop() ?? f}
-              <button aria-label="Klasörü listeden kaldır" onClick={() => invoke('library:remove-folder', f).then(reload)}>×</button>
+              <button aria-label={t('Klasörü listeden kaldır')} onClick={() => invoke('library:remove-folder', f).then(reload)}>×</button>
             </span>
           ))}
         </div>
@@ -100,10 +101,10 @@ export default function IconLibrary({ onPick, selected }: { onPick: (file: strin
         {data && filtered.length === 0 && (
           <div className="iconlib__empty">
             <Icon name="image" size={26} />
-            <span>{data.icons.length === 0 ? 'Henüz simge yok. İçinde simge resimleri olan bir klasör ekle; yüklü simge paketleri de burada görünür.' : 'Eşleşen simge yok.'}</span>
+            <span>{data.icons.length === 0 ? t('Henüz simge yok. İçinde simge resimleri olan bir klasör ekle; yüklü simge paketleri de burada görünür.') : t('Eşleşen simge yok.')}</span>
           </div>
         )}
-        {filtered.length > shown && <button className="iconlib__more" onClick={() => setShown((n) => n + PAGE)}>Daha fazla göster ({filtered.length - shown})</button>}
+        {filtered.length > shown && <button className="iconlib__more" onClick={() => setShown((n) => n + PAGE)}>{t('Daha fazla göster (')}{filtered.length - shown})</button>}
       </div>
     </div>
   )

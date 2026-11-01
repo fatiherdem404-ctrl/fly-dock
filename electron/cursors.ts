@@ -17,25 +17,26 @@ import { readZip, writeZip, ZipEntry } from './zip'
 import { curFile, aniFile, CurImage } from './cursorFiles'
 import type { CursorPackInfo, CursorStatus } from '../src/shared/types'
 
+import { t } from '../src/i18n'
 /** file name -> [Windows cursor id (OCR_*), label, default hot spot on the 256 px picture]. */
 export const ROLES: Record<string, [number, string, [number, number]]> = {
-  arrow: [32512, 'Normal seçim', [10, 9]],
-  help: [32651, 'Yardım', [10, 9]],
-  working: [32650, 'Arka planda çalışıyor', [10, 9]],
-  busy: [32514, 'Meşgul', [128, 128]],
-  precision: [32515, 'Kesin seçim', [128, 128]],
-  text: [32513, 'Metin', [128, 128]],
-  handwriting: [32631, 'El yazısı', [34, 246]],
-  unavailable: [32648, 'Kullanılamaz', [128, 128]],
-  'resize-vertical': [32645, 'Dikey boyutlandırma', [128, 128]],
-  'resize-horizontal': [32644, 'Yatay boyutlandırma', [128, 128]],
-  'resize-diagonal1': [32642, 'Çapraz boyutlandırma 1', [128, 128]],
-  'resize-diagonal2': [32643, 'Çapraz boyutlandırma 2', [128, 128]],
-  move: [32646, 'Taşı', [128, 128]],
-  alternate: [32516, 'Alternatif seçim', [99, 9]],
-  link: [32649, 'Bağlantı', [96, 24]],
-  location: [32671, 'Konum', [127, 246]],
-  person: [32672, 'Kişi', [10, 9]],
+  arrow: [32512, t('Normal seçim'), [10, 9]],
+  help: [32651, t('Yardım'), [10, 9]],
+  working: [32650, t('Arka planda çalışıyor'), [10, 9]],
+  busy: [32514, t('Meşgul'), [128, 128]],
+  precision: [32515, t('Kesin seçim'), [128, 128]],
+  text: [32513, t('Metin'), [128, 128]],
+  handwriting: [32631, t('El yazısı'), [34, 246]],
+  unavailable: [32648, t('Kullanılamaz'), [128, 128]],
+  'resize-vertical': [32645, t('Dikey boyutlandırma'), [128, 128]],
+  'resize-horizontal': [32644, t('Yatay boyutlandırma'), [128, 128]],
+  'resize-diagonal1': [32642, t('Çapraz boyutlandırma 1'), [128, 128]],
+  'resize-diagonal2': [32643, t('Çapraz boyutlandırma 2'), [128, 128]],
+  move: [32646, t('Taşı'), [128, 128]],
+  alternate: [32516, t('Alternatif seçim'), [99, 9]],
+  link: [32649, t('Bağlantı'), [96, 24]],
+  location: [32671, t('Konum'), [127, 246]],
+  person: [32672, t('Kişi'), [10, 9]],
 }
 const SIZES = [32, 48, 64, 96, 128]
 const ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,40}$/
@@ -134,7 +135,7 @@ function imagesOf(img: Electron.NativeImage, hotspot: [number, number]): CurImag
 /** Builds the files of a pack into the data folder and returns what to hand to the helper. */
 export function buildCursorFiles(id: string): { id: number; file: string }[] {
   const dir = packDir(id)
-  if (!dir) throw new Error('İmleç paketi bulunamadı')
+  if (!dir) throw new Error(t('İmleç paketi bulunamadı'))
   const meta = readMeta(dir)
   const out = path.join(outRoot(), id)
   fs.rmSync(out, { recursive: true, force: true })
@@ -172,12 +173,12 @@ export async function applyCursorPack(id: string): Promise<CursorStatus> {
       status = { active: '', message: '' }
     } else {
       const r = await helper.cursorsApply(buildCursorFiles(id))
-      status = r.applied > 0 ? { active: id, message: r.failed > 0 ? `${r.failed} imleç uygulanamadı` : '' } : { active: '', message: 'Bu pakette uygulanacak imleç yok' }
+      status = r.applied > 0 ? { active: id, message: r.failed > 0 ? t('{failed} imleç uygulanamadı', { failed: r.failed }) : '' } : { active: '', message: t('Bu pakette uygulanacak imleç yok') }
     }
   } catch (e) {
     const text = e instanceof Error ? e.message : ''
     // a helper built before cursors existed does not know the command: the app has to be restarted so it is rebuilt
-    status = { active: '', message: /unknown method/.test(text) ? 'Yardımcı program eski sürüm. Uygulamayı kapatıp yeniden başlat (geliştirmede npm run dev).' : text || 'İmleçler uygulanamadı' }
+    status = { active: '', message: /unknown method/.test(text) ? t('Yardımcı program eski sürüm. Uygulamayı kapatıp yeniden başlat (geliştirmede npm run dev).') : text || t('İmleçler uygulanamadı') }
   }
   return status
 }
@@ -205,23 +206,23 @@ async function changed(id: string) {
 
 /** Why a picture cannot be a cursor, or null when it can. */
 function problemWith(buf: Buffer, strip: boolean): string | null {
-  if (buf.length > MAX_PNG_BYTES) return 'Resim çok büyük (en fazla 8 MB).'
-  if (buf.length < 64 || !buf.subarray(0, 4).equals(PNG_MAGIC)) return 'Yalnızca PNG resimler kullanılabilir.'
+  if (buf.length > MAX_PNG_BYTES) return t('Resim çok büyük (en fazla 8 MB).')
+  if (buf.length < 64 || !buf.subarray(0, 4).equals(PNG_MAGIC)) return t('Yalnızca PNG resimler kullanılabilir.')
   const img = nativeImage.createFromBuffer(buf)
-  if (img.isEmpty()) return 'Resim okunamadı.'
+  if (img.isEmpty()) return t('Resim okunamadı.')
   const { width, height } = img.getSize()
   if (strip) {
     const frames = width / height
-    if (height < 16 || height > 512 || !Number.isInteger(frames) || frames < 2 || frames > 64) return 'Şerit, yan yana dizilmiş kare resimlerden oluşmalı (2 ile 64 kare, her biri kare biçiminde).'
+    if (height < 16 || height > 512 || !Number.isInteger(frames) || frames < 2 || frames > 64) return t('Şerit, yan yana dizilmiş kare resimlerden oluşmalı (2 ile 64 kare, her biri kare biçiminde).')
   } else if (width < 16 || width > 1024 || Math.abs(width - height) > Math.max(2, width * 0.02)) {
-    return 'Resim kare olmalı (16 ile 1024 piksel arası).'
+    return t('Resim kare olmalı (16 ile 1024 piksel arası).')
   }
   return null
 }
 
 /** A new empty pack, or a copy of an existing one (the way to change a built-in pack). */
 export function createCursorPack(name: string, copyOf?: string): CursorPackInfo {
-  const title = String(name).trim().slice(0, 60) || 'Yeni imleç paketim'
+  const title = String(name).trim().slice(0, 60) || t('Yeni imleç paketim')
   const id = newId(title)
   const dir = path.join(userRoot(), id)
   fs.mkdirSync(dir, { recursive: true })
@@ -235,14 +236,14 @@ export function createCursorPack(name: string, copyOf?: string): CursorPackInfo 
 /** Another picture for one role of a user's pack. */
 export async function setCursorRole(id: string, role: string, strip: boolean): Promise<{ ok: boolean; message: string }> {
   const dir = isBuiltin(id) ? null : packDir(id)
-  if (!dir || !ROLES[role]) return { ok: false, message: 'Bu paket değiştirilemez.' }
-  const r = await dialog.showOpenDialog({ properties: ['openFile'], filters: [{ name: strip ? 'Hareketli imleç şeridi (PNG)' : 'İmleç resmi (PNG)', extensions: ['png'] }] })
+  if (!dir || !ROLES[role]) return { ok: false, message: t('Bu paket değiştirilemez.') }
+  const r = await dialog.showOpenDialog({ properties: ['openFile'], filters: [{ name: strip ? t('Hareketli imleç şeridi (PNG)') : t('İmleç resmi (PNG)'), extensions: ['png'] }] })
   if (r.canceled || !r.filePaths[0]) return { ok: false, message: 'cancelled' }
   let buf: Buffer
   try {
     buf = fs.readFileSync(r.filePaths[0])
   } catch {
-    return { ok: false, message: 'Dosya okunamadı.' }
+    return { ok: false, message: t('Dosya okunamadı.') }
   }
   const problem = problemWith(buf, strip)
   if (problem) return { ok: false, message: problem }
@@ -334,27 +335,27 @@ const sanitizeMeta = (raw: any): PackMeta => {
 
 /** A .flypack (zip) with pack.json of type "cursors" and PNGs named like the roles. */
 export async function importCursorFile(): Promise<{ ok: boolean; message: string; pack?: CursorPackInfo }> {
-  const r = await dialog.showOpenDialog({ properties: ['openFile'], filters: [{ name: 'İmleç paketi', extensions: ['flypack', 'zip'] }] })
+  const r = await dialog.showOpenDialog({ properties: ['openFile'], filters: [{ name: t('İmleç paketi'), extensions: ['flypack', 'zip'] }] })
   if (r.canceled || !r.filePaths[0]) return { ok: false, message: 'cancelled' }
   try {
     const stat = fs.statSync(r.filePaths[0])
-    if (stat.size > 50 * 1024 * 1024) return { ok: false, message: 'Paket çok büyük.' }
+    if (stat.size > 50 * 1024 * 1024) return { ok: false, message: t('Paket çok büyük.') }
     const entries = readZip(fs.readFileSync(r.filePaths[0]), { maxEntries: 120, maxEntryBytes: MAX_PNG_BYTES, maxTotalBytes: 60 * 1024 * 1024 })
     const byName = new Map(entries.map((e) => [e.name.replace(/\\/g, '/').replace(/^\.\//, ''), e.data]))
     const manifest = JSON.parse(String(byName.get('pack.json') ?? '{}'))
-    if (manifest?.type !== 'cursors') return { ok: false, message: 'Bu bir imleç paketi değil.' }
+    if (manifest?.type !== 'cursors') return { ok: false, message: t('Bu bir imleç paketi değil.') }
     const items = collect(entries.map((e) => ({ name: e.name, data: e.data })))
-    if (items.length === 0) return { ok: false, message: 'Pakette kullanılabilir imleç resmi yok.' }
+    if (items.length === 0) return { ok: false, message: t('Pakette kullanılabilir imleç resmi yok.') }
     let meta: PackMeta = {}
     try {
       meta = sanitizeMeta(JSON.parse(String(byName.get('cursors.json') ?? '{}')))
     } catch {
       /* hot spots fall back to the defaults */
     }
-    const pack = install(String(manifest.name ?? 'İmleç paketi').trim().slice(0, 60) || 'İmleç paketi', String(manifest.author ?? ''), items, meta)
+    const pack = install(String(manifest.name ?? t('İmleç paketi')).trim().slice(0, 60) || t('İmleç paketi'), String(manifest.author ?? ''), items, meta)
     return { ok: true, message: pack.name, pack }
   } catch (e) {
-    return { ok: false, message: e instanceof Error ? e.message : 'Paket okunamadı.' }
+    return { ok: false, message: e instanceof Error ? e.message : t('Paket okunamadı.') }
   }
 }
 
@@ -366,22 +367,22 @@ export async function importCursorFolder(): Promise<{ ok: boolean; message: stri
     const dir = r.filePaths[0]
     const files = fs.readdirSync(dir).filter((f) => /\.png$/i.test(f)).slice(0, 80).map((f) => ({ name: f, data: fs.readFileSync(path.join(dir, f)) }))
     const items = collect(files)
-    if (items.length === 0) return { ok: false, message: 'Klasörde arrow.png, link.png gibi adlandırılmış imleç resmi bulunamadı.' }
+    if (items.length === 0) return { ok: false, message: t('Klasörde arrow.png, link.png gibi adlandırılmış imleç resmi bulunamadı.') }
     const meta = sanitizeMeta(readJson(path.join(dir, 'cursors.json')))
     const name = path.basename(dir)
     const pack = install(name, '', items, meta)
     return { ok: true, message: name, pack }
   } catch (e) {
-    return { ok: false, message: e instanceof Error ? e.message : 'Klasör okunamadı.' }
+    return { ok: false, message: e instanceof Error ? e.message : t('Klasör okunamadı.') }
   }
 }
 
 export async function exportCursorPack(id: string): Promise<{ ok: boolean; message: string }> {
   const dir = packDir(id)
-  if (!dir) return { ok: false, message: 'Paket bulunamadı.' }
+  if (!dir) return { ok: false, message: t('Paket bulunamadı.') }
   const info = cursorPacks().find((p) => p.id === id)
   const title = info?.name ?? id
-  const r = await dialog.showSaveDialog({ defaultPath: `${slug(title)}.flypack`, filters: [{ name: 'İmleç paketi', extensions: ['flypack'] }] })
+  const r = await dialog.showSaveDialog({ defaultPath: `${slug(title)}.flypack`, filters: [{ name: t('İmleç paketi'), extensions: ['flypack'] }] })
   if (r.canceled || !r.filePath) return { ok: false, message: 'cancelled' }
   const entries: ZipEntry[] = [{ name: 'pack.json', data: Buffer.from(JSON.stringify({ type: 'cursors', id: slug(title) + '-' + crypto.randomBytes(2).toString('hex'), name: title, author: info?.author || undefined, version: '1.0' }, null, 2)) }]
   for (const f of fs.readdirSync(dir)) if (/\.png$/.test(f) || f === 'cursors.json') entries.push({ name: f, data: fs.readFileSync(path.join(dir, f)) })

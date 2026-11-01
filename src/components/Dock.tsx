@@ -11,6 +11,7 @@ import Shelf from './Shelf'
 import { useTexture } from '@/useTexture'
 import { playSound } from '@/sound'
 
+import { t as tl } from '../i18n'
 interface DockProps {
   items: DockItem[]
   settings: DockSettings
@@ -35,7 +36,7 @@ export default function Dock({ items, settings: wanted, running, icons, launchin
 
   // One calculation decides the window size, the resting row and every padding, so nothing can be cut off.
   const types = useMemo(() => items.map((i) => i.type), [items])
-  const longestLabel = useMemo(() => items.reduce((m, i) => Math.max(m, (i.label ?? (i.type === 'trash' ? 'Çöp kutusu' : '')).length), 0), [items])
+  const longestLabel = useMemo(() => items.reduce((m, i) => Math.max(m, (i.label ?? (i.type === 'trash' ? tl('Çöp kutusu') : '')).length), 0), [items])
   // what the settings ask for, eased until the dock fits along its screen edge
   const edgeLength = horizontal ? window.screen.availWidth : window.screen.availHeight
   const settings = useMemo(() => fitToScreen(wanted, types, longestLabel, edgeLength), [wanted, types, longestLabel, edgeLength])

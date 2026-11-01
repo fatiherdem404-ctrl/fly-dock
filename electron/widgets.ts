@@ -13,6 +13,7 @@ import { currentSnapshot } from './items'
 import type { InvokeMap, WidgetInstance, WidgetType } from '../src/shared/types'
 import { DEFAULT_WIDGET_OPTIONS, widgetWindowSize } from '../src/shared/widgets'
 
+import { t } from '../src/i18n'
 const windows = new Map<string, BrowserWindow>()
 
 function createWindow(widget: WidgetInstance) {
@@ -150,8 +151,8 @@ export async function weatherFor(city: string): Promise<InvokeMap['widgets:weath
 const PLAYERS: [RegExp, string][] = [
   [/spotify\.exe$/i, 'Spotify'],
   [/vlc\.exe$/i, 'VLC'],
-  [/musicbee\.exe$/i, 'MusicBee'],
-  [/wmplayer\.exe$/i, 'Windows Media Player'],
+  [/musicbee\.exe$/i, t('MusicBee')],
+  [/wmplayer\.exe$/i, t('Windows Media Player')],
   [/foobar2000\.exe$/i, 'foobar2000'],
   [/aimp\.exe$/i, 'AIMP'],
 ]

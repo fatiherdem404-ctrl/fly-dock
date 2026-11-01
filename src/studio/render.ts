@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import { GLYPHS } from './glyphs.generated'
 
+import { t as tl } from '../i18n'
 /** Everything the studio can change about a card. All sizes are on the 256 px picture. */
 export interface Design {
   /** Card inset from the edge, so shadows have room. */
@@ -52,8 +53,8 @@ export const DEFAULT_DESIGN: Design = {
 }
 
 export const PATTERNS: [Design['pattern'], string][] = [
-  ['none', 'Yok'], ['dots', 'Noktalar'], ['grid', 'Izgara'], ['stripes', 'Çizgiler'], ['waves', 'Dalgalar'],
-  ['sheen', 'Parlama'], ['burst', 'Işın'], ['grain', 'Tane'], ['hex', 'Petek'],
+  ['none', tl('Yok')], ['dots', tl('Noktalar')], ['grid', tl('Izgara')], ['stripes', tl('Çizgiler')], ['waves', tl('Dalgalar')],
+  ['sheen', tl('Parlama')], ['burst', tl('Işın')], ['grain', tl('Tane')], ['hex', tl('Petek')],
 ]
 
 export interface Template {
@@ -63,14 +64,14 @@ export interface Template {
 }
 
 export const TEMPLATES: Template[] = [
-  { id: 'dock', name: 'Dock önizlemesi', design: { inset: 12, radius: 44, fill: 'gradient', angle: 145, bevel: 12, lightAngle: 0, gloss: 0, shadowBlur: 8, shadowY: 3, shadowOpacity: 0.35, glyphMode: 'solid', g1: '#ffffff', glyphSize: 54, glyphStroke: 2.4, glyphShadow: 0, hueSpread: 0, palette: ['#ff7a59', '#4da3ff', '#8be28b', '#f5c542', '#b57bff', '#ff6fa8'] } },
-  { id: 'mac', name: 'Mac tarzı', design: { radius: 46, fill: 'gradient', c1: '#6bb8ff', c2: '#3a5bff', angle: 160, bevel: 35, gloss: 28, shadowBlur: 14, shadowY: 8, shadowOpacity: 0.38, glyphSize: 52, glyphStroke: 2, glyphShadow: 30, hueSpread: 38 } },
+  { id: 'dock', name: tl('Dock önizlemesi'), design: { inset: 12, radius: 44, fill: 'gradient', angle: 145, bevel: 12, lightAngle: 0, gloss: 0, shadowBlur: 8, shadowY: 3, shadowOpacity: 0.35, glyphMode: 'solid', g1: '#ffffff', glyphSize: 54, glyphStroke: 2.4, glyphShadow: 0, hueSpread: 0, palette: ['#ff7a59', '#4da3ff', '#8be28b', '#f5c542', '#b57bff', '#ff6fa8'] } },
+  { id: 'mac', name: tl('Mac tarzı'), design: { radius: 46, fill: 'gradient', c1: '#6bb8ff', c2: '#3a5bff', angle: 160, bevel: 35, gloss: 28, shadowBlur: 14, shadowY: 8, shadowOpacity: 0.38, glyphSize: 52, glyphStroke: 2, glyphShadow: 30, hueSpread: 38 } },
   { id: 'win', name: 'Windows 11', design: { radius: 30, fill: 'solid', c1: '#f3f5fa', c2: '#f3f5fa', angle: 90, bevel: 0, gloss: 0, borderWidth: 2, borderColor: '#9aa6bd', borderOpacity: 0.4, shadowBlur: 10, shadowY: 5, shadowOpacity: 0.22, glyphMode: 'gradient', g1: '#1d78ff', g2: '#0a4ec4', glyphSize: 54, glyphStroke: 2, glyphShadow: 0, hueSpread: 28 } },
-  { id: 'glass', name: 'Cam', design: { radius: 44, fill: 'gradient', c1: '#ffffff33', c2: '#9ec5ff55', angle: 120, pattern: 'sheen', patternOpacity: 0.28, bevel: 55, gloss: 45, borderWidth: 2, borderColor: '#ffffff', borderOpacity: 0.55, shadowBlur: 18, shadowY: 10, shadowOpacity: 0.35, glyphMode: 'solid', g1: '#ffffff', glyphSize: 50, glyphStroke: 2, glyphShadow: 40, hueSpread: 0 } },
-  { id: 'button', name: '3B düğme', design: { radius: 40, fill: 'gradient', c1: '#ffb347', c2: '#ff5e3a', angle: 90, bevel: 90, lightAngle: 270, gloss: 55, shadowBlur: 12, shadowY: 12, shadowOpacity: 0.5, glyphSize: 50, glyphStroke: 2.4, glyphShadow: 55, hueSpread: 52 } },
-  { id: 'neon', name: 'Neon', design: { radius: 36, fill: 'solid', c1: '#0c0f1e', c2: '#0c0f1e', angle: 90, pattern: 'grid', patternColor: '#4cf2ff', patternOpacity: 0.1, bevel: 0, gloss: 0, borderWidth: 3, borderColor: '#4cf2ff', borderOpacity: 0.9, shadowBlur: 16, shadowY: 0, shadowOpacity: 0.7, shadowColor: '#4cf2ff', glyphMode: 'gradient', g1: '#4cf2ff', g2: '#c46bff', glyphSize: 52, glyphStroke: 2.2, glyphShadow: 0, glyphGlow: 60, hueSpread: 30 } },
-  { id: 'paper', name: 'Kâğıt', design: { radius: 18, fill: 'solid', c1: '#fbf6ea', c2: '#fbf6ea', angle: 90, pattern: 'grain', patternColor: '#7a5a2a', patternOpacity: 0.12, bevel: 20, lightAngle: 300, gloss: 0, borderWidth: 2, borderColor: '#b79b6a', borderOpacity: 0.5, shadowBlur: 10, shadowY: 6, shadowOpacity: 0.3, glyphMode: 'solid', g1: '#4a3a24', glyphSize: 50, glyphStroke: 2.2, glyphShadow: 0, hueSpread: 0 } },
-  { id: 'flat', name: 'Kartsız', design: { fill: 'none', bevel: 0, gloss: 0, borderWidth: 0, shadowBlur: 0, shadowOpacity: 0, glyphMode: 'gradient', g1: '#5ab0ff', g2: '#7a4dff', glyphSize: 84, glyphStroke: 1.8, glyphShadow: 45, hueSpread: 45 } },
+  { id: 'glass', name: tl('Cam'), design: { radius: 44, fill: 'gradient', c1: '#ffffff33', c2: '#9ec5ff55', angle: 120, pattern: 'sheen', patternOpacity: 0.28, bevel: 55, gloss: 45, borderWidth: 2, borderColor: '#ffffff', borderOpacity: 0.55, shadowBlur: 18, shadowY: 10, shadowOpacity: 0.35, glyphMode: 'solid', g1: '#ffffff', glyphSize: 50, glyphStroke: 2, glyphShadow: 40, hueSpread: 0 } },
+  { id: 'button', name: tl('3B düğme'), design: { radius: 40, fill: 'gradient', c1: '#ffb347', c2: '#ff5e3a', angle: 90, bevel: 90, lightAngle: 270, gloss: 55, shadowBlur: 12, shadowY: 12, shadowOpacity: 0.5, glyphSize: 50, glyphStroke: 2.4, glyphShadow: 55, hueSpread: 52 } },
+  { id: 'neon', name: tl('Neon'), design: { radius: 36, fill: 'solid', c1: '#0c0f1e', c2: '#0c0f1e', angle: 90, pattern: 'grid', patternColor: '#4cf2ff', patternOpacity: 0.1, bevel: 0, gloss: 0, borderWidth: 3, borderColor: '#4cf2ff', borderOpacity: 0.9, shadowBlur: 16, shadowY: 0, shadowOpacity: 0.7, shadowColor: '#4cf2ff', glyphMode: 'gradient', g1: '#4cf2ff', g2: '#c46bff', glyphSize: 52, glyphStroke: 2.2, glyphShadow: 0, glyphGlow: 60, hueSpread: 30 } },
+  { id: 'paper', name: tl('Kâğıt'), design: { radius: 18, fill: 'solid', c1: '#fbf6ea', c2: '#fbf6ea', angle: 90, pattern: 'grain', patternColor: '#7a5a2a', patternOpacity: 0.12, bevel: 20, lightAngle: 300, gloss: 0, borderWidth: 2, borderColor: '#b79b6a', borderOpacity: 0.5, shadowBlur: 10, shadowY: 6, shadowOpacity: 0.3, glyphMode: 'solid', g1: '#4a3a24', glyphSize: 50, glyphStroke: 2.2, glyphShadow: 0, hueSpread: 0 } },
+  { id: 'flat', name: tl('Kartsız'), design: { fill: 'none', bevel: 0, gloss: 0, borderWidth: 0, shadowBlur: 0, shadowOpacity: 0, glyphMode: 'gradient', g1: '#5ab0ff', g2: '#7a4dff', glyphSize: 84, glyphStroke: 1.8, glyphShadow: 45, hueSpread: 45 } },
 ]
 
 // ---- colour helpers ----

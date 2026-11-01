@@ -7,6 +7,7 @@
 import { Ball, bounceOffMover, makeBall, stepBall, World } from './ball'
 import { GOAL_W, Pitch, goalBoxes, goalPosts, inWhichGoal } from './pitch'
 
+import { t } from '../i18n'
 export const PEN_MAX_PULL = 230
 const SPEED_PER_PX = 6.6
 /** Slowing down on the grass, per second, and how fast a spinning ball turns (rad/s at 1000 px/s and full spin). */
@@ -218,10 +219,10 @@ export function step(pen: Pen, ball: Ball, dt: number, width: number, floor: num
       pen.done = true
       if (pen.touched) {
         pen.saves += 1
-        pen.verdict = 'KURTARDI!'
+        pen.verdict = t('KURTARDI!')
         ev.save()
       } else {
-        pen.verdict = ball.touches > 0 ? 'DİREK!' : 'DIŞARI'
+        pen.verdict = ball.touches > 0 ? t('DİREK!') : t('DIŞARI')
         ev.miss()
       }
       end(pen, 1.2)
@@ -258,13 +259,13 @@ export function step(pen: Pen, ball: Ball, dt: number, width: number, floor: num
       if (!pen.done && inWhichGoal(b, width, floor, pitch) === g.ownIdx) {
         pen.done = true
         pen.conceded += 1
-        pen.verdict = 'GOL YEDİN'
+        pen.verdict = t('GOL YEDİN')
         ev.conceded()
         pen.phase = 'returned'
         pen.timer = 1.2
       } else if (!pen.done && (Math.hypot(b.vx, b.vy) < 25 || pen.timer > 6)) {
         pen.done = true
-        pen.verdict = pen.touched ? 'KURTARDIN!' : 'DIŞARI'
+        pen.verdict = pen.touched ? t('KURTARDIN!') : t('DIŞARI')
         if (pen.touched) ev.blocked()
         pen.phase = 'returned'
         pen.timer = pen.touched ? 1.2 : 0.8

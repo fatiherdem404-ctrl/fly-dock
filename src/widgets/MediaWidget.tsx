@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { invoke } from '@/api'
 
+import { t } from '../i18n'
 const PREV = <path d="M7 5v14M19 5l-9 7 9 7z" />
 const NEXT = <path d="M17 5v14M5 5l9 7-9 7z" />
 const PLAY = <path d="M8 5l11 7-11 7z" />
@@ -30,13 +31,13 @@ export default function MediaWidget() {
         <svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v12" /><circle cx="6.5" cy="18" r="2.5" /><circle cx="16.5" cy="16" r="2.5" /></svg>
       </div>
       <div className="wg-media__text">
-        <b>{playing?.title || (playing ? playing.app : 'Çalan bir şey yok')}</b>
-        <span>{playing ? playing.app : 'Spotify, VLC ve benzeri oynatıcılar'}</span>
+        <b>{playing?.title || (playing ? playing.app : t('Çalan bir şey yok'))}</b>
+        <span>{playing ? playing.app : t('Spotify, VLC ve benzeri oynatıcılar')}</span>
       </div>
       <div className="wg-media__buttons">
-        <Btn label="Önceki" onClick={() => invoke('widgets:media', 'prev')}>{PREV}</Btn>
-        <Btn label="Oynat / duraklat" big onClick={() => invoke('widgets:media', 'playpause')}>{PLAY}</Btn>
-        <Btn label="Sonraki" onClick={() => invoke('widgets:media', 'next')}>{NEXT}</Btn>
+        <Btn label={t('Önceki')} onClick={() => invoke('widgets:media', 'prev')}>{PREV}</Btn>
+        <Btn label={t('Oynat / duraklat')} big onClick={() => invoke('widgets:media', 'playpause')}>{PLAY}</Btn>
+        <Btn label={t('Sonraki')} onClick={() => invoke('widgets:media', 'next')}>{NEXT}</Btn>
       </div>
     </div>
   )

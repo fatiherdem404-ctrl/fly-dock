@@ -7,6 +7,7 @@ import WheelGlyph from '@/components/WheelGlyph'
 import IconLibrary from '@/components/IconLibrary'
 import { Card, Row, Message } from '../ui'
 
+import { t } from '../../i18n'
 type Picked = { path: string; preview: string }
 
 export function PackBuilder({ onMade }: { tab?: string; onMade: (id: string) => void }) {
@@ -28,7 +29,7 @@ export function PackBuilder({ onMade }: { tab?: string; onMade: (id: string) => 
   const assign = async (file: string, preview?: string) => {
     if (!row || !keys) return
     const shown = preview ?? (await invoke('library:thumb', file))
-    if (!shown) return setMessage({ text: 'Bu resim okunamadı ya da çok büyük (en çok 2 MB).', error: true })
+    if (!shown) return setMessage({ text: t('Bu resim okunamadı ya da çok büyük (en çok 2 MB).'), error: true })
     setChosen((cur) => ({ ...cur, [row]: { path: file, preview: shown } }))
     const i = keys.findIndex((k) => k.key === row)
     setActive(keys[i + 1]?.key ?? row)
@@ -38,12 +39,12 @@ export function PackBuilder({ onMade }: { tab?: string; onMade: (id: string) => 
     const got = await invoke('builder:folder', (keys ?? []).map((k) => k.key))
     const n = Object.keys(got).length
     setChosen((cur) => ({ ...cur, ...got }))
-    setMessage({ text: n ? `${n} simge eşleşti.` : 'Bu klasörde öğelerle aynı adlı resim bulunamadı (ör. chrome.png, folder.png, wheel-apps.png).', error: n === 0 })
+    setMessage({ text: n ? t('{n} simge eşleşti.', { n }) : t('Bu klasörde öğelerle aynı adlı resim bulunamadı (ör. chrome.png, folder.png, wheel-apps.png).'), error: n === 0 })
   }
   const create = async () => {
     const map = Object.fromEntries(Object.entries(chosen).map(([k, v]) => [k, v.path]))
     const r = await invoke('builder:create', name, author, map)
-    setMessage({ text: r.ok ? `"${r.message}" oluşturuldu ve kullanılıyor. Dışa aktarmak için Simge paketleri sekmesindeki listeyi kullan.` : r.message, error: !r.ok })
+    setMessage({ text: r.ok ? t('"{message}" oluşturuldu ve kullanılıyor. Dışa aktarmak için Simge paketleri sekmesindeki listeyi kullan.', { message: r.message }) : r.message, error: !r.ok })
     if (r.ok && r.pack) onMade(r.pack.id)
   }
   const glyph = (k: { key: string; wheelId?: string }) => {
@@ -55,26 +56,26 @@ export function PackBuilder({ onMade }: { tab?: string; onMade: (id: string) => 
     return current[k.key] ? <img src={current[k.key]} alt="" /> : <Icon name="image" size={16} />
   }
   return (
-    <Card title="Paket oluştur" hint="Soldan bir öğe seç, sağdaki kütüphaneden simgesine tıkla; sıradaki öğeye kendiliğinden geçer. Kütüphaneye simge klasörü ekleyebilir ya da tek tek resim seçebilirsin. Simgeler dock’tan da değiştirilebilir: bir öğeye sağ tıkla, 'Simge değiştir'.">
+    <Card title={t('Paket oluştur')} hint={t('Soldan bir öğe seç, sağdaki kütüphaneden simgesine tıkla; sıradaki öğeye kendiliğinden geçer. Kütüphaneye simge klasörü ekleyebilir ya da tek tek resim seçebilirsin. Simgeler dock’tan da değiştirilebilir: bir öğeye sağ tıkla, \'Simge değiştir\'.')}>
       <div className="st-builder">
         <div className="st-builder__items">
           {(keys ?? []).map((k) => (
             <button key={k.key} className="st-builder__item" aria-pressed={row === k.key} onClick={() => setActive(k.key)}>
               <span className="st-builder-thumb">{glyph(k)}</span>
               <span className="st-builder__label">{k.label}{chosen[k.key] && <i className="st-builder__done" />}</span>
-              {chosen[k.key] && <span className="st-builder__clear" role="button" aria-label="Seçimi kaldır" onClick={(e) => { e.stopPropagation(); setChosen((cur) => { const { [k.key]: _gone, ...rest } = cur; return rest }) }}>×</span>}
+              {chosen[k.key] && <span className="st-builder__clear" role="button" aria-label={t('Seçimi kaldır')} onClick={(e) => { e.stopPropagation(); setChosen((cur) => { const { [k.key]: _gone, ...rest } = cur; return rest }) }}>×</span>}
             </button>
           ))}
         </div>
         <div className="st-builder__lib"><IconLibrary onPick={assign} selected={row ? chosen[row]?.path : null} /></div>
       </div>
       <div className="st-row-inline">
-        <button className="st-btn" onClick={fromFolder}><Icon name="folder" size={15} />Adlarına göre klasörden dağıt…</button>
-        {count > 0 && <button className="st-btn" onClick={() => setChosen({})}><Icon name="refresh" size={15} />Seçimleri temizle</button>}
+        <button className="st-btn" onClick={fromFolder}><Icon name="folder" size={15} />{t('Adlarına göre klasörden dağıt…')}</button>
+        {count > 0 && <button className="st-btn" onClick={() => setChosen({})}><Icon name="refresh" size={15} />{t('Seçimleri temizle')}</button>}
       </div>
-      <Row label="Paket adı"><input className="st-input" type="text" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Benim simgelerim" /></Row>
-      <Row label="Yapımcı" hint="İstersen boş bırak"><input className="st-input" type="text" value={author} maxLength={60} onChange={(e) => setAuthor(e.target.value)} /></Row>
-      <div className="st-row-inline"><button className="st-btn st-btn--accent" disabled={count === 0 || !name.trim()} onClick={create}><Icon name="download" size={15} />Paketi oluştur ve kullan ({count})</button></div>
+      <Row label={t('Paket adı')}><input className="st-input" type="text" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder={t('Benim simgelerim')} /></Row>
+      <Row label={t('Yapımcı')} hint={t('İstersen boş bırak')}><input className="st-input" type="text" value={author} maxLength={60} onChange={(e) => setAuthor(e.target.value)} /></Row>
+      <div className="st-row-inline"><button className="st-btn st-btn--accent" disabled={count === 0 || !name.trim()} onClick={create}><Icon name="download" size={15} />{t('Paketi oluştur ve kullan (')}{count})</button></div>
       {message && <Message text={message.text} error={message.error} />}
     </Card>
   )

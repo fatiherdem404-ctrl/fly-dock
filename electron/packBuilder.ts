@@ -11,9 +11,10 @@ import { wheelEntries } from './wheel'
 import { isAllowedImage, readAllowed, libraryThumb, pickFolderImages } from './iconLibrary'
 import type { PackInfo, PackBuilderKey } from '../src/shared/types'
 
+import { t } from '../src/i18n'
 const keyOfPath = (p: string) => (p.toLowerCase().startsWith('shell:') ? p.slice(6) : path.win32.basename(p, path.win32.extname(p))).toLowerCase().replace(/[^a-z0-9 ._-]/g, '').slice(0, 60)
 
-const SPECIAL: Record<string, string> = { start: 'Başlat düğmesi', wheel: 'Kontrol paneli simgesi', power: 'Güç menüsü simgesi', group: 'Gruplar' }
+const SPECIAL: Record<string, string> = { start: t('Başlat düğmesi'), wheel: t('Kontrol paneli simgesi'), power: t('Güç menüsü simgesi'), group: t('Gruplar') }
 
 /** Everything a pack can replace: every dock item, every gear-menu entry, then the generic folder / file / trash icons. */
 export function builderKeys(): PackBuilderKey[] {
@@ -28,11 +29,11 @@ export function builderKeys(): PackBuilderKey[] {
     if (item.type === 'start' || item.type === 'wheel' || item.type === 'power' || item.type === 'group') add({ key: item.type, label: SPECIAL[item.type], itemId: item.id })
     else if ((item.type === 'app' || item.type === 'file') && item.targetPath) add({ key: keyOfPath(item.targetPath), label: item.label || keyOfPath(item.targetPath), itemId: item.id })
   }
-  add({ key: 'folder', label: 'Klasörler' })
-  add({ key: 'file', label: 'Diğer dosyalar' })
-  add({ key: 'trash', label: 'Geri dönüşüm kutusu (boş)' })
-  add({ key: 'trash-full', label: 'Geri dönüşüm kutusu (dolu)' })
-  for (const e of wheelEntries().entries) if (!e.path) add({ key: `wheel-${e.id}`, label: `Kontrol paneli: ${e.name}`, wheelId: e.id })
+  add({ key: 'folder', label: t('Klasörler') })
+  add({ key: 'file', label: t('Diğer dosyalar') })
+  add({ key: 'trash', label: t('Geri dönüşüm kutusu (boş)') })
+  add({ key: 'trash-full', label: t('Geri dönüşüm kutusu (dolu)') })
+  for (const e of wheelEntries().entries) if (!e.path) add({ key: `wheel-${e.id}`, label: t('Kontrol paneli: {name}', { name: e.name }), wheelId: e.id })
   return keys
 }
 
@@ -50,7 +51,7 @@ export async function pickBuilderFolder(keys: string[]): Promise<Record<string, 
 
 export function createBuilderPack(name: string, author: string, map: Record<string, string>): { ok: boolean; message: string; pack?: PackInfo } {
   const title = name.trim().slice(0, 60)
-  if (!title) return { ok: false, message: 'Pakete bir ad ver.' }
+  if (!title) return { ok: false, message: t('Pakete bir ad ver.') }
   const entries: ZipEntry[] = []
   const iconMap: Record<string, string> = {}
   const valid = new Set(builderKeys().map((k) => k.key))
@@ -63,7 +64,7 @@ export function createBuilderPack(name: string, author: string, map: Record<stri
     entries.push({ name: entryName, data })
     iconMap[key] = entryName
   }
-  if (n === 0) return { ok: false, message: 'Hiçbir öğeye resim seçilmedi.' }
+  if (n === 0) return { ok: false, message: t('Hiçbir öğeye resim seçilmedi.') }
   const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'paket'
   const id = `${slug}-${Date.now().toString(36).slice(-4)}`
   entries.push(
@@ -80,7 +81,7 @@ export function createBuilderPack(name: string, author: string, map: Record<stri
 /** The icon studio's result: one finished PNG per key (base64), written as an ordinary pack through the same install checks. */
 export function createPackFromPngs(name: string, author: string, images: Record<string, string>, card: unknown = null): { ok: boolean; message: string; pack?: PackInfo } {
   const title = String(name).trim().slice(0, 60)
-  if (!title) return { ok: false, message: 'Pakete bir ad ver.' }
+  if (!title) return { ok: false, message: t('Pakete bir ad ver.') }
   const entries: ZipEntry[] = []
   const iconMap: Record<string, string> = {}
   let n = 0
@@ -92,7 +93,7 @@ export function createPackFromPngs(name: string, author: string, images: Record<
     entries.push({ name: entryName, data })
     iconMap[key] = entryName
   }
-  if (n === 0) return { ok: false, message: 'Hiç simge üretilemedi.' }
+  if (n === 0) return { ok: false, message: t('Hiç simge üretilemedi.') }
   const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'paket'
   const id = `${slug}-${Date.now().toString(36).slice(-4)}`
   entries.push(

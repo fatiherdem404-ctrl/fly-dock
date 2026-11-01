@@ -8,6 +8,7 @@ import { helper } from './helper'
 import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN, blurSupported } from './windows'
 import type { PowerAction } from '../src/shared/types'
 
+import { t } from '../src/i18n'
 let overlay: BrowserWindow | null = null
 
 export function closePowerMenu() {

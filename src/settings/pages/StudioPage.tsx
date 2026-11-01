@@ -8,6 +8,7 @@ import { rasterize } from '@/studio/raster'
 import { GlyphPicker, GlyphChoice } from '../GlyphPicker'
 import { Card, Message, Row, Segmented, Select, Slider, Switch, Update } from '../ui'
 
+import { t as tl } from '../../i18n'
 // ---- Icon studio (development builds only): design the cards and glyphs of a whole icon pack ----
 
 const STORE = 'flydock.studio'
@@ -39,11 +40,11 @@ async function artOf(choice: GlyphChoice): Promise<{ glyphArt?: string; glyphFil
 }
 
 const GROUPS: [string, string, (k: string, i: number) => boolean][] = [
-  ['main', 'Ana öğeler', (k, i) => !k.startsWith('wheel-') && !['belgeler', 'indirilenler', 'resimler', 'videolar'].includes(k) && i < 38],
-  ['wheel', 'Kontrol paneli', (k) => k.startsWith('wheel-') || k === 'wheel'],
+  ['main', tl('Ana öğeler'), (k, i) => !k.startsWith('wheel-') && !['belgeler', 'indirilenler', 'resimler', 'videolar'].includes(k) && i < 38],
+  ['wheel', tl('Kontrol paneli'), (k) => k.startsWith('wheel-') || k === 'wheel'],
   ['apps', 'Programlar', (k, i) => i >= 38 && !k.startsWith('wheel-')],
 ]
-const BACKDROPS: [string, string][] = [['dark', 'Koyu'], ['light', 'Açık'], ['check', 'Dama']]
+const BACKDROPS: [string, string][] = [['dark', tl('Koyu')], ['light', tl('Açık||arka plan')], ['check', tl('Dama')]]
 
 function Color({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
@@ -59,7 +60,7 @@ export function StudioTab({ set }: { set: Update }) {
   const [mine, setMine] = useState<{ name: string; design: Design }[]>(() => read('mine', []))
   const [group, setGroup] = useState('main')
   const [backdrop, setBackdrop] = useState('dark')
-  const [name, setName] = useState('Benim paketim')
+  const [name, setName] = useState(tl('Benim paketim'))
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<{ text: string; error?: boolean } | null>(null)
   const [use, setUse] = useState(true)
@@ -101,19 +102,19 @@ export function StudioTab({ set }: { set: Update }) {
         const [key, , glyph] = all[i]
         images[key] = await rasterize(cardSvg({ ...design, ...styles[key] }, glyph, { index: i, badge: key === 'trash-full', uid: 'x', ...(await artOf(picks[key] ?? null)) }), 256)
       }
-      const r = await invoke('studio:make-pack', name, 'İkon stüdyosu', images, fallback ? { ...design } : null)
+      const r = await invoke('studio:make-pack', name, tl('İkon stüdyosu'), images, fallback ? { ...design } : null)
       if (r.ok && r.pack) {
         if (use) set({ iconPack: r.pack.id })
-        setMsg({ text: `“${r.pack.name}” paketi oluşturuldu${use ? ' ve kullanılıyor' : ''}: ${Object.keys(images).length} simge.` })
+        setMsg({ text: tl('“{name}” paketi oluşturuldu{v1}: {length} simge.', { name: r.pack.name, v1: use ? tl(' ve kullanılıyor') : '', length: Object.keys(images).length }) })
       } else setMsg({ text: r.message, error: true })
     } catch (e) {
-      setMsg({ text: e instanceof Error ? e.message : 'Paket oluşturulamadı', error: true })
+      setMsg({ text: e instanceof Error ? e.message : tl('Paket oluşturulamadı'), error: true })
     }
     setBusy(false)
   }
 
   const saveMine = () => {
-    const n = newName.current.trim() || `Şablonum ${mine.length + 1}`
+    const n = newName.current.trim() || tl('Şablonum {v0}', { v0: mine.length + 1 })
     const next = [...mine.filter((m) => m.name !== n), { name: n, design }]
     setMine(next)
     write('mine', next)
@@ -132,9 +133,9 @@ export function StudioTab({ set }: { set: Update }) {
         </div>
         <div className={`sd__grid sd__grid--${backdrop}`}>
           {cards.map((c) => (
-            <figure key={c.key} className="sd__card" onClick={() => setEditing(c.key)} title="Simgeyi değiştirmek için tıkla">
+            <figure key={c.key} className="sd__card" onClick={() => setEditing(c.key)} title={tl('Simgeyi değiştirmek için tıkla')}>
               <span dangerouslySetInnerHTML={{ __html: c.svg }} />
-              <figcaption>{c.label}{picks[c.key] || styles[c.key] ? ' ✎' : ''}{c.extra && <button className="sd__x" title="Bu programı listeden çıkar" onClick={(e) => { e.stopPropagation(); setExtras((cur) => cur.filter((x) => x.key !== c.key)) }}>✕</button>}</figcaption>
+              <figcaption>{c.label}{picks[c.key] || styles[c.key] ? ' ✎' : ''}{c.extra && <button className="sd__x" title={tl('Bu programı listeden çıkar')} onClick={(e) => { e.stopPropagation(); setExtras((cur) => cur.filter((x) => x.key !== c.key)) }}>✕</button>}</figcaption>
             </figure>
           ))}
           {group === 'apps' && (
@@ -147,17 +148,17 @@ export function StudioTab({ set }: { set: Update }) {
               setAddLabel('')
               setEditing(key)
             }}>
-              <b>Kendi programını ekle</b>
-              <input className="st-input" placeholder="exe adı, örn. photoshop" value={addKey} onChange={(e) => setAddKey(e.target.value)} />
-              <input className="st-input" placeholder="Görünen ad (isteğe bağlı)" value={addLabel} onChange={(e) => setAddLabel(e.target.value)} />
-              <button className="st-btn st-btn--accent" type="submit" disabled={!addKey.trim()}>Ekle ve simge seç</button>
-              <small>Programın exe dosyasının adı (uzantısız) paketteki anahtarı olur. Simgesini Lucide’dan seçebilir ya da SVG kodu yapıştırabilirsin.</small>
+              <b>{tl('Kendi programını ekle')}</b>
+              <input className="st-input" placeholder={tl('exe adı, örn. photoshop')} value={addKey} onChange={(e) => setAddKey(e.target.value)} />
+              <input className="st-input" placeholder={tl('Görünen ad (isteğe bağlı)')} value={addLabel} onChange={(e) => setAddLabel(e.target.value)} />
+              <button className="st-btn st-btn--accent" type="submit" disabled={!addKey.trim()}>{tl('Ekle ve simge seç')}</button>
+              <small>{tl('Programın exe dosyasının adı (uzantısız) paketteki anahtarı olur. Simgesini Lucide’dan seçebilir ya da SVG kodu yapıştırabilirsin.')}</small>
             </form>
           )}
           {fallback && group === 'apps' && (
             <figure>
               <span dangerouslySetInnerHTML={{ __html: cardSvg(design, '', { appIcon: SAMPLE_APP, uid: 'smp' }) }} />
-              <figcaption>Pakette olmayan program</figcaption>
+              <figcaption>{tl('Pakette olmayan program')}</figcaption>
             </figure>
           )}
         </div>
@@ -182,65 +183,65 @@ export function StudioTab({ set }: { set: Update }) {
         />
       )}
       <div className="sd__side">
-        <Card icon="edit" title="Şablon" hint="Bir şablonla başla, sonra istediğin gibi değiştir.">
+        <Card icon="edit" title={tl('Şablon')} hint={tl('Bir şablonla başla, sonra istediğin gibi değiştir.')}>
           <div className="sd__chips">
             {TEMPLATES.map((t) => <button key={t.id} className="st-btn" onClick={() => setDesign(designFrom(t))}>{t.name}</button>)}
             {mine.map((m) => (
-              <button key={m.name} className="st-btn" onClick={() => setDesign({ ...DEFAULT_DESIGN, ...m.design })} title="Kendi şablonun">★ {m.name}</button>
+              <button key={m.name} className="st-btn" onClick={() => setDesign({ ...DEFAULT_DESIGN, ...m.design })} title={tl('Kendi şablonun')}>★ {m.name}</button>
             ))}
           </div>
           <div className="st-row-inline">
-            <input className="st-input sd__name" placeholder="Şablon adı" onChange={(e) => (newName.current = e.target.value)} />
-            <button className="st-btn" onClick={saveMine}>Şablonu kaydet</button>
+            <input className="st-input sd__name" placeholder={tl('Şablon adı')} onChange={(e) => (newName.current = e.target.value)} />
+            <button className="st-btn" onClick={saveMine}>{tl('Şablonu kaydet')}</button>
           </div>
         </Card>
-        <Card icon="desk" title="Kart">
-          <Row label="Dolgu"><Segmented value={design.fill} onChange={(fill) => d({ fill })} options={[['solid', 'Düz'], ['gradient', 'Degrade'], ['none', 'Kartsız']]} /></Row>
+        <Card icon="desk" title={tl('Kart')}>
+          <Row label={tl('Dolgu')}><Segmented value={design.fill} onChange={(fill) => d({ fill })} options={[['solid', tl('Düz')], ['gradient', tl('Degrade')], ['none', tl('Kartsız')]]} /></Row>
           {design.fill !== 'none' && (
             <>
-              <Row label="Renk"><Color value={design.c1} onChange={(c1) => d({ c1 })} /></Row>
-              {design.fill === 'gradient' && <Row label="İkinci renk"><Color value={design.c2} onChange={(c2) => d({ c2 })} /></Row>}
-              {design.fill === 'gradient' && <Row label="Degrade yönü">{num('angle', 0, 360, 5, '°')}</Row>}
-              <Row label="Köşe yuvarlaklığı">{num('radius', 0, 100, 1, '%')}</Row>
-              <Row label="Kenar boşluğu" hint="Kartın resim kenarından uzaklığı">{num('inset', 0, 48, 1, ' px')}</Row>
-              <Row label="Desen"><Select value={design.pattern} onChange={(pattern) => d({ pattern })} options={PATTERNS} /></Row>
-              {design.pattern !== 'none' && <Row label="Desen rengi"><Color value={design.patternColor} onChange={(patternColor) => d({ patternColor })} /></Row>}
-              {design.pattern !== 'none' && <Row label="Desen yoğunluğu">{num('patternOpacity', 0.02, 0.6, 0.01)}</Row>}
+              <Row label={tl('Renk')}><Color value={design.c1} onChange={(c1) => d({ c1 })} /></Row>
+              {design.fill === 'gradient' && <Row label={tl('İkinci renk')}><Color value={design.c2} onChange={(c2) => d({ c2 })} /></Row>}
+              {design.fill === 'gradient' && <Row label={tl('Degrade yönü')}>{num('angle', 0, 360, 5, '°')}</Row>}
+              <Row label={tl('Köşe yuvarlaklığı')}>{num('radius', 0, 100, 1, '%')}</Row>
+              <Row label={tl('Kenar boşluğu')} hint={tl('Kartın resim kenarından uzaklığı')}>{num('inset', 0, 48, 1, ' px')}</Row>
+              <Row label={tl('Desen')}><Select value={design.pattern} onChange={(pattern) => d({ pattern })} options={PATTERNS} /></Row>
+              {design.pattern !== 'none' && <Row label={tl('Desen rengi')}><Color value={design.patternColor} onChange={(patternColor) => d({ patternColor })} /></Row>}
+              {design.pattern !== 'none' && <Row label={tl('Desen yoğunluğu')}>{num('patternOpacity', 0.02, 0.6, 0.01)}</Row>}
             </>
           )}
         </Card>
         {design.fill !== 'none' && (
-          <Card icon="maximize" title="Derinlik ve kenar">
-            <Row label="3B kabartma" hint="Bir kenar ışık alır, karşısı gölgede kalır">{num('bevel', 0, 100, 1, '%')}</Row>
-            <Row label="Işık yönü">{num('lightAngle', 0, 360, 5, '°')}</Row>
-            <Row label="Parlak yüzey">{num('gloss', 0, 100, 1, '%')}</Row>
-            <Row label="Çerçeve kalınlığı">{num('borderWidth', 0, 12, 0.5, ' px')}</Row>
-            {design.borderWidth > 0 && <Row label="Çerçeve rengi"><Color value={design.borderColor} onChange={(borderColor) => d({ borderColor })} /></Row>}
-            {design.borderWidth > 0 && <Row label="Çerçeve görünürlüğü">{num('borderOpacity', 0.05, 1, 0.05)}</Row>}
-            <Row label="Gölge bulanıklığı">{num('shadowBlur', 0, 40, 1, ' px')}</Row>
-            <Row label="Gölgenin aşağı kayması">{num('shadowY', 0, 30, 1, ' px')}</Row>
-            <Row label="Gölge koyuluğu">{num('shadowOpacity', 0, 1, 0.05)}</Row>
-            <Row label="Gölge rengi"><Color value={design.shadowColor} onChange={(shadowColor) => d({ shadowColor })} /></Row>
+          <Card icon="maximize" title={tl('Derinlik ve kenar')}>
+            <Row label={tl('3B kabartma')} hint={tl('Bir kenar ışık alır, karşısı gölgede kalır')}>{num('bevel', 0, 100, 1, '%')}</Row>
+            <Row label={tl('Işık yönü')}>{num('lightAngle', 0, 360, 5, '°')}</Row>
+            <Row label={tl('Parlak yüzey')}>{num('gloss', 0, 100, 1, '%')}</Row>
+            <Row label={tl('Çerçeve kalınlığı')}>{num('borderWidth', 0, 12, 0.5, ' px')}</Row>
+            {design.borderWidth > 0 && <Row label={tl('Çerçeve rengi')}><Color value={design.borderColor} onChange={(borderColor) => d({ borderColor })} /></Row>}
+            {design.borderWidth > 0 && <Row label={tl('Çerçeve görünürlüğü')}>{num('borderOpacity', 0.05, 1, 0.05)}</Row>}
+            <Row label={tl('Gölge bulanıklığı')}>{num('shadowBlur', 0, 40, 1, ' px')}</Row>
+            <Row label={tl('Gölgenin aşağı kayması')}>{num('shadowY', 0, 30, 1, ' px')}</Row>
+            <Row label={tl('Gölge koyuluğu')}>{num('shadowOpacity', 0, 1, 0.05)}</Row>
+            <Row label={tl('Gölge rengi')}><Color value={design.shadowColor} onChange={(shadowColor) => d({ shadowColor })} /></Row>
           </Card>
         )}
-        <Card icon="image" title="Simge çizgisi">
-          <Row label="Renk"><Segmented value={design.glyphMode} onChange={(glyphMode) => d({ glyphMode })} options={[['solid', 'Tek renk'], ['gradient', 'Degrade']]} /></Row>
-          <Row label={design.glyphMode === 'solid' ? 'Çizgi rengi' : 'Başlangıç rengi'}><Color value={design.g1} onChange={(g1) => d({ g1 })} /></Row>
-          {design.glyphMode === 'gradient' && <Row label="Bitiş rengi"><Color value={design.g2} onChange={(g2) => d({ g2 })} /></Row>}
-          <Row label="Boyut">{num('glyphSize', 30, 92, 1, '%')}</Row>
-          <Row label="Çizgi kalınlığı">{num('glyphStroke', 0.8, 3.6, 0.1)}</Row>
-          <Row label="Çizgi gölgesi">{num('glyphShadow', 0, 100, 1, '%')}</Row>
-          <Row label="Neon ışıma">{num('glyphGlow', 0, 100, 1, '%')}</Row>
-          <Row label="Renk çeşitliliği" hint="Her simgenin rengi çarkta biraz ileri döner; 0 hepsini aynı yapar">{num('hueSpread', 0, 120, 1, '°')}</Row>
+        <Card icon="image" title={tl('Simge çizgisi')}>
+          <Row label={tl('Renk')}><Segmented value={design.glyphMode} onChange={(glyphMode) => d({ glyphMode })} options={[['solid', tl('Tek renk')], ['gradient', tl('Degrade')]]} /></Row>
+          <Row label={design.glyphMode === 'solid' ? tl('Çizgi rengi') : tl('Başlangıç rengi')}><Color value={design.g1} onChange={(g1) => d({ g1 })} /></Row>
+          {design.glyphMode === 'gradient' && <Row label={tl('Bitiş rengi')}><Color value={design.g2} onChange={(g2) => d({ g2 })} /></Row>}
+          <Row label={tl('Boyut')}>{num('glyphSize', 30, 92, 1, '%')}</Row>
+          <Row label={tl('Çizgi kalınlığı')}>{num('glyphStroke', 0.8, 3.6, 0.1)}</Row>
+          <Row label={tl('Çizgi gölgesi')}>{num('glyphShadow', 0, 100, 1, '%')}</Row>
+          <Row label={tl('Neon ışıma')}>{num('glyphGlow', 0, 100, 1, '%')}</Row>
+          <Row label={tl('Renk çeşitliliği')} hint={tl('Her simgenin rengi çarkta biraz ileri döner; 0 hepsini aynı yapar')}>{num('hueSpread', 0, 120, 1, '°')}</Row>
         </Card>
-        <Card icon="pack" title="Paketi oluştur" hint={`${all.length} simge, 256 piksel PNG olarak ayrı bir simge paketine yazılır; sonra Simge paketleri sayfasından dışa aktarabilirsin.`}>
-          <Row label="Paket adı"><input className="st-input" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} /></Row>
-          <Row label="Eksik programlara kart ekle" hint="Pakette resmi olmayan programların (Photoshop, WhatsApp…) kendi simgesi bu kartın içine konur. Önizlemesi Programlar sekmesinin sonunda"><Switch label="Eksik programlara kart ekle" value={fallback} onChange={setFallback} /></Row>
-          {fallback && <Row label="Program simgesi boyutu">{num('appIconSize', 40, 90, 1, '%')}</Row>}
-          <Row label="Oluşunca kullan"><Switch label="Oluşunca kullan" value={use} onChange={setUse} /></Row>
+        <Card icon="pack" title={tl('Paketi oluştur')} hint={tl('{length} simge, 256 piksel PNG olarak ayrı bir simge paketine yazılır; sonra Simge paketleri sayfasından dışa aktarabilirsin.', { length: all.length })}>
+          <Row label={tl('Paket adı')}><input className="st-input" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} /></Row>
+          <Row label={tl('Eksik programlara kart ekle')} hint={tl('Pakette resmi olmayan programların (Photoshop, WhatsApp…) kendi simgesi bu kartın içine konur. Önizlemesi Programlar sekmesinin sonunda')}><Switch label={tl('Eksik programlara kart ekle')} value={fallback} onChange={setFallback} /></Row>
+          {fallback && <Row label={tl('Program simgesi boyutu')}>{num('appIconSize', 40, 90, 1, '%')}</Row>}
+          <Row label={tl('Oluşunca kullan')}><Switch label={tl('Oluşunca kullan')} value={use} onChange={setUse} /></Row>
           <div className="st-row-inline">
-            <button className="st-btn st-btn--accent" onClick={make} disabled={busy || !name.trim()}>{busy ? 'Üretiliyor…' : 'Paketi oluştur'}</button>
-            <button className="st-btn" onClick={() => setDesign({ ...DEFAULT_DESIGN })}>Ayarları sıfırla</button>
+            <button className="st-btn st-btn--accent" onClick={make} disabled={busy || !name.trim()}>{busy ? tl('Üretiliyor…') : tl('Paketi oluştur')}</button>
+            <button className="st-btn" onClick={() => setDesign({ ...DEFAULT_DESIGN })}>{tl('Ayarları sıfırla')}</button>
           </div>
           {msg && <Message text={msg.text} error={msg.error} />}
         </Card>

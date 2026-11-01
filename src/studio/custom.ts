@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 /** A glyph the user brought: markup in a 24 x 24 box, and whether it is made of filled shapes (true) or strokes (false). */
@@ -20,11 +21,11 @@ const num = /^[-+0-9.,\sA-Za-z]*$/
  */
 export function parseGlyph(code: string, keepColors = false): CustomGlyph | { error: string } {
   const text = code.trim()
-  if (!text) return { error: 'SVG kodunu buraya yapıştır.' }
-  if (text.length > 60_000) return { error: 'Kod çok uzun.' }
+  if (!text) return { error: t('SVG kodunu buraya yapıştır.') }
+  if (text.length > 60_000) return { error: t('Kod çok uzun.') }
   const doc = new DOMParser().parseFromString(text, 'image/svg+xml')
   const svg = doc.documentElement
-  if (doc.querySelector('parsererror') || svg.nodeName.toLowerCase() !== 'svg') return { error: 'Bu geçerli bir SVG kodu değil. <svg …> ile başlamalı.' }
+  if (doc.querySelector('parsererror') || svg.nodeName.toLowerCase() !== 'svg') return { error: t('Bu geçerli bir SVG kodu değil. <svg …> ile başlamalı.') }
   const vb = (svg.getAttribute('viewBox') ?? '0 0 24 24').trim().split(/[\s,]+/).map(Number)
   const [vx, vy, vw, vh] = vb.length === 4 && vb.every(Number.isFinite) && vb[2] > 0 && vb[3] > 0 ? vb : [0, 0, 24, 24]
   const k = 24 / Math.max(vw, vh)
@@ -56,7 +57,7 @@ export function parseGlyph(code: string, keepColors = false): CustomGlyph | { er
     return out
   }
   const inner = walk(svg)
-  if (!inner) return { error: 'SVG içinde çizilecek bir şekil bulunamadı.' }
+  if (!inner) return { error: t('SVG içinde çizilecek bir şekil bulunamadı.') }
   // a root paint is inherited by every shape without its own
   const rootPaint = keepColors ? [['fill', rootFill], ['stroke', rootStroke]].filter(([, v]) => v && v !== 'none' && SAFE_PAINT.test(v)).map(([a, v]) => ` ${a}="${v}"`).join('') : ''
   const art0 = rootPaint ? `<g${rootPaint}>${inner}</g>` : inner

@@ -10,6 +10,7 @@ import { getSettings, updateSettings } from './store'
 import { builtinIconRoot } from './packs'
 import type { LibraryIcon } from '../src/shared/types'
 
+import { t } from '../src/i18n'
 export const IMAGE_EXT = new Set(['.png', '.ico', '.svg', '.jpg', '.jpeg', '.webp'])
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024
 const MAX_ICONS = 2500
@@ -51,7 +52,7 @@ export function listLibrary(): { icons: LibraryIcon[]; folders: string[] } {
       walk(path.join(root, id), 3, files)
       let source = id
       try {
-        source = JSON.parse(fs.readFileSync(path.join(root, id, 'pack.json'), 'utf8')).name ?? id
+        source = t(JSON.parse(fs.readFileSync(path.join(root, id, 'pack.json'), 'utf8')).name ?? id)
       } catch {
         /* keep the id */
       }
@@ -110,7 +111,7 @@ export function libraryThumb(file: string): string | null {
 
 /** A picture chosen in the system dialog; it is usable for the rest of the session. */
 export async function pickImage(): Promise<{ path: string; preview: string } | null> {
-  const r = await dialog.showOpenDialog({ properties: ['openFile'], filters: [{ name: 'Resim', extensions: ['png', 'ico', 'svg', 'jpg', 'jpeg', 'webp'] }] })
+  const r = await dialog.showOpenDialog({ properties: ['openFile'], filters: [{ name: t('Resim'), extensions: ['png', 'ico', 'svg', 'jpg', 'jpeg', 'webp'] }] })
   if (r.canceled || !r.filePaths[0]) return null
   picked.add(norm(r.filePaths[0]))
   const preview = libraryThumb(r.filePaths[0])

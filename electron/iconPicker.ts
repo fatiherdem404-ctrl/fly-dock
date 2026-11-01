@@ -12,6 +12,7 @@ import { readAllowed } from './iconLibrary'
 import { storeTexture } from './textures'
 import { wheelEntries, setWheelIconFile } from './wheel'
 
+import { t } from '../src/i18n'
 let win: BrowserWindow | null = null
 
 export function showIconPicker(target: string) {
@@ -53,7 +54,7 @@ export async function pickerInfo(target: string): Promise<{ name: string; curren
   return { name: item.label || (item.targetPath ? path.basename(item.targetPath, path.extname(item.targetPath)) : item.type), current: await iconForItem(item), custom: !!item.customIconPath }
 }
 
-const UNREADABLE = 'Bu resim okunamadı ya da 2 MB’tan büyük.'
+const UNREADABLE = t('Bu resim okunamadı ya da 2 MB’tan büyük.')
 
 /** Gives the target the picture, or the default again when `file` is null. */
 export function applyPickedIcon(target: string, file: string | null): { ok: boolean; message: string } {

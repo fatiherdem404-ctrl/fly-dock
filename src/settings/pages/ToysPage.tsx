@@ -10,6 +10,7 @@ import { Frame } from '../previews'
 import basketballUrl from '@/assets/toys/basketball.png'
 import soccerUrl from '@/assets/toys/soccer.png'
 
+import { t } from '../../i18n'
 /** Each game's own little picture: its ball or racket. */
 function GameGlyph({ game }: { game: 'basket' | 'football' | 'bounce' }) {
   if (game === 'basket') return <img src={basketballUrl} alt="" />
@@ -67,70 +68,70 @@ function Scores(_props: { tab: string }) {
     invoke('toys:scores').then(setScores)
   }, [])
   return (
-    <Card icon="check" tab="Oyunlar" title="Skorların" hint="Süreye karşı modda tur 60 saniyedir: topa ilk dokunuşunla başlar, süre dolunca rekorun kaydedilir. Serbest modda rekor yalnızca top sektirme serisi için tutulur. Kapatıp açsan da kaybolmaz.">
+    <Card icon="check" tab={t('Oyunlar')} title={t('Skorların')} hint={t('Süreye karşı modda tur 60 saniyedir: topa ilk dokunuşunla başlar, süre dolunca rekorun kaydedilir. Serbest modda rekor yalnızca top sektirme serisi için tutulur. Kapatıp açsan da kaybolmaz.')}>
       <div className="st-scores">
-        <div><b>{scores.basketBest}</b><small>Basketbol rekoru (60 sn)</small><em>toplam {scores.basket}</em></div>
-        <div><b>{scores.footballBest}</b><small>Futbol rekoru (60 sn)</small><em>toplam {scores.football}</em></div>
-        <div><b>{scores.juggleBest}</b><small>Futbol sektirme rekoru (60 sn)</small><em>en uzun seri {scores.juggleCombo}</em></div>
-        <div><b>{scores.pongBest}</b><small>Pong galibiyeti</small><em>kazanılan maç</em></div>
-        <div><b>{scores.bounceBest}</b><small>Top sektirme rekoru (60 sn)</small><em>en uzun seri {scores.bounceCombo}</em></div>
+        <div><b>{scores.basketBest}</b><small>{t('Basketbol rekoru (60 sn)')}</small><em>{t('toplam')} {scores.basket}</em></div>
+        <div><b>{scores.footballBest}</b><small>{t('Futbol rekoru (60 sn)')}</small><em>{t('toplam')} {scores.football}</em></div>
+        <div><b>{scores.juggleBest}</b><small>{t('Futbol sektirme rekoru (60 sn)')}</small><em>{t('en uzun seri')} {scores.juggleCombo}</em></div>
+        <div><b>{scores.pongBest}</b><small>{t('Pong galibiyeti')}</small><em>{t('kazanılan maç')}</em></div>
+        <div><b>{scores.bounceBest}</b><small>{t('Top sektirme rekoru (60 sn)')}</small><em>{t('en uzun seri')} {scores.bounceCombo}</em></div>
       </div>
-      <Row label="Skorları sıfırla"><button className="st-btn" onClick={() => invoke('toys:scores', { basket: 0, basketBest: 0, football: 0, footballBest: 0, bounceBest: 0, bounceCombo: 0, juggleBest: 0, juggleCombo: 0, pongBest: 0 }).then(setScores)}><Icon name="refresh" size={15} />Sıfırla</button></Row>
+      <Row label={t('Skorları sıfırla')}><button className="st-btn" onClick={() => invoke('toys:scores', { basket: 0, basketBest: 0, football: 0, footballBest: 0, bounceBest: 0, bounceCombo: 0, juggleBest: 0, juggleCombo: 0, pongBest: 0 }).then(setScores)}><Icon name="refresh" size={15} />{t('Sıfırla')}</button></Row>
     </Card>
   )
 }
 
 export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
   const game = (key: 'toyBasket' | 'toyFootball' | 'toyBounce', modeKey: 'toyBasketMode' | 'toyFootballMode' | 'toyBounceMode', pic: 'basket' | 'football' | 'bounce', title: string, hint: string, how: string, extra?: React.ReactNode) => (
-    <Card glyph={<GameGlyph game={pic} />} icon="toys" tab="Oyunlar" title={title} hint={hint}>
+    <Card glyph={<GameGlyph game={pic} />} icon="toys" tab={t('Oyunlar')} title={title} hint={hint}>
       <div className="st-toygame">
         <Frame className="st-toygame__pic"><GamePic game={pic} /></Frame>
         <p className="st-prose">{how}</p>
       </div>
       {extra}
-      <Row label={`${title} açık`}><Switch label={title} value={s[key]} onChange={(v) => set({ [key]: v })} /></Row>
-      <Row label="Mod" hint="Serbest: sadece oyna, sayaç tutulur. Süreye karşı: 60 saniyede en yüksek skor, rekor kaydedilir."><Segmented<ToyMode> value={s[modeKey]} onChange={(v) => set({ [modeKey]: v })} options={[['free', 'Serbest'], ['timed', 'Süreye karşı']]} /></Row>
+      <Row label={t('{title} açık', { title })}><Switch label={title} value={s[key]} onChange={(v) => set({ [key]: v })} /></Row>
+      <Row label={t('Mod')} hint={t('Serbest: sadece oyna, sayaç tutulur. Süreye karşı: 60 saniyede en yüksek skor, rekor kaydedilir.')}><Segmented<ToyMode> value={s[modeKey]} onChange={(v) => set({ [modeKey]: v })} options={[['free', t('Serbest')], ['timed', t('Süreye karşı')]]} /></Row>
     </Card>
   )
   const panelGame = (key: 'toyPong', id: 'pong', title: string, hint: string, how: string) => (
-    <Card glyph={<MiniGlyph game={id} />} icon="toys" tab="Oyunlar" title={title} hint={hint}>
+    <Card glyph={<MiniGlyph game={id} />} icon="toys" tab={t('Oyunlar')} title={title} hint={hint}>
       <p className="st-prose">{how}</p>
-      <Row label={`${title} açık`}><Switch label={title} value={s[key]} onChange={(v) => set({ [key]: v })} /></Row>
+      <Row label={t('{title} açık', { title })}><Switch label={title} value={s[key]} onChange={(v) => set({ [key]: v })} /></Row>
     </Card>
   )
   return (
     <Pages id="toys">
-      {game('toyBasket', 'toyBasketMode', 'basket', 'Basketbol', 'Serbest atış ya da karşıda pota.', 'Serbest atışta imleç topun yanına gelince ele dönüşür: topu tutup fırlat. Karşıda pota modunda topu sapan gibi geri çekersin: çekişin uzunluğu gücü, yönü yüksekliği belirler. Potadan geçerse basket sayılır; üç sayı çizgisinin ötesinden atış üç sayı, hiçbir yere değmeden giren atış deliksiz.', (
+      {game('toyBasket', 'toyBasketMode', 'basket', t('Basketbol'), t('Serbest atış ya da karşıda pota.'), t('Serbest atışta imleç topun yanına gelince ele dönüşür: topu tutup fırlat. Karşıda pota modunda topu sapan gibi geri çekersin: çekişin uzunluğu gücü, yönü yüksekliği belirler. Potadan geçerse basket sayılır; üç sayı çizgisinin ötesinden atış üç sayı, hiçbir yere değmeden giren atış deliksiz.'), (
         <>
-          <Row label="Basketbol türü" hint="Serbest atış: topu tutup fırlatırsın. Karşıda pota: güç ve yükseklik çubuklarıyla nişan alırsın"><Segmented<'free' | 'far'> value={s.toyBasketStyle} onChange={(toyBasketStyle) => set({ toyBasketStyle })} options={[['free', 'Serbest atış'], ['far', 'Karşıda pota']]} /></Row>
-          {s.toyBasketStyle === 'far' && <Row label="Yol çizgisi" hint="Nişan alırken topun gideceği yolu noktalarla gösterir"><Switch label="Yol çizgisi" value={s.toyShotLine} onChange={(toyShotLine) => set({ toyShotLine })} /></Row>}
+          <Row label={t('Basketbol türü')} hint={t('Serbest atış: topu tutup fırlatırsın. Karşıda pota: güç ve yükseklik çubuklarıyla nişan alırsın')}><Segmented<'free' | 'far'> value={s.toyBasketStyle} onChange={(toyBasketStyle) => set({ toyBasketStyle })} options={[['free', t('Serbest atış')], ['far', t('Karşıda pota')]]} /></Row>
+          {s.toyBasketStyle === 'far' && <Row label={t('Yol çizgisi')} hint={t('Nişan alırken topun gideceği yolu noktalarla gösterir')}><Switch label={t('Yol çizgisi')} value={s.toyShotLine} onChange={(toyShotLine) => set({ toyShotLine })} /></Row>}
         </>
       ))}
-      {game('toyFootball', 'toyFootballMode', 'football', 'Futbol', 'Serbest oyun, serbest vuruş ya da top sektirme.', 'Serbest oyunda saha yukarıdan görünür: imleç topun yanına gelince krampona dönüşür, topa hızlıca vurup karşı kaleye sokarsın. Serbest vuruşta kale karşıda ve top her seferinde başka bir yerde: topu sapan gibi geri çek, yön ve gücü çekişin belirler; fare tekerleği topa falso (kavis) verir, kaleci çizgisinde yanlara kayarak durdurmaya çalışır. Top sektirmede topa tıkla, krampon sana geçer; topu yere düşürmeden havada tut, her vuruş bir puan.', (
+      {game('toyFootball', 'toyFootballMode', 'football', t('Futbol'), t('Serbest oyun, serbest vuruş ya da top sektirme.'), t('Serbest oyunda saha yukarıdan görünür: imleç topun yanına gelince krampona dönüşür, topa hızlıca vurup karşı kaleye sokarsın. Serbest vuruşta kale karşıda ve top her seferinde başka bir yerde: topu sapan gibi geri çek, yön ve gücü çekişin belirler; fare tekerleği topa falso (kavis) verir, kaleci çizgisinde yanlara kayarak durdurmaya çalışır. Top sektirmede topa tıkla, krampon sana geçer; topu yere düşürmeden havada tut, her vuruş bir puan.'), (
         <>
-          <Row label="Futbol türü" hint="Serbest oyun: iki kale, topa vur. Serbest vuruş: karşıda kale ve kaleci, top her seferinde başka yerde. Top sektirme: topu kramponla havada tut"><Segmented<'free' | 'penalty' | 'juggle'> value={s.toyFootballStyle} onChange={(toyFootballStyle) => set({ toyFootballStyle })} options={[['free', 'Serbest oyun'], ['penalty', 'Serbest vuruş'], ['juggle', 'Top sektirme']]} /></Row>
-          {(s.toyFootballStyle === 'free' || s.toyFootballStyle === 'penalty') && <Row label="Saha rengi saydamlığı" hint="0'da sahanın yeşili görünmez, yalnızca çizgiler ve kaleler kalır; masaüstün bütünüyle görünür"><Slider value={Math.round(s.toyPitchAlpha * 100)} min={0} max={80} step={1} unit=" %" onChange={(v) => set({ toyPitchAlpha: v / 100 })} /></Row>}
-          {(s.toyFootballStyle === 'free' || s.toyFootballStyle === 'penalty') && <Row label="Saha yönü" hint="Saha yukarıdan görünür, iki kale de tam görünür. Yatay: kaleler sol ve sağda. Dikey: biri altta, biri üstte"><Segmented<'horizontal' | 'vertical'> value={s.toyPitch} onChange={(toyPitch) => set({ toyPitch })} options={[['horizontal', 'Yatay'], ['vertical', 'Dikey']]} /></Row>}
-          {s.toyFootballStyle === 'penalty' && <Row label="Kaleci de sana atsın" hint="Sen attıktan sonra kaleci karşı kaleye şut çeker; imleçle kalenin önünde eldiven olarak savunursun"><Switch label="Kaleci sana da atsın" value={s.toyKeeperShoots} onChange={(toyKeeperShoots) => set({ toyKeeperShoots })} /></Row>}
+          <Row label={t('Futbol türü')} hint={t('Serbest oyun: iki kale, topa vur. Serbest vuruş: karşıda kale ve kaleci, top her seferinde başka yerde. Top sektirme: topu kramponla havada tut')}><Segmented<'free' | 'penalty' | 'juggle'> value={s.toyFootballStyle} onChange={(toyFootballStyle) => set({ toyFootballStyle })} options={[['free', t('Serbest oyun')], ['penalty', t('Serbest vuruş')], ['juggle', t('Top sektirme')]]} /></Row>
+          {(s.toyFootballStyle === 'free' || s.toyFootballStyle === 'penalty') && <Row label={t('Saha rengi saydamlığı')} hint={t('0\'da sahanın yeşili görünmez, yalnızca çizgiler ve kaleler kalır; masaüstün bütünüyle görünür')}><Slider value={Math.round(s.toyPitchAlpha * 100)} min={0} max={80} step={1} unit=" %" onChange={(v) => set({ toyPitchAlpha: v / 100 })} /></Row>}
+          {(s.toyFootballStyle === 'free' || s.toyFootballStyle === 'penalty') && <Row label={t('Saha yönü')} hint={t('Saha yukarıdan görünür, iki kale de tam görünür. Yatay: kaleler sol ve sağda. Dikey: biri altta, biri üstte')}><Segmented<'horizontal' | 'vertical'> value={s.toyPitch} onChange={(toyPitch) => set({ toyPitch })} options={[['horizontal', t('Yatay')], ['vertical', t('Dikey')]]} /></Row>}
+          {s.toyFootballStyle === 'penalty' && <Row label={t('Kaleci de sana atsın')} hint={t('Sen attıktan sonra kaleci karşı kaleye şut çeker; imleçle kalenin önünde eldiven olarak savunursun')}><Switch label={t('Kaleci sana da atsın')} value={s.toyKeeperShoots} onChange={(toyKeeperShoots) => set({ toyKeeperShoots })} /></Row>}
         </>
       ))}
-      {panelGame('toyPong', 'pong', 'Pong', 'Bilgisayara karşı klasik pong.', 'Tüm ekranda, futbol sahası gibi yarı saydam bir sahada oynanır: raketi farenle yönet, top her vuruşta hızlanır, ilk yedi sayıya ulaşan kazanır. Başlamak için ortadaki düğmeye tıkla; oyun sürerken masaüstün kullanılabilir kalır. Saha rengi saydamlığı Futbol kartındaki ayarla değişir.')}
-      {game('toyBounce', 'toyBounceMode', 'bounce', 'Top sektirme', 'Raketle tenis topunu havada tut.', 'Topa tıkla, havaya fırlasın; imleç yatay bir raket olur. Topu yere düşürmeden sektir, her vuruş bir puan. Top düşünce seri biter; sağ tık oyunu bırakır.')}
-      <Scores tab="Oyunlar" />
-      <Card icon="window" tab="Yerleşim" title="Pencere katmanı" hint="Oyunlar diğer pencerelerin üstünde mi dursun, onlar gibi davransın mı, yoksa masaüstü gibi altta mı kalsın.">
+      {panelGame('toyPong', 'pong', 'Pong', t('Bilgisayara karşı klasik pong.'), t('Tüm ekranda, futbol sahası gibi yarı saydam bir sahada oynanır: raketi farenle yönet, top her vuruşta hızlanır, ilk yedi sayıya ulaşan kazanır. Başlamak için ortadaki düğmeye tıkla; oyun sürerken masaüstün kullanılabilir kalır. Saha rengi saydamlığı Futbol kartındaki ayarla değişir.'))}
+      {game('toyBounce', 'toyBounceMode', 'bounce', t('Top sektirme'), t('Raketle tenis topunu havada tut.'), t('Topa tıkla, havaya fırlasın; imleç yatay bir raket olur. Topu yere düşürmeden sektir, her vuruş bir puan. Top düşünce seri biter; sağ tık oyunu bırakır.'))}
+      <Scores tab={t('Oyunlar')} />
+      <Card icon="window" tab={t('Yerleşim')} title={t('Pencere katmanı')} hint={t('Oyunlar diğer pencerelerin üstünde mi dursun, onlar gibi davransın mı, yoksa masaüstü gibi altta mı kalsın.')}>
         <Cards<DockLayer> size="s" value={s.toyLayer} onChange={(toyLayer) => set({ toyLayer })} options={[
-          { id: 'above', label: 'Üstte', hint: 'Hep önde', preview: <LayerPreview layer="above" /> },
-          { id: 'normal', label: 'Normal', hint: 'Pencereler kapatabilir', preview: <LayerPreview layer="normal" /> },
-          { id: 'below', label: 'Altta', hint: 'Masaüstü gibi', preview: <LayerPreview layer="below" /> },
+          { id: 'above', label: t('Üstte'), hint: t('Hep önde'), preview: <LayerPreview layer="above" /> },
+          { id: 'normal', label: t('Normal'), hint: t('Pencereler kapatabilir'), preview: <LayerPreview layer="normal" /> },
+          { id: 'below', label: t('Altta'), hint: t('Masaüstü gibi'), preview: <LayerPreview layer="below" /> },
         ]} />
       </Card>
-      <Card icon="location" tab="Yerleşim" title="Konum" hint="Oyunların bastığı zemin ve potanın yeri.">
-        <Row label="Zemin" hint="Dock altta ve açıksa 'Dock’un üstü' onun rafını zemin yapar"><Segmented value={s.toyFloor} onChange={(toyFloor) => set({ toyFloor })} options={[['dock', 'Dock’un üstü'], ['screen', 'Ekranın altı']]} /></Row>
-        <Row label="Pota" hint="Basketbol potasının durduğu kenar"><Segmented value={s.toyHoopSide} onChange={(toyHoopSide) => set({ toyHoopSide })} options={[['right', 'Sağda'], ['left', 'Solda']]} /></Row>
+      <Card icon="location" tab={t('Yerleşim')} title={t('Konum')} hint={t('Oyunların bastığı zemin ve potanın yeri.')}>
+        <Row label={t('Zemin')} hint={t('Dock altta ve açıksa \'Dock’un üstü\' onun rafını zemin yapar')}><Segmented value={s.toyFloor} onChange={(toyFloor) => set({ toyFloor })} options={[['dock', t('Dock’un üstü')], ['screen', t('Ekranın altı')]]} /></Row>
+        <Row label={t('Pota')} hint={t('Basketbol potasının durduğu kenar')}><Segmented value={s.toyHoopSide} onChange={(toyHoopSide) => set({ toyHoopSide })} options={[['right', t('Sağda')], ['left', t('Solda')]]} /></Row>
       </Card>
-      <Card icon="sound" tab="Oyunlar" title="Ses">
-        <Row label="İmleci göster" hint="Oyun sırasında Windows imleci raketin, elin ya da kramponun yanında da görünsün. Skor kartındaki düğmeyle de değişir"><Switch label="İmleci göster" value={s.toyShowCursor} onChange={(toyShowCursor) => set({ toyShowCursor })} /></Row>
-        <Row label="Oyun sesleri" hint="Top sekmesi, basket ve gol sesleri"><Switch label="Ses" value={s.toySound} onChange={(toySound) => set({ toySound })} /></Row>
+      <Card icon="sound" tab={t('Oyunlar')} title={t('Ses')}>
+        <Row label={t('İmleci göster')} hint={t('Oyun sırasında Windows imleci raketin, elin ya da kramponun yanında da görünsün. Skor kartındaki düğmeyle de değişir')}><Switch label={t('İmleci göster')} value={s.toyShowCursor} onChange={(toyShowCursor) => set({ toyShowCursor })} /></Row>
+        <Row label={t('Oyun sesleri')} hint={t('Top sekmesi, basket ve gol sesleri')}><Switch label={t('Ses')} value={s.toySound} onChange={(toySound) => set({ toySound })} /></Row>
       </Card>
     </Pages>
   )

@@ -17,6 +17,7 @@ import { getTheme, themeWallpaperFile } from './packs'
 import { LIVE_WALLPAPERS } from '../src/shared/types'
 import type { WallpaperSource, WallpaperInfo, WallpaperItem, WallpaperDraft, WallpaperPicked } from '../src/shared/types'
 
+import { t, locale } from '../src/i18n'
 export const IMAGE_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif'])
 export const VIDEO_EXT = new Set(['.mp4', '.webm', '.m4v'])
 const MAX_FOLDER_FILES = 400
@@ -92,7 +93,7 @@ function listFolder(folder: string): string[] {
     }
   }
   walk(folder, 1)
-  return out.sort((a, b) => a.localeCompare(b, 'tr', { numeric: true }))
+  return out.sort((a, b) => a.localeCompare(b, locale(), { numeric: true }))
 }
 
 /** The wallpaper the settings ask for right now (without advancing a slideshow). */
@@ -181,7 +182,7 @@ async function createWindow(display: Electron.Display) {
     // physical pixels, because the shell positions the window itself
     const px = screen.dipToScreenRect(win, win.getBounds())
     const ok = await helper.desktopAttach(handleOf(win), px.x, px.y, px.width, px.height).catch(() => false)
-    status = ok ? { attached: true, message: '' } : { attached: false, message: 'Masaüstü katmanına bağlanılamadı. Yardımcı programı yenilemek için uygulamayı kapatıp yeniden aç.' }
+    status = ok ? { attached: true, message: '' } : { attached: false, message: t('Masaüstü katmanına bağlanılamadı. Yardımcı programı yenilemek için uygulamayı kapatıp yeniden aç.') }
     if (!ok && !win.isDestroyed()) {
       win.destroy()
       windows.delete(display.id)
@@ -335,7 +336,7 @@ export function disposeWallpaper() {
 export async function pickWallpaperFile(): Promise<string | null> {
   const r = await dialog.showOpenDialog({
     properties: ['openFile'],
-    filters: [{ name: 'Resim ve video', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'gif', 'mp4', 'webm', 'm4v'] }],
+    filters: [{ name: t('Resim ve video'), extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'gif', 'mp4', 'webm', 'm4v'] }],
   })
   return r.canceled || !r.filePaths[0] ? null : r.filePaths[0]
 }
@@ -417,7 +418,7 @@ export function addWallpaper(draft: WallpaperDraft): WallpaperItem {
   const id = crypto.randomBytes(6).toString('hex')
   const base: StoredItem = {
     id,
-    name: clip(draft.name, 80) || 'Adsız duvar kâğıdı',
+    name: clip(draft.name, 80) || t('Adsız duvar kâğıdı'),
     author: clip(draft.author, 80),
     note: clip(draft.note, 400),
     kind: draft.kind,
@@ -426,12 +427,12 @@ export function addWallpaper(draft: WallpaperDraft): WallpaperItem {
   }
   if (draft.kind === 'scene') {
     const code = typeof draft.code === 'string' ? draft.code.slice(0, MAX_CODE) : ''
-    if (!code.trim()) throw new Error('Sahne kodu boş')
+    if (!code.trim()) throw new Error(t('Sahne kodu boş'))
     base.code = code
   } else {
     const src = draft.file ?? ''
     const kind = kindOf(src)
-    if (!kind || !fs.existsSync(src)) throw new Error('Dosya bulunamadı')
+    if (!kind || !fs.existsSync(src)) throw new Error(t('Dosya bulunamadı'))
     base.kind = kind
     base.stored = `${id}${path.extname(src).toLowerCase()}`
     fs.mkdirSync(path.join(libDir(), 'files'), { recursive: true })

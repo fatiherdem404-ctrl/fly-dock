@@ -5,6 +5,7 @@ import type { CSSProperties } from 'react'
 import type { DockItem, DockPosition, IndicatorStyle, LaunchAnimation } from '@/shared/types'
 import { playSound } from '@/sound'
 
+import { t } from '../i18n'
 interface DockIconProps {
   item: DockItem
   style: CSSProperties
@@ -24,7 +25,7 @@ interface DockIconProps {
 }
 
 export default function DockIcon({ item, style, iconSrc, running, launching, launchAnimation, indicator, position, showLabel, dragging, locked, onClick, onDragStart, onDragEnd, onContextMenu }: DockIconProps) {
-  const label = item.label ?? (item.type === 'trash' ? 'Çöp kutusu' : '')
+  const label = item.label ?? (item.type === 'trash' ? t('Çöp kutusu') : '')
   const labelRef = useRef<HTMLDivElement>(null)
   // A label wider than the room beside its icon is slid back inside the window instead of being cut off.
   useLayoutEffect(() => {

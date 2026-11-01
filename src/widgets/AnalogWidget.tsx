@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { WidgetOptions } from '@/shared/widgets'
 
+import { t } from '../i18n'
 /** Analog clock drawn in SVG: ticks, optional numbers, three hands; every colour comes from the theme. */
 export default function AnalogWidget({ options }: { options: WidgetOptions }) {
   const smooth = options.smooth !== false
@@ -27,7 +28,7 @@ export default function AnalogWidget({ options }: { options: WidgetOptions }) {
   })
   const labels = numbers === 'none' ? [] : (numbers === 'all' ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] : [12, 3, 6, 9])
   return (
-    <svg viewBox="0 0 200 200" className="wg-analog" role="img" aria-label="Analog saat">
+    <svg viewBox="0 0 200 200" className="wg-analog" role="img" aria-label={t('Analog saat')}>
       <circle cx="100" cy="100" r="96" className="wg-analog__face" />
       {ticks}
       {labels.map((n) => {

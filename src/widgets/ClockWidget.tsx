@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { WidgetOptions } from '@/shared/widgets'
 
+import { t, locale } from '../i18n'
 /** The date and time, refreshed every second (or every few seconds when the seconds are hidden). */
 export function useNow(everyMs: number): Date {
   const [now, setNow] = useState(new Date())
@@ -20,7 +21,7 @@ export default function ClockWidget({ options }: { options: WidgetOptions }) {
   const hour12 = !!options.hour12
   const h = hour12 ? now.getHours() % 12 || 12 : now.getHours()
   const pad = (n: number) => String(n).padStart(2, '0')
-  const date = now.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })
+  const date = now.toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' })
   return (
     <div className="wg-clock">
       <div className="wg-clock__time">
@@ -28,7 +29,7 @@ export default function ClockWidget({ options }: { options: WidgetOptions }) {
         <i className="wg-colon" style={{ opacity: seconds && now.getSeconds() % 2 ? 0.25 : 1 }}>:</i>
         <b>{pad(now.getMinutes())}</b>
         {seconds && <small>{pad(now.getSeconds())}</small>}
-        {hour12 && <em>{now.getHours() < 12 ? 'ÖÖ' : 'ÖS'}</em>}
+        {hour12 && <em>{now.getHours() < 12 ? t('ÖÖ') : t('ÖS')}</em>}
       </div>
       {options.date !== false && <div className="wg-clock__date">{date}</div>}
     </div>

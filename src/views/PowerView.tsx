@@ -6,12 +6,13 @@ import Icon, { IconName } from '@/icons'
 import type { DockSettings, PowerAction } from '@/shared/types'
 import { initSound, playSound } from '@/sound'
 
+import { t, locale } from '../i18n'
 const ACTIONS: { id: PowerAction; label: string; icon: IconName; confirm: boolean }[] = [
-  { id: 'lock', label: 'Kilitle', icon: 'lock', confirm: false },
-  { id: 'sleep', label: 'Uyku', icon: 'moon', confirm: false },
-  { id: 'logout', label: 'Oturumu kapat', icon: 'logout', confirm: true },
-  { id: 'restart', label: 'Yeniden başlat', icon: 'restart', confirm: true },
-  { id: 'shutdown', label: 'Kapat', icon: 'power', confirm: true },
+  { id: 'lock', label: t('Kilitle'), icon: 'lock', confirm: false },
+  { id: 'sleep', label: t('Uyku'), icon: 'moon', confirm: false },
+  { id: 'logout', label: t('Oturumu kapat'), icon: 'logout', confirm: true },
+  { id: 'restart', label: t('Yeniden başlat'), icon: 'restart', confirm: true },
+  { id: 'shutdown', label: t('Kapat||güç'), icon: 'power', confirm: true },
 ]
 
 /** Full-screen power menu. Anything that ends the session asks for a second click first. */
@@ -53,20 +54,20 @@ export default function PowerView() {
   }
 
   const hour = now.getHours()
-  const greeting = hour < 5 ? 'İyi geceler' : hour < 12 ? 'Günaydın' : hour < 18 ? 'İyi günler' : 'İyi akşamlar'
+  const greeting = hour < 5 ? t('İyi geceler') : hour < 12 ? t('Günaydın') : hour < 18 ? t('İyi günler') : t('İyi akşamlar')
   return (
     <div className={`power${blur ? ' power--blur' : ''}${closing ? ' power--closing' : ''}`} onMouseDown={(e) => e.target === e.currentTarget && close()}>
-      <div className="power__clock">{now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</div>
+      <div className="power__clock">{now.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}</div>
       <div className="power__greeting">{greeting}</div>
       <div className="power__row">
         {ACTIONS.map((a, i) => (
           <button key={a.id} className={`power__btn${armed === a.id ? ' power__btn--armed' : ''}${a.id === 'shutdown' ? ' power__btn--danger' : ''}`} style={{ animationDelay: `${60 + i * 45}ms` }} onClick={() => choose(a)}>
             <span><Icon name={a.icon} size={30} /></span>
-            <b>{armed === a.id ? 'Emin misin? Tekrar tıkla' : a.label}</b>
+            <b>{armed === a.id ? t('Emin misin? Tekrar tıkla') : a.label}</b>
           </button>
         ))}
       </div>
-      <div className="power__hint">Esc ile kapat</div>
+      <div className="power__hint">{t('Esc ile kapat')}</div>
     </div>
   )
 }

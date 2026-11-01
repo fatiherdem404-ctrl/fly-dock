@@ -10,6 +10,7 @@ import type {
 } from '@/shared/types'
 import { DeskCard } from './pages/DeskPage'
 
+import { t as tl } from '../i18n'
 /*
  * Small pictures that show what a setting does. They are drawn with CSS and SVG only, loop on their own, and cost
  * nothing to look at. Every one fits the same 16:10 frame (.pv).
@@ -85,7 +86,7 @@ export function SepPreview({ kind }: { kind: SeparatorStyle }) {
 export function LabelPreview({ mode }: { mode: LabelMode }) {
   return (
     <Frame>
-      <span className="pv-row"><Icn i={0} /><span className="pv-labelwrap"><Icn i={1} />{mode !== 'never' && <em className={`pv-tip pv-tip--${mode}`}>Chrome</em>}</span><Icn i={2} /></span>
+      <span className="pv-row"><Icn i={0} /><span className="pv-labelwrap"><Icn i={1} />{mode !== 'never' && <em className={`pv-tip pv-tip--${mode}`}>{tl('Chrome')}</em>}</span><Icn i={2} /></span>
     </Frame>
   )
 }
@@ -232,8 +233,8 @@ export function ThemeScene({ theme, hue }: { theme: ThemeDef; hue?: number }) {
       <span className="pv-scene__wall" style={wallStyle(live)}>
         {live && <LiveThumb id={live} hue={accentHue} className="pv-scene__live" />}
       </span>
-      <span className="pv-scene__shelf"><DeskCard style={(theme.desk?.deskStyle as DeskStyle | undefined) ?? 'glass'} length={Math.max(110, Math.round(width * 0.58))} label="Etiket" /></span>
-      <span className="pv-scene__panel"><b>Aa</b><i /></span>
+      <span className="pv-scene__shelf"><DeskCard style={(theme.desk?.deskStyle as DeskStyle | undefined) ?? 'glass'} length={Math.max(110, Math.round(width * 0.58))} label={tl('Etiket')} /></span>
+      <span className="pv-scene__panel"><b>{tl('Aa')}</b><i /></span>
     </span>
   )
 }

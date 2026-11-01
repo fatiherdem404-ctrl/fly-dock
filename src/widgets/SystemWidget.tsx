@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { invoke } from '@/api'
 
+import { t } from '../i18n'
 type Stats = { cpu: number; ram: number; disk: number; diskLabel: string }
 
 const R = 24
@@ -32,8 +33,8 @@ export default function SystemWidget() {
   }, [])
   return (
     <div className="wg-sys">
-      <Ring label="CPU" value={stats.cpu} tone={0} />
-      <Ring label="RAM" value={stats.ram} tone={1} />
+      <Ring label={t('CPU')} value={stats.cpu} tone={0} />
+      <Ring label={t('RAM')} value={stats.ram} tone={1} />
       <Ring label={stats.diskLabel} value={stats.disk} tone={2} />
     </div>
   )

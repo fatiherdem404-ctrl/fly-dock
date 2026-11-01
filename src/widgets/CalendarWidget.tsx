@@ -5,7 +5,8 @@ import Icon from '@/icons'
 import type { WidgetOptions } from '@/shared/widgets'
 import { useNow } from './ClockWidget'
 
-const DAYS = ['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pz']
+import { getLang, locale, t } from '../i18n'
+const DAYS = getLang() === 'tr' ? ['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pz'] : ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
 
 /** ISO week number (weeks start on Monday, week 1 holds the first Thursday). */
 function isoWeek(d: Date): number {
@@ -22,9 +23,9 @@ export default function CalendarWidget({ options }: { options: WidgetOptions; on
   if (options.view === 'day') {
     return (
       <div className="wg-day">
-        <div className="wg-day__week">{now.toLocaleDateString('tr-TR', { weekday: 'long' })}</div>
+        <div className="wg-day__week">{now.toLocaleDateString(locale(), { weekday: 'long' })}</div>
         <div className="wg-day__num">{now.getDate()}</div>
-        <div className="wg-day__month">{now.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })}</div>
+        <div className="wg-day__month">{now.toLocaleDateString(locale(), { month: 'long', year: 'numeric' })}</div>
       </div>
     )
   }
@@ -41,13 +42,13 @@ export default function CalendarWidget({ options }: { options: WidgetOptions; on
     <div className="wg-cal">
       <div className="wg-cal__head">
         <div>
-          <b>{shown.toLocaleDateString('tr-TR', { month: 'long' })}</b>
+          <b>{shown.toLocaleDateString(locale(), { month: 'long' })}</b>
           <span>{shown.getFullYear()}</span>
         </div>
         <div className="wg-cal__nav">
-          <button aria-label="Önceki ay" onClick={() => setShift((s) => s - 1)}><Icon name="arrowLeft" size={14} /></button>
-          <button aria-label="Bu ay" className={shift === 0 ? 'is-now' : ''} onClick={() => setShift(0)}><i /></button>
-          <button aria-label="Sonraki ay" onClick={() => setShift((s) => s + 1)}><Icon name="arrowRight" size={14} /></button>
+          <button aria-label={t('Önceki ay')} onClick={() => setShift((s) => s - 1)}><Icon name="arrowLeft" size={14} /></button>
+          <button aria-label={t('Bu ay')} className={shift === 0 ? 'is-now' : ''} onClick={() => setShift(0)}><i /></button>
+          <button aria-label={t('Sonraki ay')} onClick={() => setShift((s) => s + 1)}><Icon name="arrowRight" size={14} /></button>
         </div>
       </div>
       <div className={`wg-cal__grid${weekNumbers ? ' wg-cal__grid--weeks' : ''}`}>

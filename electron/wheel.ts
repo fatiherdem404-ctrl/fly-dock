@@ -11,6 +11,7 @@ import { store, getSettings } from './store'
 import { packWheelIcon } from './packs'
 import type { WheelEntry } from '../src/shared/types'
 
+import { t } from '../src/i18n'
 type Launch =
   | { kind: 'control'; file: string }
   | { kind: 'uri'; uri: string }
@@ -24,27 +25,27 @@ interface CatalogEntry extends WheelEntry {
 const entry = (id: string, name: string, category: string, icon: string, launch: Launch): CatalogEntry => ({ id, name, category, icon, launch })
 
 export const CATALOG: CatalogEntry[] = [
-  entry('apps', 'Programlar ve Özellikler', 'Sistem', 'apps', { kind: 'control', file: 'appwiz.cpl' }),
-  entry('system', 'Sistem özellikleri', 'Sistem', 'chip', { kind: 'control', file: 'sysdm.cpl' }),
-  entry('power', 'Güç seçenekleri', 'Sistem', 'battery', { kind: 'control', file: 'powercfg.cpl' }),
-  entry('datetime', 'Tarih ve saat', 'Sistem', 'clock', { kind: 'control', file: 'timedate.cpl' }),
-  entry('mouse', 'Fare', 'Sistem', 'cursor', { kind: 'control', file: 'main.cpl' }),
-  entry('controlpanel', 'Denetim Masası', 'Sistem', 'settings', { kind: 'exe', file: 'control.exe' }),
-  entry('sound', 'Ses', 'Donanım', 'sound', { kind: 'control', file: 'mmsys.cpl' }),
-  entry('display', 'Ekran', 'Donanım', 'monitor', { kind: 'uri', uri: 'ms-settings:display' }),
-  entry('bluetooth', 'Bluetooth', 'Donanım', 'bluetooth', { kind: 'uri', uri: 'ms-settings:bluetooth' }),
-  entry('devices', 'Aygıt Yöneticisi', 'Donanım', 'chip', { kind: 'msc', file: 'devmgmt.msc' }),
-  entry('network', 'Ağ bağlantıları', 'Ağ', 'network', { kind: 'control', file: 'ncpa.cpl' }),
-  entry('wifi', 'Wi-Fi', 'Ağ', 'wifi', { kind: 'uri', uri: 'ms-settings:network-wifi' }),
-  entry('apps-settings', 'Uygulamalar (Ayarlar)', 'Ayarlar', 'apps', { kind: 'uri', uri: 'ms-settings:appsfeatures' }),
-  entry('personalize', 'Kişiselleştirme', 'Ayarlar', 'theme', { kind: 'uri', uri: 'ms-settings:personalization' }),
-  entry('startup', 'Başlangıç uygulamaları', 'Ayarlar', 'play', { kind: 'uri', uri: 'ms-settings:startupapps' }),
-  entry('storage', 'Depolama', 'Ayarlar', 'disk', { kind: 'uri', uri: 'ms-settings:storagesense' }),
-  entry('taskmgr', 'Görev Yöneticisi', 'Araçlar', 'chip', { kind: 'exe', file: 'taskmgr.exe' }),
-  entry('disks', 'Disk Yönetimi', 'Araçlar', 'disk', { kind: 'msc', file: 'diskmgmt.msc' }),
-  entry('services', 'Hizmetler', 'Araçlar', 'tools', { kind: 'msc', file: 'services.msc' }),
-  entry('events', 'Olay Görüntüleyici', 'Araçlar', 'list', { kind: 'msc', file: 'eventvwr.msc' }),
-  entry('computer', 'Bilgisayar Yönetimi', 'Araçlar', 'tools', { kind: 'msc', file: 'compmgmt.msc' }),
+  entry('apps', t('Programlar ve Özellikler'), t('Sistem'), 'apps', { kind: 'control', file: 'appwiz.cpl' }),
+  entry('system', t('Sistem özellikleri'), t('Sistem'), 'chip', { kind: 'control', file: 'sysdm.cpl' }),
+  entry('power', t('Güç seçenekleri'), t('Sistem'), 'battery', { kind: 'control', file: 'powercfg.cpl' }),
+  entry('datetime', t('Tarih ve saat'), t('Sistem'), 'clock', { kind: 'control', file: 'timedate.cpl' }),
+  entry('mouse', t('Fare'), t('Sistem'), 'cursor', { kind: 'control', file: 'main.cpl' }),
+  entry('controlpanel', t('Denetim Masası'), t('Sistem'), 'settings', { kind: 'exe', file: 'control.exe' }),
+  entry('sound', t('Ses'), t('Donanım'), 'sound', { kind: 'control', file: 'mmsys.cpl' }),
+  entry('display', t('Ekran'), t('Donanım'), 'monitor', { kind: 'uri', uri: 'ms-settings:display' }),
+  entry('bluetooth', t('Bluetooth'), t('Donanım'), 'bluetooth', { kind: 'uri', uri: 'ms-settings:bluetooth' }),
+  entry('devices', t('Aygıt Yöneticisi'), t('Donanım'), 'chip', { kind: 'msc', file: 'devmgmt.msc' }),
+  entry('network', t('Ağ bağlantıları'), t('Ağ'), 'network', { kind: 'control', file: 'ncpa.cpl' }),
+  entry('wifi', t('Wi-Fi'), t('Ağ'), 'wifi', { kind: 'uri', uri: 'ms-settings:network-wifi' }),
+  entry('apps-settings', t('Uygulamalar (Ayarlar)'), t('Ayarlar'), 'apps', { kind: 'uri', uri: 'ms-settings:appsfeatures' }),
+  entry('personalize', t('Kişiselleştirme'), t('Ayarlar'), 'theme', { kind: 'uri', uri: 'ms-settings:personalization' }),
+  entry('startup', t('Başlangıç uygulamaları'), t('Ayarlar'), 'play', { kind: 'uri', uri: 'ms-settings:startupapps' }),
+  entry('storage', t('Depolama'), t('Ayarlar'), 'disk', { kind: 'uri', uri: 'ms-settings:storagesense' }),
+  entry('taskmgr', t('Görev Yöneticisi'), t('Araçlar'), 'chip', { kind: 'exe', file: 'taskmgr.exe' }),
+  entry('disks', t('Disk Yönetimi'), t('Araçlar'), 'disk', { kind: 'msc', file: 'diskmgmt.msc' }),
+  entry('services', t('Hizmetler'), t('Araçlar'), 'tools', { kind: 'msc', file: 'services.msc' }),
+  entry('events', t('Olay Görüntüleyici'), t('Araçlar'), 'list', { kind: 'msc', file: 'eventvwr.msc' }),
+  entry('computer', t('Bilgisayar Yönetimi'), t('Araçlar'), 'tools', { kind: 'msc', file: 'compmgmt.msc' }),
 ]
 
 const DEFAULT_HIDDEN = ['computer', 'events', 'storage']
@@ -97,7 +98,7 @@ export function setWheelIconFile(id: string, file: string | null): { ok: boolean
 export function wheelEntries(): { entries: WheelEntry[]; hidden: string[] } {
   const { hidden, order, custom, icons } = wheelState()
   const byId = new Map<string, WheelEntry>(CATALOG.map(({ launch: _launch, ...view }) => [view.id, view]))
-  for (const c of custom) byId.set(c.id, { id: c.id, name: c.name, category: 'Eklediklerim', icon: 'folder', path: c.path })
+  for (const c of custom) byId.set(c.id, { id: c.id, name: c.name, category: t('Eklediklerim'), icon: 'folder', path: c.path })
   const entries = order.map((id) => byId.get(id)).filter((e): e is WheelEntry => !!e).map((e) => {
     if (icons[e.id]) return { ...e, iconFile: icons[e.id] }
     const packIcon = packWheelIcon(getSettings().iconPack, e.id)

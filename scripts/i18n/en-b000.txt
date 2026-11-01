@@ -1,0 +1,208 @@
+0|Brand logos
+1|Card colour
+2|SVG code
+3|Position, icons, labels and behaviour
+4|Shelf and surface
+5|The shelf the icons stand on: material, depth, corners
+6|Colours, glass, font, and the matching shelf and background
+7|Live backgrounds, pictures, video and slideshow
+8|Change the icons of programs all at once
+9|Icon studio
+10|Design your own icon pack with cards, colour and depth
+11|Cursors
+12|Replace the mouse cursors with a pack
+13|Animations
+14|Speed, motion, opening and window effects
+15|Size and position of the folder, group and control panel window
+16|Click, opening and window sounds
+17|Items
+18|The programs and shortcuts in the dock
+19|A quick-access list for Windows settings and tools
+20|Widgets
+21|Clock, calendar, weather and more, matching your theme
+22|Mini games
+23|Basketball, football, juggling and pong played on the desktop
+24|Safe, reversible Windows settings
+25|Startup, backup and about
+26|Content
+27|Windows’ own cursors
+28|Nothing changes
+29|{length} cursors · {author}
+30|Bottom left
+31|On top
+32|Always in front
+33|Normal
+34|Windows can cover it
+35|Behind
+36|Like the desktop
+37|Spring
+38|No overshoot, lively
+39|Bouncy spring
+40|Overshoots and settles back
+41|Slow at the start and end
+42|Constant speed
+43|Grow
+44|The icon grows
+45|Lift
+46|The icon lifts off the shelf
+47|Wave
+48|Grows and lifts
+49|Bounce
+50|Hops twice
+51|Jump
+52|A single hop
+53|Light pulse
+54|Glows and grows
+55|None
+56|Dot
+57|Bar
+58|Glow
+59|Ring
+60|Slide
+61|Fade
+62|Scale
+63|Genie
+64|Flows out of the icon and back in
+65|This picture could not be read or is too big (2 MB at most).
+66|Confirmation windows
+67|Settings and notifications
+68|Delete (poof)
+69|Dock appears
+70|Dock disappears
+71|The “{name}” pack was created{v1}: {length} icons.
+72|Single colour
+73|Dock background
+74|Accent colour
+75|Off
+76|Windows’ own wallpaper stays
+77|From the theme
+78|The selected theme’s background; it changes when the theme changes
+79|I’ll choose
+80|Live background, picture or video
+81|Pictures and videos change at set intervals
+82|Digital clock
+83|A clock with big digits, and the date
+84|Hour hand, minute hand and a seconds hand
+85|Calendar
+86|A month calendar or a big day card
+87|Weather
+88|The current temperature and conditions of a city
+89|Rings for processor, memory and disk
+90|Media
+91|The playing track and playback buttons
+92|Battery percentage and charging state
+93|A sticky note on the desktop
+94|Glass
+95|Like the dock, the theme’s glass surface
+96|The flat colour of the settings window
+97|Accent
+98|In the theme’s accent colour
+99|Bare
+100|No card, just text
+101|Small
+102|Medium
+103|Full screen
+104|Work area
+105|Above the icon
+106|Anchored to the icon you clicked
+107|In the middle of the dock
+108|Anchored to the dock’s edge
+109|In the middle of the screen
+110|The middle of the work area
+111|At the pointer
+112|Where the pointer is
+113|Retro
+114|Bubble
+115|Paste the SVG code here.
+116|The code is too long.
+117|This is not valid SVG code. It must start with <svg …>.
+118|No shape to draw was found in the SVG.
+119|Documents (Turkish name)
+120|Videos (Turkish name)
+121|Notepad
+122|Dock preview
+123|Mac style
+124|3D button
+125|Paper
+126|steer the paddle with the mouse · first to 7 points wins
+127|points  ·  opponent {aiPts}
+128|Ready: click the START button
+129|points
+130|goals
+131|GOAL!
+132|SAVED!
+133|YOU SAVED IT!
+134|Partly cloudy
+135|Cloudy
+136|Foggy
+137|Drizzle
+138|Rainy
+139|Snowy
+140|Showers
+141|Snow showers
+142|Thunderstorm
+143|This pack has no cursor to apply
+144|This pack cannot be changed.
+145|The file could not be read.
+146|The pack is too big.
+147|This is not a cursor pack.
+148|There is no usable cursor picture in the pack.
+149|No cursor pictures named like arrow.png or link.png were found in the folder.
+150|Pack not found.
+151|Type the new name.
+152|Rename
+153|That name will not work
+154|Try again
+155|Could not be renamed
+156|Delete "{name}"?
+157|It moves to the recycle bin; you can get it back from there.
+158|Could not be deleted
+159|Type the name to show in the menu.
+160|Group
+161|{name} — Settings
+162|Show / hide the dock
+163|Quit {name}
+164|Empty the recycle bin?
+165|Everything in it is deleted permanently. This cannot be undone.
+166|Empty
+167|Programs
+168|All of them are already in the dock
+169|Undo all tweaks?
+170|Every Windows setting changed by {name} returns to its old value. Windows may ask for approval for those that need administrator rights.
+171|Undo
+172|The cursor pack is removed from this computer. If you have not exported it, you cannot get it back.
+173|The pack is removed from this computer. If you have not exported it, you cannot get it back.
+174|Restore the backup?
+175|Your current settings, dock items and widgets are replaced with those in the backup. The app restarts.
+176|Folders
+177|Other files
+178|Recycle Bin (empty)
+179|Recycle Bin (full)
+180|Control panel: {name}
+181|Give the pack a name.
+182|No picture was chosen for any item.
+183|No icons could be generated.
+184|Fly Default
+185|Give the theme a name.
+186|The picture is larger than 4 MB; choose a smaller one.
+187|Only PNG, JPEG and WebP pictures can be used.
+188|Show file extensions
+189|Explorer shows extensions such as .exe and .txt at the end of file names.
+190|Show hidden files
+191|Files and folders marked hidden are visible in Explorer.
+192|Classic right-click menu
+193|In Windows 11, opens the full menu without the "Show more options" step.
+194|Align the taskbar to the left
+195|Windows 11 taskbar icons sit on the left instead of the middle.
+196|Game Mode on
+197|While a game runs, Windows trims background work.
+198|Turn off the window minimise animation
+199|No animation plays when windows shrink and grow; the system feels a bit faster.
+200|Remove the startup delay
+201|Windows starts startup programs at sign-in without making them wait.
+202|Remove the shortcut arrow
+203|Hides the small arrow on shortcut icons. Asks for administrator approval.
+204|Turn off hibernation
+205|Deletes hiberfil.sys and frees a few GB on the disk; fast startup is turned off too. Asks for administrator approval.
+206|Could not connect to the desktop layer. To refresh the helper program, close the app and open it again.
+207|Picture and video

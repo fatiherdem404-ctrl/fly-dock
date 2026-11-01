@@ -119,7 +119,7 @@ try {
     await sleep(250)
   }
   const evalExpr = arg('eval')
-  if (evalExpr) console.log('EVAL:', JSON.stringify(await view.evaluate(evalExpr)).slice(0, 400))
+  if (evalExpr) { const r = await view.evaluate(evalExpr); if (arg('evalout')) writeFileSync(arg('evalout'), typeof r === 'string' ? r : JSON.stringify(r)); else console.log('EVAL:', JSON.stringify(r).slice(0, 400)) }
   await sleep(Number(arg('wait') ?? 900))
   const shot = await view.send('Page.captureScreenshot', { format: 'png' })
   writeFileSync(out, Buffer.from(shot.result.data, 'base64'))

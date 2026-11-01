@@ -6,6 +6,7 @@ import Icon from '@/icons'
 import { initSound, playSound } from '@/sound'
 import type { ConfirmRequest, DockSettings } from '@/shared/types'
 
+import { t } from '../i18n'
 /** The app's own confirmation window. Enter confirms, Esc cancels; dangerous questions default to Cancel. */
 export default function ConfirmView() {
   const query = new URLSearchParams(window.location.hash.split('?')[1] ?? '')
@@ -64,8 +65,8 @@ export default function ConfirmView() {
           {request.input && <input ref={inputRef} className="confirm__input" value={text} maxLength={200} spellCheck={false} onChange={(e) => setText(e.target.value)} />}
         </div>
         <div className="confirm__buttons">
-          <button ref={cancelRef} className="confirm__btn" onClick={() => answer(false)}>{request.cancelLabel ?? 'Vazgeç'}</button>
-          <button ref={okRef} className="confirm__btn confirm__btn--ok" onClick={() => answer(true)}>{request.confirmLabel ?? 'Tamam'}</button>
+          <button ref={cancelRef} className="confirm__btn" onClick={() => answer(false)}>{request.cancelLabel ?? t('Vazgeç')}</button>
+          <button ref={okRef} className="confirm__btn confirm__btn--ok" onClick={() => answer(true)}>{request.confirmLabel ?? t('Tamam')}</button>
         </div>
       </div>
     </div>

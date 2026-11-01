@@ -7,6 +7,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import crypto from 'node:crypto'
 
+import { t } from '../src/i18n'
 export const MAX_TEXTURE_BYTES = 4 * 1024 * 1024
 const NAME = /^[0-9a-f]{16}\.(png|jpg|webp)$/
 const MIME = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp' } as const
@@ -22,9 +23,9 @@ export function sniff(buf: Buffer): keyof typeof MIME | null {
 }
 
 export function storeTexture(buf: Buffer): { ok: boolean; file?: string; message: string } {
-  if (buf.length > MAX_TEXTURE_BYTES) return { ok: false, message: 'Resim 4 MB’tan büyük; daha küçük bir resim seç.' }
+  if (buf.length > MAX_TEXTURE_BYTES) return { ok: false, message: t('Resim 4 MB’tan büyük; daha küçük bir resim seç.') }
   const kind = sniff(buf)
-  if (!kind) return { ok: false, message: 'Yalnızca PNG, JPEG ve WebP resimler kullanılabilir.' }
+  if (!kind) return { ok: false, message: t('Yalnızca PNG, JPEG ve WebP resimler kullanılabilir.') }
   const file = `${crypto.createHash('sha1').update(buf).digest('hex').slice(0, 16)}.${kind}`
   fs.mkdirSync(dir(), { recursive: true })
   fs.writeFileSync(path.join(dir(), file), buf)
@@ -56,7 +57,7 @@ export function removeTexture(file: string) {
 }
 
 export async function pickTexture(): Promise<{ ok: boolean; file?: string; message: string }> {
-  const result = await dialog.showOpenDialog({ properties: ['openFile'], filters: [{ name: 'Resim', extensions: ['png', 'jpg', 'jpeg', 'webp'] }] })
+  const result = await dialog.showOpenDialog({ properties: ['openFile'], filters: [{ name: t('Resim'), extensions: ['png', 'jpg', 'jpeg', 'webp'] }] })
   if (result.canceled || !result.filePaths[0]) return { ok: false, message: 'cancelled' }
   try {
     return storeTexture(fs.readFileSync(result.filePaths[0]))

@@ -1,0 +1,260 @@
+400|Frame visibility
+401|Shadow blur
+402|Shadow offset downward
+403|Shadow darkness
+404|Shadow colour
+405|Icon outline
+406|Start colour
+407|End colour
+408|Line thickness
+409|Line shadow
+410|Neon glow
+411|Colour variety
+412|Each icon’s colour turns a bit further around the wheel; 0 makes them all the same
+413|Create the pack
+414|{length} icons are written as 256 px PNG files into a separate icon pack; you can export it afterwards from the Icon packs page.
+415|Add cards for missing programs
+416|Programs that have no picture in the pack (Photoshop, WhatsApp…) get their own icon placed inside this card. Preview at the end of the Programs tab
+417|Program icon size
+418|Use it when done
+419|Generating…
+420|Reset settings
+421|Strong
+422|Segoe UI (default)
+423|=
+424|=
+425|=
+426|=
+427|Glass or flat colour behind the icons
+428|Dock border
+429|Thin frame
+430|Buttons, selected items, the settings window
+431|Running app mark
+432|The dot under the icon
+433|Label and menu background
+434|Right-click menu, icon label, folder window
+435|Label and menu text
+436|Settings window background
+437|Settings window text
+438|Faded text
+439|Descriptions and secondary text
+440|"{message}" was created and is in use. To export it, use the list in the Themes tab.
+441|Take a theme as a starting point and change its colours and glass; you see the result live on the left. When done, type a name and create it: it is added to your theme list, and you can export it from there as a .flypack file.
+442|Starting theme
+443|Label
+444|Settings window
+445|Faded description text
+446|Button
+447|Open
+448|Settings
+449|Glass blur
+450|0 = flat colour
+451|Shadow
+452|Also add the current shelf
+453|The shelf’s style, depth, corners and custom texture are saved with the theme; choosing the theme changes the shelf too
+454|Add the shelf too
+455|Add the wallpaper too
+456|The selected live background, picture or video (up to 8 MB) is saved with the theme
+457|Theme name
+458|My theme
+459|Create the theme and use it
+460|Click a card once: colours, glass, font, shelf and background switch to that theme. The picture shows how the theme will look on your desktop.
+461|Apply the shelf too when choosing a theme
+462|When off, only the colours change and your shelf stays as it is
+463|Apply the theme’s shelf
+464|Icon packs
+465|Changes the icons of programs all at once. Clicking a card makes the dock icons come from that pack.
+466|Your scores
+467|In timed mode a round is 60 seconds: it starts with your first touch of the ball, and your record is saved when time is up. In free mode a record is kept only for the juggling streak. It stays even if you close and reopen the app.
+468|Basketball record (60 s)
+469|total
+470|Football record (60 s)
+471|Football juggling record (60 s)
+472|longest streak
+473|Pong wins
+474|matches won
+475|Juggling record (60 s)
+476|Reset scores
+477|{title} on
+478|Mode
+479|Free: just play, a counter is kept. Timed: the highest score in 60 seconds; the record is saved.
+480|Free
+481|Timed
+482|Basketball
+483|Free throw or a hoop on the far side.
+484|In free throw the pointer turns into a hand when it reaches the ball: grab the ball and throw it. With the hoop on the far side you pull the ball back like a slingshot: the length of the pull sets the power and its direction sets the height. If it goes through the hoop it counts as a basket; a shot from beyond the three-point line is three points, and one that touches nothing is a swish.
+485|Basketball type
+486|Free throw: you grab and throw the ball. Hoop on the far side: you aim with the power and height bars
+487|Free throw
+488|Hoop on the far side
+489|Path line
+490|Shows the path the ball will take as dots while you aim
+491|Football
+492|Free play, free kick or juggling.
+493|In free play the pitch is seen from above: the pointer turns into a boot when it reaches the ball, and you hit the ball hard into the far goal. In a free kick the goal is on the far side and the ball is somewhere different each time: pull the ball back like a slingshot, your pull sets direction and power; the mouse wheel adds curve, and the goalkeeper slides sideways along the line to stop it. In juggling, click the ball and the boot is yours; keep it in the air without letting it touch the ground, every touch is a point.
+494|Football type
+495|Free play: two goals, hit the ball. Free kick: a goal and a goalkeeper on the far side, the ball somewhere different each time. Juggling: keep the ball in the air with the boot
+496|Free play
+497|Free kick
+498|Juggling
+499|Pitch colour opacity
+500|At 0 the green of the pitch is not visible, only the lines and goals remain; your desktop shows through completely
+501|Pitch direction
+502|The pitch is seen from above and both goals are fully visible. Horizontal: goals on the left and right. Vertical: one at the bottom, one at the top
+503|The goalkeeper shoots at you too
+504|After you shoot, the goalkeeper shoots at the far goal; you defend in front of your goal with the pointer as a glove
+505|The goalkeeper shoots at you too
+506|Classic pong against the computer.
+507|Played on the whole screen on a translucent pitch like a football field: steer the paddle with the mouse, the ball speeds up with every hit, and the first to reach seven points wins. Click the button in the middle to start; your desktop stays usable while the game runs. The pitch colour opacity changes with the setting on the Football card.
+508|Keep the tennis ball in the air with a racket.
+509|Click the ball to launch it; the pointer becomes a horizontal racket. Bounce the ball without letting it fall, every hit is a point. When the ball drops the streak ends; right-click leaves the game.
+510|Window layer
+511|Whether the games stay on top of other windows, behave like them, or stay underneath like the desktop.
+512|The floor the games bounce on and where the hoop is.
+513|Floor
+514|When the dock is at the bottom and visible, 'Top of the dock' uses its shelf as the floor
+515|Top of the dock
+516|Bottom of the screen
+517|Hoop
+518|The edge of the screen where the basketball hoop stands
+519|On the right
+520|Sound
+521|Show the pointer
+522|While playing, the Windows pointer also stays visible next to the racket, hand or boot. The button on the score card changes it too
+523|Game sounds
+524|Ball bounce, basket and goal sounds
+525|Takes effect when Explorer restarts
+526|Takes effect after signing out and back in
+527|Could not apply: {message}
+528|Safe settings
+529|Most settings only change the current user’s registry (HKCU). The old value is stored before a change, and turning a setting off brings that exact value back.
+530|Settings that need administrator rights ask for administrator approval (Windows’ own approval window opens); the app itself never runs as administrator. There are no settings yet that turn off services (SysMain, telemetry, Windows Search). Defender, Windows Update, the firewall and user accounts are never touched.
+531|{name} · administrator
+532|A restore point was created.
+533|No approval was given, so no point was created.
+534|Could not be created: {message} (System Restore may be off; Windows allows only one point a day)
+535|Create a restore point
+536|Restart Explorer
+537|Undo everything
+538|Change log
+539|turned on
+540|undone
+541|Fit
+542|Tile
+543|Once a day
+544|Wallpaper
+545|The wallpaper is shown behind the desktop icons without writing anything to Windows. When you close the app, your own wallpaper comes back.
+546|The “{name}” theme brings a live background: {v1}.
+547|The “{name}” theme does not bring a background, or brings it as a picture or video; otherwise your desktop stays as it is.
+548|Ready-made live backgrounds
+549|Choose one of the ready scenes; they all react to the pointer and to clicks.
+550|My library
+551|The pictures, videos and scenes you wrote yourself stay here under their names. Files are copied to the app’s own folder; your original file is never touched.
+552|The pictures and videos in the folder (and one subfolder down) change into each other at set intervals, in shuffled order.
+553|Choose another folder…
+554|Choose a folder…
+555|Change interval
+556|Shuffled order
+557|When off, in file name order
+558|Change now
+559|Go to the next one
+560|Layout and saving power
+561|Picture layout
+562|Pause for full-screen apps
+563|While a game or video is full screen the background does not run and does not strain the processor
+564|Pause in full screen
+565|React to the pointer
+566|Animated backgrounds follow the pointer: stars link up, waves swell, bubbles flee
+567|Pointer reaction
+568|Animated background speed
+569|Scenes you write in code are drawn at this speed. A low speed relieves the processor, the graphics card and the fans
+570|30 frames (recommended)
+571|Pause on battery
+572|The animated background pauses while a laptop runs on battery
+573|Paused right now.
+574|Running.
+575|No background.
+576|Control panel
+577|This list opens when you right-click the dock and choose 'Add control panel'. You can turn Windows’ own tools on and off, add your own programs, files and folders, and give each the icon you like.
+578|Add a program or file…
+579|Reset icon
+580|Default icon
+581|Up
+582|Down
+583|Remove from the list
+584|Show seconds
+585|Seconds
+586|12-hour format
+587|AM / PM
+588|12 hours
+589|Show the date
+590|Date
+591|Seconds hand
+592|Smooth motion
+593|When off, the seconds hand ticks
+594|Numbers
+595|All
+596|Day card
+597|Week numbers
+598|City
+599|Type a name; it updates when you leave the field
+600|=
+601|Add a widget
+602|Each widget sits on the desktop as a free window; you move it by dragging. The previews are real and live; their colours come from the selected theme.
+603|Preview style
+604|A widget you add starts with this style; you can change it later
+605|” was added to the desktop. See the “Added” tab to edit it.
+606|Added
+607|Added ({length})
+608|The widgets on the desktop. You change their style, size and details here.
+609|No widgets yet. Choose one from the “Add” tab.
+610|Style
+611|The size of the dock window that opens when you click a folder or group. If you drag the window larger by its edge, the size is remembered as 'Custom'.
+612|Width
+613|Where it opens
+614|Where on the screen the folder, group and control panel window opens. The opening effect always starts from where the icon is.
+615|How it works
+616|Right-click a folder in the dock and choose
+617|Show as stack
+618|or, for an app group, choose
+619|New group
+620|— the window grows open from the icon when you click it. Drag it by the title bar to move it and resize it from the edges. Right-clicking an item inside opens a menu like the one in Windows.
+621|Esc
+622|or clicking outside closes it; it shrinks back into its icon as it closes.
+623|=
+624|=
+625|Search settings…  (Ctrl+F)
+626|No matching settings
+627|Minimise
+628|=
+629|=
+630|Show
+631|Hide
+632|Picture
+633|Video
+634|Code scene
+635|File not found
+636|Use {name} as the wallpaper
+637|Delete?
+638|Edit name and details
+639|Edit
+640|Delete from library
+641|Add a wallpaper…
+642|Write your own scene…
+643|The file in use is not in the library and has no name:
+644|Give it a name and add it to the library
+645|The library is empty. You can add pictures or videos, or write your own animated background in JavaScript; what you add stays here under its name, and you can change or delete it whenever you like.
+646|Entry not found
+647|Could not be saved
+648|Edit wallpaper
+649|Add wallpaper
+650|Choose a picture or video
+651|=
+652|Another file…
+653|Picture / video
+654|Name
+655|For example: City at night
+656|Made by
+657|(optional)
+658|Note
+659|Code

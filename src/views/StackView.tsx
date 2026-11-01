@@ -6,8 +6,9 @@ import Icon from '@/icons'
 import DockWindow from '@/components/DockWindow'
 import type { DockSettings, StackEntry, StackSort, StackView as ViewMode } from '@/shared/types'
 
-const VIEWS: [ViewMode, string][] = [['xl', 'Çok büyük simgeler'], ['large', 'Büyük simgeler'], ['medium', 'Orta simgeler'], ['small', 'Küçük simgeler'], ['list', 'Liste'], ['details', 'Ayrıntılar']]
-const SORTS: [StackSort, string][] = [['name', 'Ad'], ['date', 'Değişiklik tarihi'], ['size', 'Boyut'], ['type', 'Tür']]
+import { t as tl, getLang, locale } from '../i18n'
+const VIEWS: [ViewMode, string][] = [['xl', tl('Çok büyük simgeler')], ['large', tl('Büyük simgeler')], ['medium', tl('Orta simgeler')], ['small', tl('Küçük simgeler')], ['list', tl('Liste')], ['details', tl('Ayrıntılar')]]
+const SORTS: [StackSort, string][] = [['name', tl('Ad')], ['date', tl('Değişiklik tarihi')], ['size', tl('Boyut')], ['type', tl('Tür')]]
 /** Edge of the picture in px for each view, and how sharp a preview to ask the shell for. */
 const ICON_PX: Record<ViewMode, number> = { xl: 112, large: 80, medium: 48, small: 32, list: 22, details: 20 }
 const PREVIEW_EXT = /^(png|jpe?g|gif|bmp|webp|tiff?|heic|avif|mp4|mkv|avi|mov|wmv|webm|pdf|svg|ico)$/
@@ -32,7 +33,7 @@ function StackIcon({ entry, view }: { entry: StackEntry; view: ViewMode }) {
 }
 
 function kindOf(e: StackEntry) {
-  return e.isDirectory ? 'Klasör' : e.ext ? `${e.ext.toUpperCase()} dosyası` : 'Dosya'
+  return e.isDirectory ? tl('Klasör') : e.ext ? tl('{v0} dosyası', { v0: e.ext.toUpperCase() }) : tl('Dosya')
 }
 
 function sizeText(bytes: number) {
@@ -53,8 +54,8 @@ function sorted(entries: StackEntry[], by: StackSort, desc: boolean): StackEntry
     switch (by) {
       case 'date': return a.mtime - b.mtime
       case 'size': return a.size - b.size
-      case 'type': return a.ext.localeCompare(b.ext) || a.name.localeCompare(b.name, 'tr')
-      default: return a.name.localeCompare(b.name, 'tr', { numeric: true })
+      case 'type': return a.ext.localeCompare(b.ext) || a.name.localeCompare(b.name, locale())
+      default: return a.name.localeCompare(b.name, locale(), { numeric: true })
     }
   }
   // folders always come first, like in Explorer
@@ -84,37 +85,37 @@ export default function StackView({ itemId }: { itemId: string }) {
   useEffect(() => searchRef.current?.focus(), [])
   const all = useMemo(() => (entries ? sorted(entries, by, desc) : null), [entries, by, desc])
   const list = useMemo(() => {
-    const q = query.trim().toLocaleLowerCase('tr')
-    return all && q ? all.filter((e) => e.name.toLocaleLowerCase('tr').includes(q)) : all
+    const q = query.trim().toLocaleLowerCase(getLang())
+    return all && q ? all.filter((e) => e.name.toLocaleLowerCase(getLang()).includes(q)) : all
   }, [all, query])
   const totalBytes = useMemo(() => (list ?? []).reduce((sum, e) => sum + (e.isDirectory ? 0 : e.size), 0), [list])
   const rows = view === 'list' || view === 'details'
 
   const open = (entry: StackEntry) => invoke('stack:open', entry.path)
-  const title = decodeURIComponent(new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('t') ?? '') || 'Klasör'
+  const title = decodeURIComponent(new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('t') ?? '') || tl('Klasör')
   const toolbar = (
     <>
       <label className="dw__search">
         <Icon name="search" size={14} />
-        <input ref={searchRef} value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Bu klasörde ara…" spellCheck={false}
+        <input ref={searchRef} value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tl('Bu klasörde ara…')} spellCheck={false}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && list?.[0]) open(list[0])
           }} />
       </label>
-      <select className="stack__select" aria-label="Görünüm" value={view} onChange={(e) => change({ stackView: e.target.value as ViewMode })}>
+      <select className="stack__select" aria-label={tl('Görünüm')} value={view} onChange={(e) => change({ stackView: e.target.value as ViewMode })}>
         {VIEWS.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
       </select>
-      <select className="stack__select" aria-label="Sırala" value={by} onChange={(e) => change({ stackSort: e.target.value as StackSort })}>
-        {SORTS.map(([v, label]) => <option key={v} value={v}>Sırala: {label}</option>)}
+      <select className="stack__select" aria-label={tl('Sırala')} value={by} onChange={(e) => change({ stackSort: e.target.value as StackSort })}>
+        {SORTS.map(([v, label]) => <option key={v} value={v}>{tl('Sırala:')} {label}</option>)}
       </select>
-      <button className="stack__tool" aria-label={desc ? 'Azalan sıra' : 'Artan sıra'} title={desc ? 'Azalan' : 'Artan'} onClick={() => change({ stackDesc: !desc })}>
+      <button className="stack__tool" aria-label={desc ? tl('Azalan sıra') : tl('Artan sıra')} title={desc ? tl('Azalan') : tl('Artan')} onClick={() => change({ stackDesc: !desc })}>
         <Icon name={desc ? 'arrowDown' : 'arrowUp'} size={14} />
       </button>
     </>
   )
   const footer = list && (
     <>
-      <span>{query.trim() ? `${list.length} sonuç (${all?.length ?? 0} öğe içinde)` : `${list.length} öğe`}</span>
+      <span>{query.trim() ? tl('{length} sonuç ({v1} öğe içinde)', { length: list.length, v1: all?.length ?? 0 }) : tl('{length} öğe', { length: list.length })}</span>
       <span>{totalBytes > 0 ? sizeText(totalBytes) : ''}</span>
     </>
   )
@@ -124,12 +125,12 @@ export default function StackView({ itemId }: { itemId: string }) {
         {list && list.length === 0 && (
           <div className="stack__empty">
             <Icon name="folder" size={28} />
-            <span>{query.trim() ? 'Aramayla eşleşen bir şey yok' : 'Burada henüz bir şey yok'}</span>
+            <span>{query.trim() ? tl('Aramayla eşleşen bir şey yok') : tl('Burada henüz bir şey yok')}</span>
           </div>
         )}
         {view === 'details' && list && list.length > 0 && (
           <div className="stack__head">
-            <span /><span>Ad</span><span>Tarih</span><span>Tür</span><span>Boyut</span>
+            <span /><span>{tl('Ad')}</span><span>{tl('Tarih')}</span><span>{tl('Tür')}</span><span>{tl('Boyut')}</span>
           </div>
         )}
         <div className={`stack__grid stack__grid--${view}`}>
@@ -139,7 +140,7 @@ export default function StackView({ itemId }: { itemId: string }) {
               <span className="stack__name">{entry.name}</span>
               {view === 'details' && (
                 <>
-                  <span className="stack__meta">{entry.mtime ? new Date(entry.mtime).toLocaleDateString('tr-TR') : ''}</span>
+                  <span className="stack__meta">{entry.mtime ? new Date(entry.mtime).toLocaleDateString(locale()) : ''}</span>
                   <span className="stack__meta">{kindOf(entry)}</span>
                   <span className="stack__meta stack__meta--num">{entry.isDirectory ? '' : sizeText(entry.size)}</span>
                 </>

@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 // The small self-contained games of the desktop toys (Pong, bowling, darts). Each one lives in a panel in the middle
@@ -66,7 +67,7 @@ export function panel(c: CanvasRenderingContext2D, a: Area, tint = 'rgba(14, 18,
 
 export function label(c: CanvasRenderingContext2D, text: string, x: number, y: number, size = 13, color = 'rgba(255,255,255,0.85)', weight = 600) {
   c.fillStyle = color
-  c.font = `${weight} ${size}px 'Segoe UI', system-ui, sans-serif`
+  c.font = t('{weight} {size}px \'Segoe UI\', system-ui, sans-serif', { weight, size })
   c.textAlign = 'center'
   c.textBaseline = 'middle'
   c.fillText(text, x, y)

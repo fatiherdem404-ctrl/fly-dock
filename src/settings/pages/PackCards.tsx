@@ -7,6 +7,7 @@ import { LIVE_WALLPAPERS, PackInfo, ThemeDef } from '@/shared/types'
 import { Message } from '../ui'
 import { ThemeScene } from '../previews'
 
+import { t as tl } from '../../i18n'
 // ---- Themes and icon packs, shown as cards with a picture of what they do ----
 
 const liveName = (id?: string) => LIVE_WALLPAPERS.find(([k]) => k === id)?.[1]
@@ -52,11 +53,11 @@ export function PackCards({ packs, activeId, onUse, type, onChanged }: { packs: 
       <div className="st-themecards">
         {type === 'icons' && (
           <div className="st-themecard" data-active={activeId === ''}>
-            <button className="st-themecard__pic" onClick={() => onUse('')} aria-label="Sistem simgelerini kullan">
+            <button className="st-themecard__pic" onClick={() => onUse('')} aria-label={tl('Sistem simgelerini kullan')}>
               <span className="st-iconstrip">{[0, 1, 2, 3].map((i) => <i key={i} />)}</span>
             </button>
-            <div className="st-themecard__title"><b>Sistem simgeleri</b>{activeId === '' && <span className="st-badge"><Icon name="check" size={11} />Kullanımda</span>}</div>
-            <small>Windows’un kendi simgeleri</small>
+            <div className="st-themecard__title"><b>{tl('Sistem simgeleri')}</b>{activeId === '' && <span className="st-badge"><Icon name="check" size={11} />{tl('Kullanımda')}</span>}</div>
+            <small>{tl('Windows’un kendi simgeleri')}</small>
           </div>
         )}
         {list.map((p) => {
@@ -64,28 +65,28 @@ export function PackCards({ packs, activeId, onUse, type, onChanged }: { packs: 
           const active = activeId === p.id
           return (
             <div key={p.id} className="st-themecard" data-active={active}>
-              <button className="st-themecard__pic" onClick={() => onUse(p.id)} aria-label={`${p.name} temasını kullan`}>
+              <button className="st-themecard__pic" onClick={() => onUse(p.id)} aria-label={tl('{name} temasını kullan', { name: p.name })}>
                 {type === 'theme' ? (theme ? <ThemeScene theme={theme} /> : <span className="pv" />) : <PackStrip name={p.name} />}
               </button>
               <div className="st-themecard__title">
                 <b>{p.name}</b>
-                {active && <span className="st-badge"><Icon name="check" size={11} />Kullanımda</span>}
+                {active && <span className="st-badge"><Icon name="check" size={11} />{tl('Kullanımda')}</span>}
               </div>
               <div className="st-badges">
-                <span className="st-badge st-badge--plain">{p.builtin ? 'Hazır' : p.author ?? 'Bilinmeyen yazar'}</span>
-                {p.hasDesk && <span className="st-badge"><Icon name="desk" size={11} />Raflı</span>}
-                {type === 'theme' && p.hasWallpaper && <span className="st-badge"><Icon name="image" size={11} />{liveName(theme?.wallpaper?.live) ?? 'Arka plan'}</span>}
+                <span className="st-badge st-badge--plain">{p.builtin ? tl('Hazır') : p.author ?? tl('Bilinmeyen yazar')}</span>
+                {p.hasDesk && <span className="st-badge"><Icon name="desk" size={11} />{tl('Raflı')}</span>}
+                {type === 'theme' && p.hasWallpaper && <span className="st-badge"><Icon name="image" size={11} />{liveName(theme?.wallpaper?.live) ?? tl('Arka plan')}</span>}
               </div>
               <div className="st-themecard__actions">
-                <button className="st-btn" onClick={() => onUse(p.id)} disabled={active}>{active ? 'Seçili' : 'Kullan'}</button>
-                <button className="st-btn" onClick={() => act(() => invoke('packs:export', p.id), 'Dışa aktarıldı')}><Icon name="upload" size={14} />Dışa aktar</button>
-                {!p.builtin && <button className="st-btn st-btn--danger" aria-label="Sil" onClick={() => invoke('packs:remove', p.id).then(onChanged)}><Icon name="trash" size={14} /></button>}
+                <button className="st-btn" onClick={() => onUse(p.id)} disabled={active}>{active ? tl('Seçili') : tl('Kullan')}</button>
+                <button className="st-btn" onClick={() => act(() => invoke('packs:export', p.id), tl('Dışa aktarıldı'))}><Icon name="upload" size={14} />{tl('Dışa aktar')}</button>
+                {!p.builtin && <button className="st-btn st-btn--danger" aria-label={tl('Sil')} onClick={() => invoke('packs:remove', p.id).then(onChanged)}><Icon name="trash" size={14} /></button>}
               </div>
             </div>
           )
         })}
       </div>
-      <div className="st-row-inline"><button className="st-btn st-btn--accent" onClick={() => act(() => invoke('packs:import'), 'İçe aktarıldı')}><Icon name="download" size={15} />Paket içe aktar (.flypack)</button></div>
+      <div className="st-row-inline"><button className="st-btn st-btn--accent" onClick={() => act(() => invoke('packs:import'), tl('İçe aktarıldı'))}><Icon name="download" size={15} />{tl('Paket içe aktar (.flypack)')}</button></div>
       {message && <Message text={message.text} error={message.error} />}
     </>
   )

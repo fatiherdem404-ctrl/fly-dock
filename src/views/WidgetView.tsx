@@ -6,6 +6,7 @@ import type { DockSettings, WidgetInstance } from '@/shared/types'
 import { WidgetFrame } from '@/widgets/frame'
 import Icon from '@/icons'
 
+import { t } from '../i18n'
 /** One desktop widget window: the widget's card, painted with the active theme. */
 export default function WidgetView({ widgetId }: { widgetId: string }) {
   const [widget, setWidget] = useState<WidgetInstance | null>(null)
@@ -24,7 +25,7 @@ export default function WidgetView({ widgetId }: { widgetId: string }) {
   return (
     <div className="wv">
       <WidgetFrame type={widget.type} options={widget.options} onOption={(key, value) => invoke('widgets:update', widget.id, { [key]: value })} />
-      <button className="wv__close" aria-label="Widget'ı kapat" title="Widget'ı kapat" onClick={() => invoke('widgets:remove', widget.id)}><Icon name="cross" size={12} /></button>
+      <button className="wv__close" aria-label={t('Widget\'ı kapat')} title={t('Widget\'ı kapat')} onClick={() => invoke('widgets:remove', widget.id)}><Icon name="cross" size={12} /></button>
     </div>
   )
 }

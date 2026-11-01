@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import type { Pointer } from '@/live'
 
+import { t as tl } from './i18n'
 /**
  * Runs a scene written by the user. The code lives in a sandboxed iframe (no same-origin, so it cannot reach the app,
  * Electron or the file system; it only gets a canvas), and talks to the page by messages: pointer, clicks, pause in,
@@ -152,5 +153,5 @@ export default function SceneFrame({ code, paused = false, fps = 30, pointer, on
     return () => clearInterval(timer)
   }, [pointer, paused, doc])
 
-  return <iframe ref={frame} className={className} title="Sahne" sandbox="allow-scripts" srcDoc={doc} style={{ border: 0, width: '100%', height: '100%', display: 'block' }} />
+  return <iframe ref={frame} className={className} title={tl('Sahne')} sandbox="allow-scripts" srcDoc={doc} style={{ border: 0, width: '100%', height: '100%', display: 'block' }} />
 }

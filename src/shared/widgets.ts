@@ -4,6 +4,7 @@
 // and the pages (which draw the widgets and their previews), so both always agree.
 import type { WidgetInstance, WidgetType } from './types'
 
+import { t } from '../i18n'
 export const WIDGET_TYPES: WidgetType[] = ['clock', 'analog', 'calendar', 'weather', 'system', 'media', 'battery', 'note']
 
 /** How a widget is painted. All of them use the active theme's colours. */
@@ -16,7 +17,7 @@ export const DEFAULT_WIDGET_OPTIONS: Record<WidgetType, WidgetOptions> = {
   clock: { seconds: false, hour12: false, date: true, style: 'glass', scale: 1 },
   analog: { seconds: true, numbers: 'quarters', smooth: true, style: 'glass', scale: 1 },
   calendar: { view: 'month', weekNumbers: false, style: 'glass', scale: 1 },
-  weather: { city: 'Istanbul', style: 'glass', scale: 1 },
+  weather: { city: t('Istanbul'), style: 'glass', scale: 1 },
   system: { style: 'glass', scale: 1 },
   media: { style: 'glass', scale: 1 },
   battery: { style: 'glass', scale: 1 },

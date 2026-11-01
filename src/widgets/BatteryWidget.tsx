@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
 import { useEffect, useState } from 'react'
 
+import { t } from '../i18n'
 interface BatteryManager extends EventTarget {
   level: number
   charging: boolean
@@ -37,7 +38,7 @@ export default function BatteryWidget() {
   const R = 38
   const C = 2 * Math.PI * R
   const low = pct <= 20 && !charging
-  const left = minutes === null ? '' : minutes >= 60 ? `${Math.floor(minutes / 60)} sa ${minutes % 60} dk` : `${minutes} dk`
+  const left = minutes === null ? '' : minutes >= 60 ? t('{v0} sa {v1} dk', { v0: Math.floor(minutes / 60), v1: minutes % 60 }) : `${minutes} dk`
   return (
     <div className="wg-bat">
       <div className="wg-bat__ring">
@@ -48,8 +49,8 @@ export default function BatteryWidget() {
         <b><span>{pct}<small>%</small></span></b>
       </div>
       <div className="wg-bat__text">
-        <b>{charging ? 'Şarj oluyor' : level === null ? 'Pil' : 'Pilde'}</b>
-        <span>{charging ? (left ? `Dolmasına ${left}` : 'Prize takılı') : left ? `Yaklaşık ${left} kaldı` : 'Kalan süre bilinmiyor'}</span>
+        <b>{charging ? t('Şarj oluyor') : level === null ? t('Pil') : t('Pilde')}</b>
+        <span>{charging ? (left ? t('Dolmasına {left}', { left }) : t('Prize takılı')) : left ? t('Yaklaşık {left} kaldı', { left }) : t('Kalan süre bilinmiyor')}</span>
         <i className={charging ? 'wg-bat__bolt is-on' : 'wg-bat__bolt'}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L5 14h6l-1 8 8-12h-6z" /></svg>
         </i>

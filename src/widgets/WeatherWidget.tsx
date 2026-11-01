@@ -5,21 +5,22 @@ import { invoke } from '@/api'
 import type { InvokeMap } from '@/shared/types'
 import type { WidgetOptions } from '@/shared/widgets'
 
+import { t } from '../i18n'
 type Weather = InvokeMap['widgets:weather']['result']
 type Kind = 'clear' | 'partly' | 'cloud' | 'fog' | 'drizzle' | 'rain' | 'snow' | 'storm'
 
 // WMO weather codes grouped into the few conditions we draw.
 function describe(code: number): { kind: Kind; text: string } {
-  if (code === 0) return { kind: 'clear', text: 'Açık' }
-  if (code <= 2) return { kind: 'partly', text: 'Parçalı bulutlu' }
-  if (code === 3) return { kind: 'cloud', text: 'Bulutlu' }
-  if (code <= 48) return { kind: 'fog', text: 'Sisli' }
-  if (code <= 57) return { kind: 'drizzle', text: 'Çisenti' }
-  if (code <= 67) return { kind: 'rain', text: 'Yağmurlu' }
-  if (code <= 77) return { kind: 'snow', text: 'Karlı' }
-  if (code <= 82) return { kind: 'rain', text: 'Sağanak' }
-  if (code <= 86) return { kind: 'snow', text: 'Kar sağanağı' }
-  return { kind: 'storm', text: 'Fırtına' }
+  if (code === 0) return { kind: 'clear', text: t('Açık') }
+  if (code <= 2) return { kind: 'partly', text: t('Parçalı bulutlu') }
+  if (code === 3) return { kind: 'cloud', text: t('Bulutlu') }
+  if (code <= 48) return { kind: 'fog', text: t('Sisli') }
+  if (code <= 57) return { kind: 'drizzle', text: t('Çisenti') }
+  if (code <= 67) return { kind: 'rain', text: t('Yağmurlu') }
+  if (code <= 77) return { kind: 'snow', text: t('Karlı') }
+  if (code <= 82) return { kind: 'rain', text: t('Sağanak') }
+  if (code <= 86) return { kind: 'snow', text: t('Kar sağanağı') }
+  return { kind: 'storm', text: t('Fırtına') }
 }
 
 const SUN = <circle cx="32" cy="32" r="11" fill="#ffc83d" />
@@ -50,7 +51,7 @@ export function WeatherIcon({ kind }: { kind: Kind }) {
 }
 
 export default function WeatherWidget({ options }: { options: WidgetOptions }) {
-  const city = String(options.city ?? 'Istanbul')
+  const city = String(options.city ?? t('Istanbul'))
   const [data, setData] = useState<Weather | null>(null)
   useEffect(() => {
     let live = true
@@ -63,8 +64,8 @@ export default function WeatherWidget({ options }: { options: WidgetOptions }) {
     }
   }, [city])
 
-  if (!data) return <div className="wg-wx wg-wx--note">Yükleniyor…</div>
-  if (!data.ok) return <div className="wg-wx wg-wx--note">Hava durumu alınamadı<small>{data.message === 'offline' ? 'İnternet yok' : data.message}</small></div>
+  if (!data) return <div className="wg-wx wg-wx--note">{t('Yükleniyor…')}</div>
+  if (!data.ok) return <div className="wg-wx wg-wx--note">{t('Hava durumu alınamadı')}<small>{data.message === 'offline' ? t('İnternet yok') : data.message}</small></div>
   const { kind, text } = describe(data.code)
   return (
     <div className="wg-wx">
@@ -72,7 +73,7 @@ export default function WeatherWidget({ options }: { options: WidgetOptions }) {
       <div className="wg-wx__info">
         <div className="wg-wx__temp">{data.temp}<sup>°C</sup></div>
         <div className="wg-wx__text">{text}</div>
-        <div className="wg-wx__meta">{data.city} · Rüzgâr {data.wind} km/s</div>
+        <div className="wg-wx__meta">{data.city} {t('· Rüzgâr')} {data.wind} {t('km/s')}</div>
       </div>
     </div>
   )

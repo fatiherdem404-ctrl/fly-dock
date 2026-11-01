@@ -9,7 +9,7 @@ const ts = require('typescript')
 
 const ROOTS = ['src', 'electron']
 const SKIP_DIR = new Set(['scenes', 'libs', 'i18n', 'assets'])
-const SKIP_FILE = /generated|\.d\.ts$|sceneTemplates|elevated|\.test\./
+const SKIP_FILE = /generated|\.d\.ts$|sceneTemplates|elevated|\.test\.|shared[\\/]types/
 const TR = /[çğıöşüÇĞİÖŞÜ]/
 // attribute / property names that carry text for people
 const TEXT_KEYS = new Set(['label', 'title', 'hint', 'tab', 'placeholder', 'text', 'desc', 'description', 'sub', 'subtitle', 'blurb', 'message', 'confirmLabel', 'cancelLabel', 'tooltip', 'alt', 'aria-label', 'caption', 'name', 'unit', 'summary', 'note', 'empty', 'error', 'detail', 'heading', 'body', 'badge', 'tag', 'tagline', 'action', 'okLabel', 'buttonLabel', 'emptyText', 'off', 'on', 'short', 'long', 'tip'])
@@ -33,6 +33,7 @@ function propName(n) {
 function context(node) {
   const p = node.parent
   if (!p) return null
+  if (ts.isTaggedTemplateExpression(p)) return null
   if (ts.isLiteralTypeNode(p) || ts.isImportDeclaration(p) || ts.isExportDeclaration(p) || ts.isCaseClause(p) || ts.isEnumMember(p) || ts.isExternalModuleReference(p)) return null
   if (ts.isBinaryExpression(p) && [ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken, ts.SyntaxKind.EqualsEqualsToken].includes(p.operatorToken.kind)) return null
   if (ts.isPropertyAssignment(p) && p.initializer === node) { const k = propName(p.name); return k && TEXT_KEYS.has(k) ? 'prop:' + k : 'prop?:' + k }
@@ -53,10 +54,12 @@ function context(node) {
 
 function looksHuman(text, ctx) {
   const t = text.trim()
-  if (/^prop?:/.test(ctx || '')) return false
-  if (/^call?:/.test(ctx || '') && !/^call?:(e|entry|add|game|folderPlace|special|act|dial|c.fillText|shellPlace|panelGame)$/.test(ctx)) return false
+  if (/^prop\?:/.test(ctx || '')) return false
+  if (/^call\?:/.test(ctx || '') && !/^call\?:(e|entry|add|game|folderPlace|special|act|dial|c\.fillText|shellPlace|panelGame)$/.test(ctx)) return false
   if (ctx === 'other' && !TR.test(t)) return false
-  if (ctx === 'array' && !TR.test(t) && !/s/.test(t)) return false
+  // markup, CSS and registry names that merely look like words
+  if (/^(hud |wg-|st-|fill=|stroke=|\{weight\}|not (applied|reverted))/.test(t) || /^[A-Z][a-z]+([A-Z][A-Za-z]*)+$/.test(t) || /^(HKCU|HKLM)/.test(t)) return false
+  if (ctx === 'array' && !TR.test(t) && !/\s/.test(t)) return false
   if (t.length < 2) return false
   if (!/[A-Za-zÇĞİÖŞÜçğıöşü]{2}/.test(t)) return false
   if (/^(https?:|\/|\.|#|[A-Za-z0-9_.-]+\.(png|svg|json|js|ts|css|exe|cur|ani|jpg|mp4|webm|ico))/.test(t)) return false

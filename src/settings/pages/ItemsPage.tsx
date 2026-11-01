@@ -6,6 +6,7 @@ import Icon from '@/icons'
 import { DockItem, PlaceInfo } from '@/shared/types'
 import { Card } from '../ui'
 
+import { t } from '../../i18n'
 /** The ready-made items (My Computer, Documents, Network…): one click puts one in the dock. */
 function Places({ onAdded }: { onAdded: (items: DockItem[]) => void }) {
   const [places, setPlaces] = useState<PlaceInfo[]>([])
@@ -17,13 +18,13 @@ function Places({ onAdded }: { onAdded: (items: DockItem[]) => void }) {
   }, [])
   const add = (id: string) => invoke('places:add', id).then((items) => { onAdded(items); refresh() })
   return (
-    <Card icon="plus" title="Hazır öğeler" hint="Sık kullanılan yerleri tek tıkla dock’a ekle. Eklenenler aşağıdaki listeye düşer; adını, simgesini değiştirebilir ya da kaldırabilirsin.">
+    <Card icon="plus" title={t('Hazır öğeler')} hint={t('Sık kullanılan yerleri tek tıkla dock’a ekle. Eklenenler aşağıdaki listeye düşer; adını, simgesini değiştirebilir ya da kaldırabilirsin.')}>
       <div className="st-places">
         {places.map((p) => (
-          <button key={p.id} className="st-place" disabled={p.added} onClick={() => add(p.id)} title={p.added ? 'Dockta var' : 'Docka ekle'}>
+          <button key={p.id} className="st-place" disabled={p.added} onClick={() => add(p.id)} title={p.added ? t('Dockta var') : t('Docka ekle')}>
             {icons[p.id] ? <img src={icons[p.id]} alt="" /> : <span />}
             <b>{p.label}</b>
-            <small>{p.added ? 'Eklendi' : 'Ekle'}</small>
+            <small>{p.added ? t('Eklendi') : t('Ekle')}</small>
           </button>
         ))}
       </div>
@@ -43,17 +44,17 @@ export function ItemsTab() {
   return (
     <>
     <Places onAdded={setItems} />
-    <Card icon="items" title="Sabit öğeler" hint="Dock’a dosya, program ya da klasör sürükleyip bırakarak ekleyebilirsin. Buradan ad ve kısayol düzenlenir.">
+    <Card icon="items" title={t('Sabit öğeler')} hint={t('Dock’a dosya, program ya da klasör sürükleyip bırakarak ekleyebilirsin. Buradan ad ve kısayol düzenlenir.')}>
       <div className="st-list">
         {pinned.map((item) => (
           <div className="st-list__row" key={item.id}>
             {icons[item.id] ? <img src={icons[item.id]} alt="" /> : <span />}
             <input className="st-input" type="text" defaultValue={item.label ?? ''} onBlur={(e) => e.target.value !== (item.label ?? '') && update(item.id, { label: e.target.value })} />
-            <input className="st-input" type="text" placeholder="Kısayol" title="Örnek: Ctrl+Alt+1" defaultValue={item.hotkey ?? ''} onBlur={(e) => e.target.value !== (item.hotkey ?? '') && update(item.id, { hotkey: e.target.value.trim() || undefined })} />
+            <input className="st-input" type="text" placeholder={t('Kısayol')} title={t('Örnek: Ctrl+Alt+1')} defaultValue={item.hotkey ?? ''} onBlur={(e) => e.target.value !== (item.hotkey ?? '') && update(item.id, { hotkey: e.target.value.trim() || undefined })} />
             <button className="st-btn st-btn--danger" onClick={() => invoke('items:remove', item.id).then(setItems)}><Icon name="trash" size={15} /></button>
           </div>
         ))}
-        {pinned.length === 0 && <p className="st-prose">Dock’ta henüz sabit öğe yok. Bir programı dock’a sürükleyip bırak.</p>}
+        {pinned.length === 0 && <p className="st-prose">{t('Dock’ta henüz sabit öğe yok. Bir programı dock’a sürükleyip bırak.')}</p>}
       </div>
     </Card>
     </>

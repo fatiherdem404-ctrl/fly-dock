@@ -7,24 +7,25 @@ import { DockSettings, SOUND_GROUP_OF, SoundEvent, SoundGroup, SoundTheme } from
 import { Frame } from '../previews'
 import { Card, Cards, Pages, Row, Switch, Slider, Update } from '../ui'
 
+import { t } from '../../i18n'
 // ---- Sounds ----
 
 export const SOUND_GROUPS: [SoundGroup, string, string][] = [
-  ['hover', 'Üzerine gelince', 'Fare bir simgenin üstünden geçerken küçük bir tık'],
-  ['click', 'Tıklama', 'Simgeye tıklayınca'],
-  ['launch', 'Uygulama açılışı', 'Kapalı bir program başlatılınca'],
-  ['dock', 'Dock', 'Simge bırakma, silme ve otomatik gizlenen dock’un gelip gitmesi'],
-  ['windows', 'Dock pencereleri', 'Klasör, grup ve kontrol paneli penceresinin cin efektiyle açılıp kapanması'],
-  ['menus', 'Menüler', 'Sağ tık menüsünün açılması ve seçim'],
-  ['trash', 'Çöp kutusu', 'Dosya atma ve çöp kutusunu boşaltma'],
-  ['dialogs', 'Onay pencereleri', 'Soru, onay, vazgeçme ve uyarı sesleri'],
-  ['ui', 'Ayarlar ve bildirimler', 'Bu penceredeki anahtarlar ve bildirim sesi'],
+  ['hover', t('Üzerine gelince'), t('Fare bir simgenin üstünden geçerken küçük bir tık')],
+  ['click', t('Tıklama'), t('Simgeye tıklayınca')],
+  ['launch', t('Uygulama açılışı'), t('Kapalı bir program başlatılınca')],
+  ['dock', 'Dock', t('Simge bırakma, silme ve otomatik gizlenen dock’un gelip gitmesi')],
+  ['windows', t('Dock pencereleri'), t('Klasör, grup ve kontrol paneli penceresinin cin efektiyle açılıp kapanması')],
+  ['menus', t('Menüler'), t('Sağ tık menüsünün açılması ve seçim')],
+  ['trash', t('Çöp kutusu'), t('Dosya atma ve çöp kutusunu boşaltma')],
+  ['dialogs', t('Onay pencereleri'), t('Soru, onay, vazgeçme ve uyarı sesleri')],
+  ['ui', t('Ayarlar ve bildirimler'), t('Bu penceredeki anahtarlar ve bildirim sesi')],
 ]
 
 export const SOUND_TESTS: [SoundEvent, string][] = [
-  ['hover', 'Üzerine gelme'], ['click', 'Tıklama'], ['launch', 'Açılış'], ['drop', 'Bırakma'], ['remove', 'Silme (puf)'], ['dockShow', 'Dock gelir'], ['dockHide', 'Dock gider'],
-  ['windowOpen', 'Pencere açılır (cin)'], ['windowClose', 'Pencere kapanır (cin)'], ['menuOpen', 'Menü açılır'], ['menuPick', 'Menü seçimi'],
-  ['trashDrop', 'Çöpe atma'], ['trashEmpty', 'Çöp boşaltma'], ['confirmOpen', 'Soru'], ['accept', 'Onay'], ['cancel', 'Vazgeç'], ['warn', 'Uyarı'], ['error', 'Hata'], ['toggle', 'Anahtar'], ['notify', 'Bildirim'],
+  ['hover', t('Üzerine gelme')], ['click', t('Tıklama')], ['launch', t('Açılış')], ['drop', t('Bırakma')], ['remove', t('Silme (puf)')], ['dockShow', t('Dock gelir')], ['dockHide', t('Dock gider')],
+  ['windowOpen', t('Pencere açılır (cin)')], ['windowClose', t('Pencere kapanır (cin)')], ['menuOpen', t('Menü açılır')], ['menuPick', t('Menü seçimi')],
+  ['trashDrop', t('Çöpe atma')], ['trashEmpty', t('Çöp boşaltma')], ['confirmOpen', t('Soru')], ['accept', t('Onay')], ['cancel', t('Vazgeç')], ['warn', t('Uyarı')], ['error', t('Hata')], ['toggle', t('Anahtar')], ['notify', t('Bildirim')],
 ]
 
 export function SoundTab({ s, set }: { s: DockSettings; set: Update }) {
@@ -32,18 +33,18 @@ export function SoundTab({ s, set }: { s: DockSettings; set: Update }) {
   const toggleGroup = (g: SoundGroup, on: boolean) => set({ soundGroups: on ? [...s.soundGroups, g] : s.soundGroups.filter((x) => x !== g) })
   return (
     <Pages id="sound">
-      <Card icon="sound" tab="Sesler" title="Genel" hint="Sesler uygulamanın kendi içinde üretilir; ses dosyası gerekmez. Windows’un genel sesine ve ses karıştırıcısına bağlıdır.">
-        <Row icon="power" label="Sesleri aç"><Switch label="Sesleri aç" value={s.soundEnabled} onChange={(soundEnabled) => set({ soundEnabled })} /></Row>
-        <Row icon="sound" label="Ses düzeyi"><Slider value={s.soundVolume} min={0} max={100} unit="%" onChange={(soundVolume) => set({ soundVolume })} /></Row>
-        <Row icon="motion" label="Ses stili" hint="Aynı olaylar, farklı bir karakterle çalar. Karta tıklayınca duyarsın." />
+      <Card icon="sound" tab={t('Sesler')} title={t('Genel')} hint={t('Sesler uygulamanın kendi içinde üretilir; ses dosyası gerekmez. Windows’un genel sesine ve ses karıştırıcısına bağlıdır.')}>
+        <Row icon="power" label={t('Sesleri aç')}><Switch label={t('Sesleri aç')} value={s.soundEnabled} onChange={(soundEnabled) => set({ soundEnabled })} /></Row>
+        <Row icon="sound" label={t('Ses düzeyi')}><Slider value={s.soundVolume} min={0} max={100} unit="%" onChange={(soundVolume) => set({ soundVolume })} /></Row>
+        <Row icon="motion" label={t('Ses stili')} hint={t('Aynı olaylar, farklı bir karakterle çalar. Karta tıklayınca duyarsın.')} />
         <Cards<SoundTheme> size="s" value={s.soundTheme} onChange={(soundTheme) => { set({ soundTheme }); previewSound('click', soundTheme, s.soundVolume) }} options={(Object.keys(SOUND_THEMES) as SoundTheme[]).map((id) => ({ id, label: SOUND_THEMES[id].label, preview: <Frame><svg viewBox="0 0 100 60" className="pv-svg" aria-hidden="true"><path d="M6 30H94" className="pv-svg__axis" /><path d={wavePath(id)} className="pv-svg__line" /></svg></Frame> }))} />
       </Card>
-      <Card icon="list" tab="Sesler" title="Hangi olaylarda ses çalsın">
+      <Card icon="list" tab={t('Sesler')} title={t('Hangi olaylarda ses çalsın')}>
         {SOUND_GROUPS.map(([group, label, hint]) => (
           <Row key={group} label={label} hint={hint}><Switch label={label} value={s.soundGroups.includes(group)} onChange={(on) => toggleGroup(group, on)} /></Row>
         ))}
       </Card>
-      <Card icon="play" tab="Dene" title="Sesleri dene" hint="Her ses seçili stille ve düzeyle çalar; olay kapalı olsa bile buradan dinleyebilirsin.">
+      <Card icon="play" tab={t('Dene')} title={t('Sesleri dene')} hint={t('Her ses seçili stille ve düzeyle çalar; olay kapalı olsa bile buradan dinleyebilirsin.')}>
         <div className="st-row-inline" style={{ flexWrap: 'wrap' }}>
           {SOUND_TESTS.map(([event, label]) => (
             <button key={event} className="st-btn" title={SOUND_GROUPS.find(([g]) => g === SOUND_GROUP_OF[event])?.[1]} onClick={() => previewSound(event, s.soundTheme, s.soundVolume)}><Icon name="play" size={13} />{label}</button>

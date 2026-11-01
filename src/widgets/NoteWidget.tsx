@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { WidgetOptions } from '@/shared/widgets'
 
+import { t } from '../i18n'
 /** A sticky note: the text is saved with the widget a moment after you stop typing. */
 export default function NoteWidget({ options, onOption }: { options: WidgetOptions; onOption?: (k: string, v: string | number | boolean) => void }) {
   const [text, setText] = useState(String(options.text ?? ''))
@@ -15,11 +16,11 @@ export default function NoteWidget({ options, onOption }: { options: WidgetOptio
   }
   return (
     <div className="wg-note">
-      <div className="wg-note__bar"><i /><span>Not</span></div>
+      <div className="wg-note__bar"><i /><span>{t('Not')}</span></div>
       <textarea
         value={text}
         readOnly={!onOption}
-        placeholder="Buraya bir not yaz…"
+        placeholder={t('Buraya bir not yaz…')}
         spellCheck={false}
         maxLength={4000}
         onChange={(e) => change(e.target.value)}

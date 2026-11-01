@@ -5,6 +5,7 @@
 // the window only takes the mouse on the "Başla" button between games.
 import { Area, Env, MiniGame, MiniHud, TAU, clamp, label } from './mini'
 
+import { t } from '../i18n'
 const WIN = 7
 const PADDLE_H = 120
 const PADDLE_W = 14
@@ -132,12 +133,12 @@ export class Pong implements MiniGame {
       const youScored = b.x > a.x + a.w
       if (youScored) this.youPts += 1
       else this.aiPts += 1
-      this.env.flash(youScored ? 'SAYI!' : 'RAKİP ATTI', 0.9)
+      this.env.flash(youScored ? t('SAYI!') : t('RAKİP ATTI'), 0.9)
       this.env.tone(youScored ? 660 : 200, youScored ? 990 : 120, 0.25, 'triangle', 0.1)
       if (this.youPts >= WIN || this.aiPts >= WIN) {
         this.phase = 'over'
         const won = this.youPts > this.aiPts
-        this.env.flash(won ? 'KAZANDIN!' : 'KAYBETTİN', 1.6)
+        this.env.flash(won ? 'KAZANDIN!' : t('KAYBETTİN'), 1.6)
         if (won) {
           this.env.win()
           this.env.finish(this.youPts)
@@ -218,12 +219,12 @@ export class Pong implements MiniGame {
       c.beginPath()
       c.roundRect(b.x, b.y, b.w, b.h, 18)
       c.stroke()
-      label(c, this.phase === 'over' ? (this.youPts > this.aiPts ? 'Kazandın! Tekrar oyna' : 'Kaybettin. Tekrar oyna') : 'BAŞLA', b.x + b.w / 2, b.y + b.h / 2 - 8, 20, '#ffffff', 800)
-      label(c, 'raketi fareyle yönet · ilk 7 sayı kazanır', b.x + b.w / 2, b.y + b.h / 2 + 16, 12, 'rgba(255,255,255,0.7)')
+      label(c, this.phase === 'over' ? (this.youPts > this.aiPts ? t('Kazandın! Tekrar oyna') : t('Kaybettin. Tekrar oyna')) : t('BAŞLA'), b.x + b.w / 2, b.y + b.h / 2 - 8, 20, '#ffffff', 800)
+      label(c, t('raketi fareyle yönet · ilk 7 sayı kazanır'), b.x + b.w / 2, b.y + b.h / 2 + 16, 12, 'rgba(255,255,255,0.7)')
     }
   }
 
   hud(): MiniHud {
-    return { score: this.youPts, unit: `sayı  ·  rakip ${this.aiPts}`, best: `Seri ${this.rally}`, hint: 'Hazır: BAŞLA düğmesine tıkla', active: this.phase === 'play' || this.phase === 'serve' }
+    return { score: this.youPts, unit: t('sayı  ·  rakip {aiPts}', { aiPts: this.aiPts }), best: t('Seri {rally}', { rally: this.rally }), hint: t('Hazır: BAŞLA düğmesine tıkla'), active: this.phase === 'play' || this.phase === 'serve' }
   }
 }

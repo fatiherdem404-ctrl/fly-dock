@@ -5,6 +5,7 @@ import { playSound } from '@/sound'
 import Icon, { IconName } from '@/icons'
 import { DockSettings } from '@/shared/types'
 
+import { t } from '../i18n'
 export type Update = (partial: Partial<DockSettings>) => void
 
 // ---- building blocks ----
@@ -34,7 +35,7 @@ export function Card({ title, hint, icon, glyph, children }: { title: string; hi
   return (
     <section className={closed ? 'st-card is-folded' : 'st-card'}>
       <header className={icon || glyph ? 'st-card__head st-card__head--icon' : 'st-card__head'}>
-        <button className="st-card__toggle" aria-expanded={!closed} onClick={toggle} title={closed ? 'Göster' : 'Gizle'}>
+        <button className="st-card__toggle" aria-expanded={!closed} onClick={toggle} title={closed ? t('Göster') : t('Gizle')}>
           {glyph ? <span className="st-card__icon st-card__icon--glyph">{glyph}</span> : icon && <span className="st-card__icon"><Icon name={icon} size={18} /></span>}
           <div>
             <h3>{title}</h3>
