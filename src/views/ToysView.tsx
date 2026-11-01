@@ -1,19 +1,67 @@
 import { useEffect, useRef, useState } from 'react'
 import { invoke, useEvent } from '@/api'
-import type { DockSettings, ToyScores } from '@/shared/types'
+import type { DockSettings, ToyMode, ToyScores } from '@/shared/types'
 import { DEFAULT_TOY_SCORES } from '@/shared/types'
 import { Ball, Segment, World, inGoal, kickBall, makeBall, scoredThroughRim, stepBall, throwVelocity } from '@/toys/ball'
 import { Pet, drop, makePet, pickUp, stepPet, stroke } from '@/toys/pet'
 import PetSprite from '@/toys/PetSprite'
+import handUrl from '@/assets/toys/hand.png'
+import fistUrl from '@/assets/toys/fist.png'
+import bootUrl from '@/assets/toys/boot.png'
+import racketUrl from '@/assets/toys/racket.png'
+import basketballUrl from '@/assets/toys/basketball.png'
+import soccerUrl from '@/assets/toys/soccer.png'
 
-type GameKind = 'basket' | 'football' | 'tennis'
+type GameId = 'basket' | 'football' | 'tennis' | 'yoyo'
 /** The pet's own playthings: the cat's ball of yarn and the dog's stick. */
 type PlayKind = 'yarn' | 'stick'
-type BallKind = GameKind | PlayKind
+type BallKind = GameId | PlayKind
 type Round = { active: boolean; left: number; score: number }
 
-const ALL: BallKind[] = ['basket', 'football', 'tennis', 'yarn', 'stick']
+const ALL: BallKind[] = ['basket', 'football', 'tennis', 'yoyo', 'yarn', 'stick']
+const GAME_IDS: GameId[] = ['basket', 'football', 'tennis', 'yoyo']
 const ROUND_SECONDS = 60
+
+const GAME_INFO: Record<GameId, { title: string; unit: string }> = {
+  basket: { title: 'Basketbol', unit: 'sepet' },
+  football: { title: 'Futbol', unit: 'gol' },
+  tennis: { title: 'Tenis', unit: 'vuruş' },
+  yoyo: { title: 'Beyzbol Yo-yo', unit: 'sekme' },
+}
+const BEST_KEY: Record<GameId, keyof ToyScores> = { basket: 'basketBest', football: 'footballBest', tennis: 'tennisTimedBest', yoyo: 'yoyoBest' }
+
+const modeOf = (s: DockSettings, id: GameId): ToyMode => (id === 'basket' ? s.toyBasketMode : id === 'football' ? s.toyFootballMode : id === 'tennis' ? s.toyTennisMode : s.toyYoyoMode)
+const enabledOf = (s: DockSettings, id: GameId): boolean => (id === 'basket' ? s.toyBasket : id === 'football' ? s.toyFootball : id === 'tennis' ? s.toyTennis : s.toyYoyo)
+
+// ---- pictures ----
+const picture = (url: string) => {
+  const img = new Image()
+  img.src = url
+  return img
+}
+const PICS = { hand: picture(handUrl), fist: picture(fistUrl), boot: picture(bootUrl), racket: picture(racketUrl), basket: picture(basketballUrl), football: picture(soccerUrl) }
+const ready = (img: HTMLImageElement) => img.complete && img.naturalWidth > 0
+
+/** What the on-screen scoreboard shows for one game. */
+interface HudCard {
+  id: GameId
+  title: string
+  unit: string
+  timed: boolean
+  active: boolean
+  score: number
+  left: number
+  best: string
+  hint: string
+}
+interface HudResult {
+  title: string
+  score: number
+  unit: string
+  best: number
+  record: boolean
+  game: string
+}
 
 /** Everything that moves lives here, outside React: the animation loop reads and writes it every frame. */
 interface Sim {
@@ -21,21 +69,23 @@ interface Sim {
   pet: Pet | null
   pointer: { x: number; y: number; vx: number; vy: number; t: number } | null
   samples: [number, number, number][]
-  drag: { kind: 'ball'; ball: BallKind; dx: number; dy: number } | { kind: 'pet'; dx: number; dy: number; moved: number; at: number } | null
+  drag: { kind: 'ball'; ball: BallKind; dx: number; dy: number } | { kind: 'yoyo' } | { kind: 'pet'; dx: number; dy: number; moved: number; at: number } | null
   capture: boolean
   scores: ToyScores
+  /** Tennis rally in free play. */
   rally: number
-  /** The 60-second rounds of basketball and football. */
-  rounds: Record<'basket' | 'football', Round>
+  games: Record<GameId, { round: Round; session: number }>
+  /** The result card shown for a few seconds after a timed round. */
+  result: (HudResult & { left: number }) | null
   /** Text flashed in the middle of the screen: SEPET!, GOL! … */
-  flash: { text: string; sub?: string; left: number } | null
+  flash: { text: string; left: number } | null
   /** A scored football is put back when this runs out. */
   respawn: number
   hover: boolean
   /** Size of the window the toys were last placed for. */
   size: string
-  /** The football boot or tennis racket the pointer has turned into, with the way it is swinging. */
-  armed: 'football' | 'tennis' | null
+  /** The hand, boot or racket the pointer has turned into near a ball, and the way it is swinging. */
+  armed: 'basket' | 'football' | 'tennis' | null
   toolDir: 1 | -1
   toolAngle: number
   /** The dog has the stick in its mouth. */
@@ -44,6 +94,9 @@ interface Sim {
   stickThrown: boolean
   /** Where the stick was thrown from: the dog brings it back there. */
   throwFrom: number
+  /** Baseball: the string is held, and the bounces counted since it was picked up. */
+  yoyoHeld: boolean
+  combo: number
   cursor: string
 }
 
@@ -51,6 +104,7 @@ const SPEC: Record<BallKind, { r: number; gravity: number; restitution: number; 
   basket: { r: 24, gravity: 2000, restitution: 0.72, rolling: 1.2 },
   football: { r: 28, gravity: 1900, restitution: 0.62, rolling: 0.9 },
   tennis: { r: 13, gravity: 1500, restitution: 0.86, rolling: 0.7 },
+  yoyo: { r: 18, gravity: 2000, restitution: 0.86, rolling: 1 },
   yarn: { r: 15, gravity: 1800, restitution: 0.5, rolling: 0.8 },
   stick: { r: 9, gravity: 1900, restitution: 0.3, rolling: 3.2 },
 }
@@ -58,8 +112,13 @@ const GOAL_DEPTH = 64
 const GOAL_HEIGHT = 150
 const NET_HEIGHT = 96
 const TAU = Math.PI * 2
-/** How close the pointer has to come before it turns into a boot or a racket. */
-const AURA: Record<'football' | 'tennis', number> = { football: 80, tennis: 110 }
+/** How close the pointer has to come before it turns into a hand, a boot or a racket. */
+const AURA: Record<'basket' | 'football' | 'tennis', number> = { basket: 70, football: 80, tennis: 110 }
+/** The elastic string of the baseball: how long it is before it stretches, and how hard it pulls back. */
+const STRING_REST = 130
+const STRING_PULL = 16
+/** Distance from the racket's grip to the middle of its head. */
+const RACKET_REACH = 96
 
 /** The line the toys stand on: the top of the dock when it sits at the bottom, else the bottom of the work area. */
 function floorOf(s: DockSettings, height: number): number {
@@ -108,6 +167,7 @@ function startPosition(kind: BallKind, width: number, floor: number, side: 'left
     case 'basket': return [side === 'right' ? width - 280 : 280, floor - r]
     case 'football': return [width * 0.62, floor - r]
     case 'tennis': return [width * 0.3, floor - r]
+    case 'yoyo': return [width * 0.46, floor - r]
     case 'yarn': return [Math.min(Math.max(petX + 170, 80), width - 80), floor - r]
     default: return [Math.min(Math.max(petX - 170, 80), width - 80), floor - r]
   }
@@ -165,10 +225,17 @@ function drawBall(c: CanvasRenderingContext2D, b: Ball, kind: BallKind, floor: n
     c.restore()
     return
   }
+  if ((kind === 'basket' || kind === 'football') && ready(PICS[kind])) {
+    const d = b.r * 2.12
+    c.drawImage(PICS[kind], -d / 2, -d / 2, d, d)
+    c.restore()
+    return
+  }
   const g = c.createRadialGradient(-b.r * 0.35, -b.r * 0.4, b.r * 0.1, 0, 0, b.r)
   if (kind === 'basket') { g.addColorStop(0, '#ffb066'); g.addColorStop(1, '#c9591b') }
   else if (kind === 'football') { g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#cfd3da') }
   else if (kind === 'yarn') { g.addColorStop(0, '#ff9ec4'); g.addColorStop(1, '#d6447f') }
+  else if (kind === 'yoyo') { g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#d9d6cf') }
   else { g.addColorStop(0, '#e9ff6a'); g.addColorStop(1, '#a9c91d') }
   c.fillStyle = g
   c.beginPath()
@@ -183,41 +250,31 @@ function drawBall(c: CanvasRenderingContext2D, b: Ball, kind: BallKind, floor: n
       c.ellipse(0, 0, b.r * 0.95, Math.max(2, b.r * (0.25 + Math.abs(i) * 0.18)), i * 0.5, 0, TAU)
       c.stroke()
     }
+  } else if (kind === 'yoyo') {
+    // a baseball: two curved seams with red stitches
+    c.strokeStyle = '#c8302f'
+    c.lineWidth = 1.8
+    for (const s of [-1, 1]) {
+      c.beginPath()
+      c.arc(s * b.r * 1.15, 0, b.r * 0.95, s > 0 ? Math.PI - 0.95 : -0.95, s > 0 ? Math.PI + 0.95 : 0.95)
+      c.stroke()
+      c.lineWidth = 1.2
+      for (let i = -4; i <= 4; i++) {
+        const a = (i / 4) * 0.85
+        const x = s * b.r * 1.15 - s * Math.cos(a) * b.r * 0.95
+        const y = Math.sin(a) * b.r * 0.95
+        c.beginPath(); c.moveTo(x, y); c.lineTo(x - s * 3.4, y + (a >= 0 ? 2.6 : -2.6)); c.stroke()
+      }
+      c.lineWidth = 1.8
+    }
   } else if (kind === 'basket') {
     c.strokeStyle = 'rgba(40,18,6,0.75)'
     c.lineWidth = Math.max(1.5, b.r * 0.07)
     c.beginPath()
     c.moveTo(-b.r, 0); c.lineTo(b.r, 0)
     c.moveTo(0, -b.r); c.lineTo(0, b.r)
-    c.moveTo(-b.r * 0.7, -b.r * 0.7); c.quadraticCurveTo(-b.r * 0.25, 0, -b.r * 0.7, b.r * 0.7)
-    c.moveTo(b.r * 0.7, -b.r * 0.7); c.quadraticCurveTo(b.r * 0.25, 0, b.r * 0.7, b.r * 0.7)
     c.stroke()
-  } else if (kind === 'football') {
-    c.fillStyle = '#23262e'
-    const patch = (cx: number, cy: number, rr: number) => {
-      c.beginPath()
-      for (let i = 0; i < 5; i++) {
-        const a = (i / 5) * TAU - Math.PI / 2
-        c.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr)
-      }
-      c.closePath()
-      c.fill()
-    }
-    patch(0, 0, b.r * 0.34)
-    for (let i = 0; i < 5; i++) {
-      const a = (i / 5) * TAU - Math.PI / 2
-      patch(Math.cos(a) * b.r * 0.78, Math.sin(a) * b.r * 0.78, b.r * 0.2)
-    }
-    c.strokeStyle = 'rgba(35,38,46,0.55)'
-    c.lineWidth = 1.2
-    c.beginPath()
-    for (let i = 0; i < 5; i++) {
-      const a = (i / 5) * TAU - Math.PI / 2
-      c.moveTo(Math.cos(a) * b.r * 0.32, Math.sin(a) * b.r * 0.32)
-      c.lineTo(Math.cos(a) * b.r * 0.62, Math.sin(a) * b.r * 0.62)
-    }
-    c.stroke()
-  } else {
+  } else if (kind === 'tennis') {
     c.strokeStyle = 'rgba(255,255,255,0.9)'
     c.lineWidth = Math.max(1.4, b.r * 0.12)
     c.beginPath()
@@ -234,97 +291,40 @@ function drawBall(c: CanvasRenderingContext2D, b: Ball, kind: BallKind, floor: n
   c.stroke()
 }
 
-/** A football boot with cleats and a sock: the toe is at the pointer, the leg trails behind it. */
-function drawBoot(c: CanvasRenderingContext2D, x: number, y: number, dir: number, angle: number) {
+/** Draws a picture of the pointer's tool: the hand, the boot, the racket. */
+function drawTool(c: CanvasRenderingContext2D, kind: 'hand' | 'fist' | 'boot' | 'racket', x: number, y: number, dir: number, angle: number) {
+  const img = PICS[kind]
+  if (!ready(img)) return
   c.save()
   c.translate(x, y)
-  c.scale(dir, 1)
-  c.rotate(angle)
   c.shadowColor = 'rgba(0,0,0,0.35)'
   c.shadowBlur = 8
-  c.lineCap = 'round'
-  c.lineJoin = 'round'
-  // the leg, trailing back and up
-  c.strokeStyle = '#f4f6fb'
-  c.lineWidth = 18
-  c.beginPath(); c.moveTo(-32, -12); c.lineTo(-112, -50); c.stroke()
-  c.strokeStyle = '#d7263d'
-  c.lineWidth = 17
-  c.beginPath(); c.moveTo(-60, -25); c.lineTo(-76, -33); c.stroke()
-  c.shadowBlur = 0
-  // the boot
-  c.fillStyle = '#16181f'
-  c.beginPath()
-  c.moveTo(-38, -19); c.lineTo(-16, -19); c.quadraticCurveTo(-4, -17, 7, -7); c.quadraticCurveTo(12, 0, 7, 6); c.lineTo(-38, 6); c.closePath()
-  c.fill()
-  c.fillStyle = '#d7263d'
-  c.beginPath()
-  c.moveTo(-36, -17); c.lineTo(-17, -17); c.quadraticCurveTo(-6, -15, 4, -6); c.quadraticCurveTo(7, 0, 4, 3); c.lineTo(-36, 3); c.closePath()
-  c.fill()
-  c.strokeStyle = '#ffffff'
-  c.lineWidth = 1.6
-  c.beginPath()
-  for (let i = 0; i < 4; i++) { c.moveTo(-26 + i * 7, -16 + i * 1.4); c.lineTo(-22 + i * 7, -9 + i * 1.8) }
-  c.stroke()
-  // sole and cleats
-  c.fillStyle = '#e9ecf3'
-  c.fillRect(-38, 3, 47, 4)
-  c.fillStyle = '#7d8696'
-  for (const cx of [-33, -20, -7, 5]) c.fillRect(cx, 7, 5, 5)
+  c.shadowOffsetY = 3
+  if (kind === 'hand' || kind === 'fist') {
+    // the fingertips are at the pointer
+    c.drawImage(img, -26, -8, 56, 56)
+  } else if (kind === 'boot') {
+    // the toe is at the pointer and the boot follows the swing
+    c.scale(dir, 1)
+    c.rotate(angle)
+    c.drawImage(img, -140 * 0.97, -84 * 0.7, 140, 84)
+  } else {
+    // the grip is at the pointer, the head leads the swing
+    c.scale(dir, 1)
+    c.rotate(angle)
+    c.rotate(0.72)
+    const s = 0.174
+    c.drawImage(img, -19 * s, -462 * s, 640 * s, 502 * s)
+  }
   c.restore()
 }
 
-/** A tennis racket: the grip is at the pointer and the head leads the swing. */
-function drawRacket(c: CanvasRenderingContext2D, x: number, y: number, dir: number, angle: number) {
-  c.save()
-  c.translate(x, y)
-  c.scale(dir, 1)
-  c.rotate(angle)
-  c.shadowColor = 'rgba(0,0,0,0.35)'
-  c.shadowBlur = 8
-  c.lineCap = 'round'
-  c.strokeStyle = '#2b2f3a'
-  c.lineWidth = 7
-  c.beginPath(); c.moveTo(0, 0); c.lineTo(26, 0); c.stroke()
-  c.strokeStyle = '#c9d2e3'
-  c.lineWidth = 3
-  c.beginPath(); c.moveTo(26, 0); c.lineTo(44, 0); c.stroke()
-  c.shadowBlur = 0
-  c.fillStyle = 'rgba(255,255,255,0.14)'
-  c.beginPath(); c.ellipse(66, 0, 26, 21, 0, 0, TAU); c.fill()
-  c.strokeStyle = 'rgba(255,255,255,0.55)'
-  c.lineWidth = 1
-  c.beginPath()
-  for (let i = -3; i <= 3; i++) { c.moveTo(66 - 23, i * 6); c.lineTo(66 + 23, i * 6); c.moveTo(66 + i * 7, -17); c.lineTo(66 + i * 7, 17) }
-  c.stroke()
-  c.strokeStyle = '#e8452c'
-  c.lineWidth = 4.5
-  c.beginPath(); c.ellipse(66, 0, 26, 21, 0, 0, TAU); c.stroke()
-  c.restore()
-}
-
-function label(c: CanvasRenderingContext2D, text: string, x: number, y: number, size = 16, align: CanvasTextAlign = 'center') {
-  c.font = `700 ${size}px 'Segoe UI', system-ui, sans-serif`
-  c.textAlign = align
-  c.textBaseline = 'middle'
-  c.lineWidth = 4
-  c.strokeStyle = 'rgba(10,14,28,0.7)'
-  c.lineJoin = 'round'
-  c.strokeText(text, x, y)
-  c.fillStyle = '#ffffff'
-  c.fillText(text, x, y)
-}
-
-const roundLine = (round: Round, name: string, best: number) =>
-  round.active ? `${name}: ${round.score}  ·  ${Math.ceil(round.left)} sn  ·  Rekor ${best}` : `Rekor ${best}  ·  başlamak için topa dokun`
-
-/** Where the racket's head is while the grip is at (x, y): the head leads the swing. */
-const racketHead = (x: number, y: number, dir: number, angle: number): [number, number] => [x + dir * Math.cos(angle) * 66, y + Math.sin(angle) * 66]
+/** Where the racket's head is while the grip is at (x, y). */
+const racketHead = (x: number, y: number, dir: number, angle: number): [number, number] => [x + dir * Math.cos(angle) * RACKET_REACH, y + Math.sin(angle) * RACKET_REACH]
 
 function drawScene(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, width: number, floor: number) {
   if (s.toyBasket) {
     const h = hoop(width, floor, s.toyHoopSide)
-    const outward = s.toyHoopSide === 'right' ? -1 : 1
     c.fillStyle = 'rgba(255,255,255,0.92)'
     c.strokeStyle = 'rgba(30,40,60,0.7)'
     c.lineWidth = 2
@@ -357,7 +357,6 @@ function drawScene(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, width
     c.moveTo(h.lo, h.rimY)
     c.lineTo(h.hi, h.rimY)
     c.stroke()
-    label(c, roundLine(sim.rounds.basket, 'Sepet', sim.scores.basketBest), h.boardX + outward * 150, h.boardTop - 16, 14)
   }
   if (s.toyFootball) {
     const top = floor - GOAL_HEIGHT
@@ -384,7 +383,6 @@ function drawScene(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, width
     }
     goal(0, GOAL_DEPTH)
     goal(width - GOAL_DEPTH, GOAL_DEPTH)
-    label(c, roundLine(sim.rounds.football, 'Gol', sim.scores.footballBest), GOAL_DEPTH + 150, top - 14, 14)
   }
   if (s.toyTennis) {
     const x = width / 2
@@ -400,19 +398,89 @@ function drawScene(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, width
     c.fillRect(x - 4, top - 1, 8, 5)
     c.fillStyle = '#d9d9e0'
     c.fillRect(x - 1.5, top, 3, NET_HEIGHT)
-    label(c, `Seri: ${sim.rally}  ·  Rekor: ${sim.scores.tennisBest}`, x, top - 16, 14)
   }
   if (sim.flash) {
     const t = Math.min(1, sim.flash.left / 0.4)
     c.globalAlpha = t
-    label(c, sim.flash.text, width / 2, floor * 0.3 - (1 - t) * 10, 54)
-    if (sim.flash.sub) label(c, sim.flash.sub, width / 2, floor * 0.3 + 44 - (1 - t) * 10, 22)
+    c.font = "800 54px 'Segoe UI', system-ui, sans-serif"
+    c.textAlign = 'center'
+    c.textBaseline = 'middle'
+    c.lineWidth = 6
+    c.lineJoin = 'round'
+    c.strokeStyle = 'rgba(10,14,28,0.75)'
+    c.strokeText(sim.flash.text, width / 2, floor * 0.42 - (1 - t) * 10)
+    c.fillStyle = '#ffffff'
+    c.fillText(sim.flash.text, width / 2, floor * 0.42 - (1 - t) * 10)
     c.globalAlpha = 1
+  }
+  // the baseball hangs from the pointer on an elastic string
+  const yo = sim.balls.yoyo
+  const p = sim.pointer
+  if (yo && sim.yoyoHeld && p) {
+    const sag = Math.min(40, Math.max(0, STRING_REST - Math.hypot(yo.x - p.x, yo.y - p.y)) * 0.6)
+    c.strokeStyle = '#efe7d2'
+    c.lineWidth = 2.2
+    c.lineCap = 'round'
+    c.beginPath()
+    c.moveTo(p.x, p.y)
+    c.quadraticCurveTo((p.x + yo.x) / 2, (p.y + yo.y) / 2 + sag, yo.x, yo.y)
+    c.stroke()
   }
   for (const kind of ALL) {
     const ball = sim.balls[kind]
     if (ball) drawBall(c, ball, kind, floor)
   }
+}
+
+const clock = (seconds: number) => {
+  const s = Math.max(0, Math.ceil(seconds))
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+}
+
+function GameIcon({ id }: { id: GameId }) {
+  if (id === 'basket') return <img src={basketballUrl} alt="" />
+  if (id === 'football') return <img src={soccerUrl} alt="" />
+  if (id === 'tennis') return <img src={racketUrl} alt="" />
+  return (
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <circle cx="16" cy="16" r="13" fill="#f4f1ea" stroke="#b9b3a6" strokeWidth="1" />
+      <path d="M8 6 Q 14 16 8 26 M24 6 Q 18 16 24 26" fill="none" stroke="#c8302f" strokeWidth="1.8" />
+    </svg>
+  )
+}
+
+/** The scoreboard: one card per game that is on, and the result card after a timed round. */
+function Hud({ cards, result }: { cards: HudCard[]; result: HudResult | null }) {
+  return (
+    <>
+      <div className="hud">
+        {cards.map((card) => (
+          <div key={card.id} className={`hud-card${card.timed && card.active && card.left <= 10 ? ' hud-card--urgent' : ''}`} data-active={card.active}>
+            <div className="hud-card__head">
+              <span className="hud-card__icon"><GameIcon id={card.id} /></span>
+              <b>{card.title}</b>
+              <span className="hud-chip">{card.timed ? 'Süreye karşı' : 'Serbest'}</span>
+            </div>
+            <div className="hud-card__main">
+              <strong>{card.score}</strong>
+              <small>{card.unit}</small>
+              {card.timed && <time>{clock(card.active ? card.left : ROUND_SECONDS)}</time>}
+            </div>
+            {card.timed && <div className="hud-bar"><i style={{ width: `${card.active ? (card.left / ROUND_SECONDS) * 100 : 100}%` }} /></div>}
+            <div className="hud-card__foot">{card.timed && !card.active ? card.hint : card.best}</div>
+          </div>
+        ))}
+      </div>
+      {result && (
+        <div className={`hud-result${result.record ? ' hud-result--record' : ''}`}>
+          <small>{result.game}</small>
+          <h2>{result.record ? 'Yeni rekor!' : 'Süre doldu'}</h2>
+          <strong>{result.score}<span> {result.unit}</span></strong>
+          <p>{result.record ? 'Önceki rekorunu geçtin' : `Rekor: ${result.best}`}</p>
+        </div>
+      )}
+    </>
+  )
 }
 
 export default function ToysView() {
@@ -431,10 +499,13 @@ function Toys({ s }: { s: DockSettings }) {
   const root = useRef<HTMLDivElement>(null)
   const settingsRef = useRef(s)
   settingsRef.current = s
+  const [hud, setHud] = useState<{ cards: HudCard[]; result: HudResult | null }>({ cards: [], result: null })
+  const newGame = () => ({ round: { active: false, left: 0, score: 0 }, session: 0 })
   const sim = useRef<Sim>({
     balls: {}, pet: null, pointer: null, samples: [], drag: null, capture: false, scores: { ...DEFAULT_TOY_SCORES }, rally: 0,
-    rounds: { basket: { active: false, left: 0, score: 0 }, football: { active: false, left: 0, score: 0 } },
-    flash: null, respawn: 0, hover: false, size: '', armed: null, toolDir: 1, toolAngle: -0.15, carried: false, stickThrown: false, throwFrom: 0, cursor: '',
+    games: { basket: newGame(), football: newGame(), tennis: newGame(), yoyo: newGame() },
+    result: null, flash: null, respawn: 0, hover: false, size: '', armed: null, toolDir: 1, toolAngle: -0.15, carried: false, stickThrown: false, throwFrom: 0,
+    yoyoHeld: false, combo: 0, cursor: '',
   })
 
   useEffect(() => {
@@ -456,17 +527,32 @@ function Toys({ s }: { s: DockSettings }) {
       invoke('toys:scores', patch)
     }
     const dims = () => ({ w: window.innerWidth, h: window.innerHeight })
-    const startRound = (kind: 'basket' | 'football') => {
-      const r = st.rounds[kind]
-      if (r.active) return
-      r.active = true
-      r.left = ROUND_SECONDS
-      r.score = 0
+    /** A timed round starts with the first touch of the ball. */
+    const startRound = (id: GameId) => {
+      const g = st.games[id]
+      if (g.round.active || modeOf(settingsRef.current, id) !== 'timed') return
+      g.round.active = true
+      g.round.left = ROUND_SECONDS
+      g.round.score = 0
+      st.result = null
       tone(settingsRef.current.toySound, 440, 880, 0.18, 'triangle', 0.1)
     }
-    const point = (kind: 'basket' | 'football') => {
-      const r = st.rounds[kind]
-      if (r.active) r.score += 1
+    const point = (id: GameId) => {
+      const g = st.games[id]
+      g.session += 1
+      if (g.round.active) g.round.score += 1
+    }
+    const endRound = (id: GameId) => {
+      const g = st.games[id]
+      g.round.active = false
+      const key = BEST_KEY[id]
+      const best = st.scores[key]
+      const record = g.round.score > best
+      if (record) saveScores({ [key]: g.round.score })
+      st.result = { game: GAME_INFO[id].title, title: record ? 'Yeni rekor!' : 'Süre doldu', score: g.round.score, unit: GAME_INFO[id].unit, best: record ? g.round.score : best, record, left: 4.5 }
+      const sound = settingsRef.current.toySound
+      if (record) [523, 659, 784, 1047].forEach((f, i) => tone(sound, f, f, 0.2, 'triangle', 0.1, i * 0.12))
+      else tone(sound, 400, 200, 0.4, 'triangle', 0.1)
     }
     const petBox = () => {
       const cur = settingsRef.current
@@ -475,9 +561,9 @@ function Toys({ s }: { s: DockSettings }) {
       const size = cur.toyPetSize
       return { x: p.x - size / 2, y: p.y - size * 0.93, w: size, h: size * 0.93 }
     }
-    /** What can be picked up at a point: basketball, yarn, stick or the pet. */
+    /** What can be picked up at a point: basketball, baseball, yarn, stick or the pet. */
     const grabAt = (x: number, y: number): { kind: 'ball'; ball: BallKind } | { kind: 'pet' } | null => {
-      for (const kind of ['yarn', 'stick', 'basket'] as BallKind[]) {
+      for (const kind of ['yarn', 'stick', 'yoyo', 'basket'] as BallKind[]) {
         const b = st.balls[kind]
         if (b && Math.hypot(b.x - x, b.y - y) <= b.r + (kind === 'stick' ? 26 : 8)) return { kind: 'ball', ball: kind }
       }
@@ -485,13 +571,21 @@ function Toys({ s }: { s: DockSettings }) {
       if (box && x >= box.x && x <= box.x + box.w && y >= box.y && y <= box.y + box.h) return { kind: 'pet' }
       return null
     }
-    /** Is the pointer close enough to the football or tennis ball to turn into a boot or a racket? */
-    const armedFor = (x: number, y: number): 'football' | 'tennis' | null => {
-      for (const kind of ['football', 'tennis'] as const) {
+    /** Is the pointer close enough to a ball to turn into a hand, a boot or a racket? */
+    const armedFor = (x: number, y: number): 'basket' | 'football' | 'tennis' | null => {
+      for (const kind of ['football', 'tennis', 'basket'] as const) {
         const b = st.balls[kind]
         if (b && !b.grabbed && Math.hypot(b.x - x, b.y - y) <= b.r + AURA[kind]) return kind
       }
       return null
+    }
+    const refreshCursor = () => {
+      const p = st.pointer
+      if (!p) return
+      st.armed = st.yoyoHeld || st.drag ? null : armedFor(p.x, p.y)
+      const over = grabAt(p.x, p.y)
+      setCapture(!!over || !!st.armed || !!st.drag)
+      setCursor(st.drag || st.armed ? 'none' : over ? (over.kind === 'pet' ? 'pointer' : 'grab') : '')
     }
 
     const onMove = (e: MouseEvent) => {
@@ -512,6 +606,7 @@ function Toys({ s }: { s: DockSettings }) {
       }
       const d = st.drag
       if (d) {
+        if (d.kind === 'yoyo') return
         st.samples.push([e.clientX, e.clientY, now])
         if (st.samples.length > 12) st.samples.shift()
         const { w, h } = dims()
@@ -532,14 +627,16 @@ function Toys({ s }: { s: DockSettings }) {
       // the boot and the racket hit the football and the tennis ball; the yarn is only nudged by the bare pointer
       st.armed = armedFor(e.clientX, e.clientY)
       const football = st.balls.football
-      if (football && st.armed === 'football' && kickBall(football, e.clientX, e.clientY, vx, vy, 180, 14)) {
+      if (football && st.armed === 'football' && kickBall(football, e.clientX, e.clientY, vx, vy, 180, 16)) {
         startRound('football')
         tone(sound, 220, 90, 0.11, 'triangle', 0.18)
       }
       const tennis = st.balls.tennis
       if (tennis && st.armed === 'tennis') {
         const [hx, hy] = racketHead(e.clientX, e.clientY, st.toolDir, st.toolAngle)
-        if (kickBall(tennis, hx, hy, vx, vy, 150, 22)) {
+        if (kickBall(tennis, hx, hy, vx, vy, 150, 24)) {
+          startRound('tennis')
+          point('tennis')
           tone(sound, 520, 260, 0.07, 'square', 0.08)
           st.rally += 1
           if (st.rally > st.scores.tennisBest) saveScores({ tennisBest: st.rally })
@@ -562,8 +659,14 @@ function Toys({ s }: { s: DockSettings }) {
       if (!over) return
       st.samples = [[e.clientX, e.clientY, performance.now()]]
       st.armed = null
-      setCursor('grabbing')
-      if (over.kind === 'ball') {
+      setCursor('none')
+      if (over.kind === 'ball' && over.ball === 'yoyo') {
+        // the baseball stays free: the string pulls it along with the pointer
+        st.yoyoHeld = true
+        st.combo = 0
+        startRound('yoyo')
+        st.drag = { kind: 'yoyo' }
+      } else if (over.kind === 'ball') {
         const ball = st.balls[over.ball]!
         ball.grabbed = true
         ball.vx = 0
@@ -591,7 +694,11 @@ function Toys({ s }: { s: DockSettings }) {
       st.drag = null
       const v = throwVelocity(st.samples)
       st.samples = []
-      if (d.kind === 'ball') {
+      if (d.kind === 'yoyo') {
+        st.yoyoHeld = false
+        if (st.combo > st.scores.yoyoCombo) saveScores({ yoyoCombo: st.combo })
+        st.combo = 0
+      } else if (d.kind === 'ball') {
         const ball = st.balls[d.ball]
         if (ball) {
           ball.grabbed = false
@@ -613,30 +720,38 @@ function Toys({ s }: { s: DockSettings }) {
           tone(cur.toySound, cur.toyPetKind === 'dog' ? 440 : 780, cur.toyPetKind === 'dog' ? 330 : 1100, 0.14, 'triangle', 0.1, 0.12)
         } else drop(st.pet, v.vx * 0.5, v.vy * 0.5)
       }
-      const p = st.pointer
-      if (p) {
-        st.armed = armedFor(p.x, p.y)
-        const over = grabAt(p.x, p.y)
-        setCapture(!!over || !!st.armed)
-        setCursor(st.armed ? 'none' : over ? 'grab' : '')
-      }
+      refreshCursor()
     }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mousedown', onDown)
     window.addEventListener('mouseup', onUp)
 
-    const endRound = (kind: 'basket' | 'football') => {
-      const r = st.rounds[kind]
-      r.active = false
-      const best = kind === 'basket' ? st.scores.basketBest : st.scores.footballBest
-      const noun = kind === 'basket' ? 'sepet' : 'gol'
-      const record = r.score > best
-      if (record) saveScores(kind === 'basket' ? { basketBest: r.score } : { footballBest: r.score })
-      st.flash = { text: record ? 'YENİ REKOR!' : 'SÜRE DOLDU', sub: `${r.score} ${noun}${record ? '' : `  ·  Rekor ${best}`}`, left: 3 }
-      const sound = settingsRef.current.toySound
-      if (record) [523, 659, 784, 1047].forEach((f, i) => tone(sound, f, f, 0.2, 'triangle', 0.1, i * 0.12))
-      else tone(sound, 400, 200, 0.4, 'triangle', 0.1)
-    }
+    // the scoreboard is plain page content, refreshed a few times a second
+    let lastHud = ''
+    const hudTimer = window.setInterval(() => {
+      const cur = settingsRef.current
+      const cards: HudCard[] = []
+      for (const id of GAME_IDS) {
+        if (!enabledOf(cur, id)) continue
+        const timed = modeOf(cur, id) === 'timed'
+        const g = st.games[id]
+        const sc = st.scores
+        let best = ''
+        if (timed) best = `Rekor ${sc[BEST_KEY[id]]}`
+        else if (id === 'basket') best = `Toplam ${sc.basket}`
+        else if (id === 'football') best = `Toplam ${sc.football}`
+        else if (id === 'tennis') best = `Seri ${st.rally}  ·  Rekor ${sc.tennisBest}`
+        else best = `Kombo ${st.combo}  ·  Rekor ${sc.yoyoCombo}`
+        const hint = id === 'football' ? 'Hazır: topa vurunca başlar' : id === 'tennis' ? 'Hazır: topa vurunca başlar' : id === 'yoyo' ? 'Hazır: topu tutunca başlar' : 'Hazır: topu tutunca başlar'
+        cards.push({ id, title: GAME_INFO[id].title, unit: GAME_INFO[id].unit, timed, active: g.round.active, score: timed ? g.round.score : g.session, left: Math.round(g.round.left * 10) / 10, best, hint })
+      }
+      const result = st.result ? { game: st.result.game, title: st.result.title, score: st.result.score, unit: st.result.unit, best: st.result.best, record: st.result.record } : null
+      const key = JSON.stringify([cards, result])
+      if (key !== lastHud) {
+        lastHud = key
+        setHud({ cards, result })
+      }
+    }, 100)
 
     let raf = 0
     let last = performance.now()
@@ -655,6 +770,7 @@ function Toys({ s }: { s: DockSettings }) {
         basket: cur.toyBasket,
         football: cur.toyFootball,
         tennis: cur.toyTennis,
+        yoyo: cur.toyYoyo,
         yarn: cur.toyPet && cur.toyPetPlay && cur.toyPetKind === 'cat',
         stick: cur.toyPet && cur.toyPetPlay && cur.toyPetKind === 'dog',
       }
@@ -680,11 +796,18 @@ function Toys({ s }: { s: DockSettings }) {
               st.carried = false
               st.stickThrown = false
             }
+            if (kind === 'yoyo') st.yoyoHeld = false
           }
         } else if (!st.balls[kind]) {
           const [x, y] = startPosition(kind, w, floor, side, st.pet?.x)
           st.balls[kind] = makeBall(x, y - 120, SPEC[kind].r)
         }
+      }
+      // a game that is switched off, or set to free play, has no round running
+      for (const id of GAME_IDS) {
+        const g = st.games[id]
+        if (g.round.active && (!enabledOf(cur, id) || modeOf(cur, id) === 'free')) g.round.active = false
+        if (!enabledOf(cur, id)) g.session = 0
       }
       if (!cur.toyPet) st.pet = null
       else if (!st.pet) st.pet = makePet(w * 0.3, floor)
@@ -699,6 +822,20 @@ function Toys({ s }: { s: DockSettings }) {
         const prevY = ball.y
         const prevAngle = ball.angle
         const speedBefore = Math.abs(ball.vy)
+        if (kind === 'yoyo' && st.yoyoHeld && st.pointer) {
+          // the elastic string only pulls once it is stretched past its rest length
+          const dx = st.pointer.x - ball.x
+          const dy = st.pointer.y - ball.y
+          const dist = Math.hypot(dx, dy)
+          if (dist > STRING_REST) {
+            const pull = STRING_PULL * (dist - STRING_REST)
+            ball.vx += (dx / dist) * pull * dt
+            ball.vy += (dy / dist) * pull * dt
+          }
+          const damp = Math.max(0, 1 - 0.7 * dt)
+          ball.vx *= damp
+          ball.vy *= damp
+        }
         stepBall(ball, dt, world, segmentsFor(kind, w, floor, side))
         if (kind === 'stick' && !ball.grabbed) {
           // a thrown stick tumbles in the air and settles flat once it lies on the floor
@@ -730,6 +867,11 @@ function Toys({ s }: { s: DockSettings }) {
           }
         } else if (kind === 'tennis' && ball.floorHits >= 3 && st.rally > 0) {
           st.rally = 0
+        } else if (kind === 'yoyo' && st.yoyoHeld && ball.floorHits > hitsBefore) {
+          // every bounce while the string is held counts, and a run of them is a combo
+          st.combo += 1
+          point('yoyo')
+          tone(cur.toySound, 260 + Math.min(st.combo, 12) * 40, 140, 0.1, 'triangle', 0.13)
         }
       }
       if (st.respawn > 0) {
@@ -742,16 +884,20 @@ function Toys({ s }: { s: DockSettings }) {
           ball.vy = 0
         }
       }
-      for (const kind of ['basket', 'football'] as const) {
-        const r = st.rounds[kind]
+      for (const id of GAME_IDS) {
+        const r = st.games[id].round
         if (r.active) {
           r.left -= dt
-          if (r.left <= 0) endRound(kind)
+          if (r.left <= 0) endRound(id)
         }
       }
       if (st.flash) {
         st.flash.left -= dt
         if (st.flash.left <= 0) st.flash = null
+      }
+      if (st.result) {
+        st.result.left -= dt
+        if (st.result.left <= 0) st.result = null
       }
 
       const pet = st.pet
@@ -812,15 +958,18 @@ function Toys({ s }: { s: DockSettings }) {
         c.clearRect(0, 0, w, h)
         drawScene(c, cur, st, w, floor)
         const p = st.pointer
-        if (p && st.armed && !st.drag) {
-          if (st.armed === 'football') drawBoot(c, p.x, p.y, st.toolDir, st.toolAngle)
-          else drawRacket(c, p.x, p.y, st.toolDir, st.toolAngle)
+        if (p) {
+          if (st.drag && st.drag.kind !== 'pet') drawTool(c, 'fist', p.x, p.y, 1, 0)
+          else if (st.armed === 'basket') drawTool(c, 'hand', p.x, p.y, 1, 0)
+          else if (st.armed === 'football') drawTool(c, 'boot', p.x, p.y, st.toolDir, st.toolAngle)
+          else if (st.armed === 'tennis') drawTool(c, 'racket', p.x, p.y, st.toolDir, st.toolAngle)
         }
       }
     }
     raf = requestAnimationFrame(tick)
     return () => {
       cancelAnimationFrame(raf)
+      window.clearInterval(hudTimer)
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mousedown', onDown)
       window.removeEventListener('mouseup', onUp)
@@ -830,6 +979,7 @@ function Toys({ s }: { s: DockSettings }) {
   return (
     <div className="toys" ref={root}>
       <canvas ref={canvas} className="toys__canvas" />
+      <Hud cards={hud.cards} result={hud.result} />
       <div ref={petEl} className="pet" data-state="idle" data-dir="1" style={{ width: s.toyPetSize, height: s.toyPetSize, display: s.toyPet ? 'block' : 'none' }}>
         <PetSprite kind={s.toyPetKind} />
         <span className="pet__name">{s.toyPetName || 'Dostum'}</span>

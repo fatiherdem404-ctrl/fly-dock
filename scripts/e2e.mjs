@@ -254,6 +254,29 @@ try {
     })()`)
     assert.equal(armed, 'football', 'the pointer turns into a boot near the football')
     await invoke('settings:update', { toyFootball: false })
+    // the baseball on its string: holding it starts a timed round, letting go ends the hold
+    await invoke('settings:update', { toyYoyo: true })
+    await until(async () => conn.call("!!window.__toys.balls.yoyo"), 'baseball exists')
+    await sleep(1500)
+    const yoyo = await conn.call(`new Promise((resolve) => {
+      const st = window.__toys
+      const b = st.balls.yoyo
+      const fire = (type, x, y) => window.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, button: 0 }))
+      fire('mousemove', b.x, b.y)
+      fire('mousedown', b.x, b.y)
+      const held = st.yoyoHeld
+      const round = st.games.yoyo.round.active
+      fire('mousemove', b.x, b.y - 200)
+      setTimeout(() => {
+        fire('mouseup', 0, 0)
+        resolve({ held, round, released: !st.yoyoHeld })
+      }, 60)
+    })`)
+    assert.deepEqual(yoyo, { held: true, round: true, released: true }, 'the baseball is held on its string and a timed round starts')
+    await sleep(400)
+    assert.equal(await conn.call("document.querySelectorAll('.hud-card').length >= 3"), true, 'the scoreboard shows a card for every game that is on')
+    await invoke('settings:update', { toyYoyo: false })
+
     // the dog fetches a thrown stick and brings it back; the cat has a ball of yarn
     assert.equal(await conn.call('!!window.__toys.balls.yarn'), true, 'the cat has a ball of yarn')
     await invoke('settings:update', { toyPetKind: 'dog' })
