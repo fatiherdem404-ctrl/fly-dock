@@ -3,7 +3,7 @@
 
 A modern dock for your desktop — An open-source Windows dock inspired by RocketDock: widgets, themes and icon packs.
 
-[Türkçe](README.tr.md) · [Issues](https://github.com/PLACEHOLDER/fly-dock/issues) · [Support on Ko-fi](https://ko-fi.com/PLACEHOLDER)
+[Türkçe](README.tr.md) · [Issues](https://github.com/PLACEHOLDER/fly-dock/issues)
 
 > Status: early development (Phase 0). Not ready for daily use yet.
 
@@ -47,9 +47,6 @@ scripts/    brand check and docs rendering
 
 Name, app id, links, tray text, window title, installer name and these docs all come from `src/config/brand.config.json`. Change it there, run `npm run brand:render`, and `npm run brand:check` will tell you if anything else is hardcoded.
 
-## Support the project
-
-Fly Dock is free and open source. If it is useful to you, you can support development on [Ko-fi](https://ko-fi.com/PLACEHOLDER).
 
 ## License
 

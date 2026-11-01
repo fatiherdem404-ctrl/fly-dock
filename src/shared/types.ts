@@ -727,8 +727,8 @@ export interface InvokeMap {
   'widgets:media': { args: [key: 'playpause' | 'next' | 'prev']; result: void }
   'widgets:now-playing': { args: []; result: { app: string; title: string } | null }
   'app:open-settings': { args: []; result: void }
-  'app:open-external': { args: [target: 'support' | 'repo' | 'issues']; result: void }
-  'app:info': { args: []; result: { name: string; version: string; tagline: string; kofiUrl: string; loginSupported: boolean; loginEnabled: boolean } }
+  'app:open-external': { args: [target: 'repo' | 'issues']; result: void }
+  'app:info': { args: []; result: { name: string; version: string; tagline: string; loginSupported: boolean; loginEnabled: boolean } }
   'backup:export': { args: []; result: { ok: boolean; message: string } }
   'backup:import': { args: []; result: { ok: boolean; message: string } }
   'app:quit': { args: []; result: void }

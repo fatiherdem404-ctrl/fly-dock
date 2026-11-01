@@ -3,7 +3,7 @@
 
 {{tagline.tr}} — {{description.tr}}
 
-[English](README.md) · [Sorunlar]({{issuesUrl}}) · [Ko-fi'de destek ol]({{kofiUrl}})
+[English](README.md) · [Sorunlar]({{issuesUrl}})
 
 > Durum: erken geliştirme (Faz 0). Henüz günlük kullanıma uygun değil.
 
@@ -47,10 +47,9 @@ scripts/    marka denetimi ve doküman üretimi
 
 Ad, uygulama kimliği, bağlantılar, tepsi metni, pencere başlığı, kurulum dosyası adı ve bu belgeler `src/config/brand.config.json` dosyasından gelir. Değişikliği orada yap, `npm run brand:render` çalıştır; başka yerde sabit yazılmış bir şey kalırsa `npm run brand:check` söyler.
 
-## Destek ol
-
-{{name}} ücretsiz ve açık kaynaklıdır. İşine yaradıysa geliştirmeyi [Ko-fi]({{kofiUrl}}) üzerinden destekleyebilirsin.
 
 ## Lisans
 
 {{license}} — bkz. [LICENSE](LICENSE). Telif © {{copyrightYear}} {{company}}.
+
+Kod serbestçe kullanılabilir ve değiştirilebilir. "{{name}}" adı ve logo lisansın parçası değildir: resmî sürümü belirtir. Değiştirilmiş bir sürüm yayımlarsan başka bir ad ve logo kullan, telif notlarını koru ve değiştirildiğini belirt — ayrıntılar [NOTICE](NOTICE) dosyasında.

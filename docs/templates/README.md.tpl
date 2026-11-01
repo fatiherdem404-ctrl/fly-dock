@@ -3,7 +3,7 @@
 
 {{tagline.en}} — {{description.en}}
 
-[Türkçe](README.tr.md) · [Issues]({{issuesUrl}}) · [Support on Ko-fi]({{kofiUrl}})
+[Türkçe](README.tr.md) · [Issues]({{issuesUrl}})
 
 > Status: early development (Phase 0). Not ready for daily use yet.
 
@@ -47,10 +47,9 @@ scripts/    brand check and docs rendering
 
 Name, app id, links, tray text, window title, installer name and these docs all come from `src/config/brand.config.json`. Change it there, run `npm run brand:render`, and `npm run brand:check` will tell you if anything else is hardcoded.
 
-## Support the project
-
-{{name}} is free and open source. If it is useful to you, you can support development on [Ko-fi]({{kofiUrl}}).
 
 ## License
 
 {{license}} — see [LICENSE](LICENSE). Copyright © {{copyrightYear}} {{company}}.
+
+The code is free to use and change. The name "{{name}}" and the logo are not part of the licence: they mark the official release. If you publish a changed version, give it another name and logo, keep the copyright notices and say that it is modified — details in [NOTICE](NOTICE).

@@ -102,5 +102,5 @@ export const SEARCH_INDEX: SearchEntry[] = [
   e('Windows ile başlat', 'general', undefined, 'startup login'),
   e('Yedekle ve geri yükle', 'general', undefined, 'backup'),
   e('Kısayol: dock’u göster / gizle', 'general', undefined, 'hotkey'),
-  e('Hakkında, Ko-fi desteği', 'general', undefined, 'sürüm destek'),
+  e('Hakkında, sürüm', 'general', undefined, 'sürüm destek'),
 ]

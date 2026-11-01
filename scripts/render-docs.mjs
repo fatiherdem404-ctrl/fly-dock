@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
-// Renders README.md, README.tr.md and .github/FUNDING.yml from docs/templates/*.tpl + src/config/brand.config.json.
+// Renders README.md and README.tr.md from docs/templates/*.tpl + src/config/brand.config.json.
 // `--check` only compares and exits 1 when a generated file is out of date.
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 
@@ -8,7 +8,6 @@ const brand = JSON.parse(readFileSync('src/config/brand.config.json', 'utf-8'))
 const outputs = [
   ['docs/templates/README.md.tpl', 'README.md'],
   ['docs/templates/README.tr.md.tpl', 'README.tr.md'],
-  ['docs/templates/FUNDING.yml.tpl', '.github/FUNDING.yml'],
 ]
 
 const lookup = (path) => path.split('.').reduce((v, k) => v?.[k], brand)

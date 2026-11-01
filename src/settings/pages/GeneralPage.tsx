@@ -34,9 +34,8 @@ export function GeneralTab({ s, set }: { s: DockSettings; set: Update }) {
         {message && <Message text={message.text} error={message.error} />}
       </Card>
       <Card icon="heart" tab="Hakkında" title="Hakkında">
-        <p className="st-prose"><b>{info?.name}</b> {info?.version && `v${info.version}`}<br />{info?.tagline}<br />Ücretsiz ve açık kaynak (GPLv3). Beğendiysen geliştirmeyi destekleyebilirsin.<br />Geliştiren: {brand.company} · © {brand.copyrightYear}. Ad ve logo resmî sürüme aittir (NOTICE).</p>
+        <p className="st-prose"><b>{info?.name}</b> {info?.version && `v${info.version}`}<br />{info?.tagline}<br />Ücretsiz ve açık kaynak (GPLv3).<br />Geliştiren: {brand.company} · © {brand.copyrightYear}. Ad ve logo resmî sürüme aittir (NOTICE).</p>
         <div className="st-row-inline">
-          <button className="st-btn st-btn--accent" onClick={() => invoke('app:open-external', 'support')}><Icon name="heart" size={15} />Ko-fi'de destek ol</button>
           <button className="st-btn" onClick={() => invoke('app:open-external', 'repo')}><Icon name="code" size={15} />Kaynak kodu</button>
           <button className="st-btn" onClick={() => invoke('app:open-external', 'issues')}><Icon name="bug" size={15} />Sorun bildir</button>
           <button className="st-btn st-btn--danger" onClick={() => invoke('app:quit')}><Icon name="power" size={15} />Çık</button>

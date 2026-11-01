@@ -1,2 +1,0 @@
-# Generated from src/config/brand.config.json by `npm run brand:render`. Do not edit by hand.
-ko_fi: {{kofiUser}}

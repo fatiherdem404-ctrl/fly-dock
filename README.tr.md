@@ -3,7 +3,7 @@
 
 Masaüstün için modern dock — RocketDock'tan ilham alan, açık kaynaklı Windows dock'u: widget'lar, temalar ve ikon paketleri.
 
-[English](README.md) · [Sorunlar](https://github.com/PLACEHOLDER/fly-dock/issues) · [Ko-fi'de destek ol](https://ko-fi.com/PLACEHOLDER)
+[English](README.md) · [Sorunlar](https://github.com/PLACEHOLDER/fly-dock/issues)
 
 > Durum: erken geliştirme (Faz 0). Henüz günlük kullanıma uygun değil.
 
@@ -47,9 +47,6 @@ scripts/    marka denetimi ve doküman üretimi
 
 Ad, uygulama kimliği, bağlantılar, tepsi metni, pencere başlığı, kurulum dosyası adı ve bu belgeler `src/config/brand.config.json` dosyasından gelir. Değişikliği orada yap, `npm run brand:render` çalıştır; başka yerde sabit yazılmış bir şey kalırsa `npm run brand:check` söyler.
 
-## Destek ol
-
-Fly Dock ücretsiz ve açık kaynaklıdır. İşine yaradıysa geliştirmeyi [Ko-fi](https://ko-fi.com/PLACEHOLDER) üzerinden destekleyebilirsin.
 
 ## Lisans
 

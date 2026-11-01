@@ -147,7 +147,6 @@ function createTray() {
         { label: 'Dock’u göster / gizle', icon: menuIcon('toggle'), click: toggleDockVisibility },
         { label: 'Otomatik gizle', icon: menuIcon('autohide'), type: 'checkbox', checked: getSettings().autoHide, click: (m) => applySettings({ autoHide: m.checked }) },
         { type: 'separator' },
-        { label: 'Destek ol (Ko-fi)', icon: menuIcon('support'), click: () => shell.openExternal(brand.kofiUrl) },
         { label: `${brand.name} uygulamasından çık`, icon: menuIcon('quit'), click: () => app.quit() },
       ]),
     )
@@ -523,10 +522,10 @@ function registerIpc() {
 
   handle('app:open-settings', () => openSettings())
   handle('app:open-external', (_e, target) => {
-    const url = target === 'support' ? brand.kofiUrl : target === 'repo' ? brand.repoUrl : brand.issuesUrl
+    const url = target === 'repo' ? brand.repoUrl : brand.issuesUrl
     return shell.openExternal(url)
   })
-  handle('app:info', () => ({ name: brand.name, version: app.getVersion(), tagline: brand.tagline.tr, kofiUrl: brand.kofiUrl, loginSupported: app.isPackaged, loginEnabled: loginEnabled() }))
+  handle('app:info', () => ({ name: brand.name, version: app.getVersion(), tagline: brand.tagline.tr, loginSupported: app.isPackaged, loginEnabled: loginEnabled() }))
   handle('backup:export', exportBackup)
   handle('backup:import', importBackup)
   handle('app:quit', () => app.quit())

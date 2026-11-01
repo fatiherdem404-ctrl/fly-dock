@@ -11,7 +11,7 @@ const pkg = JSON.parse(readFileSync('package.json', 'utf-8'))
 const errors = []
 const warnings = []
 
-const forbidden = [brand.name, brand.slug, brand.appId, brand.repoUrl, brand.issuesUrl, brand.kofiUrl, brand.websiteUrl, 'RocketDock Pro', 'rocketdockpro', 'rocketdock-pro']
+const forbidden = [brand.name, brand.slug, brand.appId, brand.repoUrl, brand.issuesUrl, brand.websiteUrl, 'RocketDock Pro', 'rocketdockpro', 'rocketdock-pro']
   .filter(Boolean)
 const codeRoots = ['electron', 'src']
 const codeFiles = ['index.html']
@@ -43,7 +43,7 @@ if (!existsSync('LICENSE')) errors.push('LICENSE file is missing')
 try { execFileSync(process.execPath, ['scripts/render-docs.mjs', '--check'], { stdio: 'pipe' }) }
 catch (e) { errors.push(String(e.stderr || e.message).trim()) }
 
-if (JSON.stringify(brand).includes('PLACEHOLDER')) warnings.push('brand.config.json still has PLACEHOLDER values (repo / Ko-fi) — fill them in before publishing')
+if (JSON.stringify(brand).includes('PLACEHOLDER')) warnings.push('brand.config.json still has PLACEHOLDER values — fill them in before publishing')
 
 warnings.forEach((w) => console.warn(`warning: ${w}`))
 if (errors.length) { errors.forEach((e) => console.error(e)); console.error(`\n${errors.length} brand problem(s).`); process.exit(1) }
