@@ -7,7 +7,10 @@ export const SCENE_HELP = `// Sahne kodu: aşağıdaki işlevlerden istediğini 
 //   click(x, y)                 tıklayınca çalışır
 `
 
+import voidScene from './studio/scenes/void.js?raw'
+
 export const SCENE_TEMPLATES: { id: string; name: string; code: string }[] = [
+  { id: 'void', name: 'VOID: 3B toz evreni', code: voidScene },
   {
     id: 'blank',
     name: 'Boş sahne',

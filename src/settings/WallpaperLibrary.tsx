@@ -114,7 +114,7 @@ function WallpaperDialog({ item, scene, legacy, legacyFile, onClose, onSaved }: 
   const [name, setName] = useState(item?.name ?? '')
   const [author, setAuthor] = useState(item?.author ?? '')
   const [note, setNote] = useState(item?.note ?? '')
-  const [code, setCode] = useState(item?.code ?? SCENE_TEMPLATES[0].code)
+  const [code, setCode] = useState(item?.code ?? SCENE_TEMPLATES.find((t) => t.id === 'blank')!.code)
   const [applied, setApplied] = useState(code)
   const [error, setError] = useState<SceneError | null>(null)
   const [fail, setFail] = useState('')
