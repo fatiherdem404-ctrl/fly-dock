@@ -68,14 +68,16 @@ export function geo(width: number, floor: number, pitch: Pitch): Geo {
   return { pitch, targetIdx: 0, ownIdx: 1, targetLine: line, ownLine: b.y, sign: -1, center: width / 2, spot: { x: width / 2, y: line + dist } }
 }
 
-/** A new place to take the free kick from: in front of the goal, never in the same place twice in a row. */
+/**
+ * A new place to take the free kick from: in the attacking half, well outside the box, never right at the goal.
+ * Between about a third and just over half of the pitch's length away from the goal line, and anywhere across.
+ */
 export function randomSpot(g: Geo, width: number, floor: number): { x: number; y: number } {
   const r = Math.random
-  if (g.pitch === 'horizontal') {
-    const [x, y] = place(g, g.targetLine - (270 + r() * Math.min(300, width * 0.3)), g.center + (r() * 2 - 1) * Math.min(floor / 2 - 90, 280))
-    return { x, y }
-  }
-  const [x, y] = place(g, g.targetLine + (250 + r() * Math.min(260, floor * 0.3)), g.center + (r() * 2 - 1) * Math.min(width / 2 - 100, 330))
+  const extent = g.pitch === 'horizontal' ? width : floor
+  const dist = extent * (0.34 + r() * 0.2)
+  const side = (g.pitch === 'horizontal' ? floor : width) / 2 - 110
+  const [x, y] = place(g, g.targetLine - g.sign * dist, g.center + (r() * 2 - 1) * Math.min(side, 340))
   return { x, y }
 }
 
