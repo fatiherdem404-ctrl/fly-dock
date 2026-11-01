@@ -14,6 +14,7 @@ import { iconForItem, setTrashState } from './icons'
 import { shellIcon, thumbnail } from './iconService'
 import { askConfirm, askInput, answerConfirm, confirmIsOpen } from './confirm'
 import { registerWallpaperScheme, initWallpaper, disposeWallpaper, sync as syncWallpaper, advance as nextWallpaper, restartSlideshow, setFullscreenPaused, wallpaperInfo, pickWallpaperFile, pickWallpaperFolder, pickNewWallpaper, wallpaperLibrary, addWallpaper, editWallpaper, removeWallpaper, libraryFile } from './wallpaper'
+import { initCursors, disposeCursors, cursorPacks, cursorStatus, applyCursorPack } from './cursors'
 import { showEntryMenu } from './entryMenu'
 import { menuIsOpen } from './contextMenu'
 import { listLibrary, libraryThumb, pickImage, addLibraryFolder, removeLibraryFolder } from './iconLibrary'
@@ -391,6 +392,13 @@ function registerIpc() {
   handle('wallpaper:info', () => wallpaperInfo())
   handle('wallpaper:next', () => nextWallpaper())
   handle('wallpaper:pick-file', () => pickWallpaperFile())
+  handle('cursors:list', () => cursorPacks())
+  handle('cursors:status', () => cursorStatus())
+  handle('cursors:apply', async (_e, id) => {
+    const r = await applyCursorPack(id)
+    applySettings({ cursorPack: r.active || (id ? '' : '') })
+    return r
+  })
   handle('wallpaper:pick-new', (_e, existing) => pickNewWallpaper(existing))
   handle('wallpaper:library', () => wallpaperLibrary())
   handle('wallpaper:add', (_e, draft) => addWallpaper(draft))
@@ -550,6 +558,7 @@ if (!app.requestSingleInstanceLock()) {
 
     initDockWindows()
     initWallpaper()
+    initCursors()
     initToys()
     // screenshot runs ask for the confirmation window so it can be looked at
     if (HEADLESS && process.env.FLY_DOCK_TEST_CONFIRM === 'input') setTimeout(() => void askInput({ title: 'Yeniden adlandır', message: 'Yeni adı yaz.', confirmLabel: 'Adlandır', value: 'rapor-2026.docx' }), 1500)
@@ -569,6 +578,7 @@ if (!app.requestSingleInstanceLock()) {
     globalShortcut.unregisterAll()
     disposeDockWindows()
     disposeWallpaper()
+    void disposeCursors()
     disposeToys()
     disposeWidgets()
     helper.stop()

@@ -244,6 +244,8 @@ export interface DockSettings {
   wallpaperPauseBattery: boolean
   /** Live scenes react to the cursor. */
   wallpaperReact: boolean
+  /** The cursor pack in use ('' = Windows' own pointers). */
+  cursorPack: string
   /** Folders whose pictures show up in the icon picker. */
   iconFolders: string[]
   // desktop toys
@@ -355,6 +357,20 @@ export interface WallpaperSource {
 }
 
 /** One entry of the wallpaper library: a picture or video copied into the app's own folder, or a scene written by the user. */
+/** A cursor pack as the settings page shows it: one small picture per role it covers. */
+export interface CursorPackInfo {
+  id: string
+  name: string
+  author: string
+  roles: { role: string; label: string; image: string; animated: boolean }[]
+}
+
+export interface CursorStatus {
+  /** The pack that is on right now ('' = none). */
+  active: string
+  message: string
+}
+
 export interface WallpaperItem {
   id: string
   name: string
@@ -547,7 +563,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   launchAtLogin: false,
   toggleHotkey: 'Control+Alt+D',
   theme: 'glass-dark',
-  iconPack: 'fly-win11',
+  iconPack: '',
   themeDesk: true,
   wallpaperMode: 'off',
   wallpaperSingle: '',
@@ -558,6 +574,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   wallpaperPauseFullscreen: true,
   wallpaperPauseBattery: true,
   wallpaperReact: true,
+  cursorPack: '',
   iconFolders: [],
   toyBasket: false,
   toyFootball: false,
@@ -640,6 +657,9 @@ export interface InvokeMap {
   'wallpaper:next': { args: []; result: void }
   'wallpaper:pick-file': { args: []; result: string | null }
   'wallpaper:pick-new': { args: [existing?: string]; result: WallpaperPicked | null }
+  'cursors:list': { args: []; result: CursorPackInfo[] }
+  'cursors:status': { args: []; result: CursorStatus }
+  'cursors:apply': { args: [id: string]; result: CursorStatus }
   'wallpaper:library': { args: []; result: WallpaperItem[] }
   'wallpaper:add': { args: [draft: WallpaperDraft]; result: WallpaperItem }
   'wallpaper:edit': { args: [id: string, patch: Partial<Pick<WallpaperItem, 'name' | 'author' | 'note' | 'code'>>]; result: WallpaperItem | null }

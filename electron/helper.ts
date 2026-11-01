@@ -156,6 +156,15 @@ class Helper extends EventEmitter {
     return this.call<boolean>('watchClicks', { on })
   }
 
+  /** Replaces system cursors: `id` is the OCR_* number, `file` a .cur or .ani. */
+  cursorsApply(items: { id: number; file: string }[]) {
+    return this.call<{ applied: number; failed: number }>('cursorsApply', { items })
+  }
+
+  cursorsRestore() {
+    return this.call<boolean>('cursorsRestore')
+  }
+
   desktopAttach(hwnd: number, x: number, y: number, width: number, height: number) {
     return this.call<boolean>('desktopAttach', { hwnd, x, y, width, height })
   }

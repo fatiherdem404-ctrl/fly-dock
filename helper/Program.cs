@@ -56,6 +56,8 @@ internal static class Program
         switch (method)
         {
             case "ping": return "pong";
+            case "cursorsApply": return Cursors.Apply(p["items"] as JsonArray ?? new JsonArray());
+            case "cursorsRestore": return Cursors.Restore();
             case "watchClicks":
                 Clicks.Watch(p["on"]?.GetValue<bool>() ?? false, (x, y) => Emit("click", new JsonObject { ["x"] = x, ["y"] = y }));
                 return true;
@@ -147,5 +149,7 @@ internal static class Program
         Emit("ready", new JsonObject { ["version"] = 1 });
         System.Windows.Forms.Application.Run();
         Queue.CompleteAdding();
+        // the app is gone: give the user their own pointers back
+        if (Cursors.Applied) Cursors.Restore();
     }
 }

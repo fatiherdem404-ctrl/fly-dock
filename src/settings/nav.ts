@@ -1,6 +1,6 @@
 import type { IconName } from '@/icons'
 
-export type Tab = 'dock' | 'desk' | 'theme' | 'wallpaper' | 'icons' | 'motion' | 'windows' | 'sound' | 'items' | 'wheel' | 'widgets' | 'toys' | 'tweaks' | 'general'
+export type Tab = 'dock' | 'desk' | 'theme' | 'wallpaper' | 'icons' | 'cursors' | 'motion' | 'windows' | 'sound' | 'items' | 'wheel' | 'widgets' | 'toys' | 'tweaks' | 'general'
 
 export interface TabInfo {
   id: Tab
@@ -16,6 +16,7 @@ export const TAB_INFO: Record<Tab, TabInfo> = {
   theme: { id: 'theme', label: 'Temalar', icon: 'theme', blurb: 'Renkler, cam, yazı tipi ve eşlik eden raf ile arka plan' },
   wallpaper: { id: 'wallpaper', label: 'Duvar kâğıdı', icon: 'image', blurb: 'Canlı arka planlar, resim, video ve slayt' },
   icons: { id: 'icons', label: 'Simge paketleri', icon: 'pack', blurb: 'Programların simgelerini toplu değiştir' },
+  cursors: { id: 'cursors', label: 'İmleçler', icon: 'cursor', blurb: 'Fare imleçlerini bir paketle değiştir' },
   motion: { id: 'motion', label: 'Animasyonlar', icon: 'motion', blurb: 'Hız, hareket, açılış ve pencere efektleri' },
   windows: { id: 'windows', label: 'Dock pencereleri', icon: 'window', blurb: 'Klasör, grup ve kontrol paneli penceresinin boyutu ve yeri' },
   sound: { id: 'sound', label: 'Sesler', icon: 'sound', blurb: 'Tıklama, açılış ve pencere sesleri' },
@@ -28,7 +29,7 @@ export const TAB_INFO: Record<Tab, TabInfo> = {
 }
 
 export const NAV_GROUPS: { title: string; tabs: Tab[] }[] = [
-  { title: 'Görünüm', tabs: ['dock', 'desk', 'theme', 'wallpaper', 'icons'] },
+  { title: 'Görünüm', tabs: ['dock', 'desk', 'theme', 'wallpaper', 'icons', 'cursors'] },
   { title: 'Davranış', tabs: ['motion', 'windows', 'sound'] },
   { title: 'İçerik', tabs: ['items', 'wheel', 'widgets', 'toys'] },
   { title: 'Sistem', tabs: ['tweaks', 'general'] },
@@ -75,6 +76,7 @@ export const SEARCH_INDEX: SearchEntry[] = [
   e('Duvar kâğıdı davranışı (pil, tam ekran)', 'wallpaper', 'Davranış', 'durdur'),
   e('Simge paketi seç', 'icons', 'Paketler', 'icon pack'),
   e('Simge paketi oluştur', 'icons', 'Paket oluştur', 'rocketdock'),
+  e('İmleç paketi', 'cursors', 'Paketler', 'cursor fare mouse imleç ok el'),
   e('Hız ve hareket tipi', 'motion', 'Hız', 'speed'),
   e('Fare üzerine gelme animasyonu', 'motion', 'Simge efektleri', 'hover'),
   e('Uygulama başlatma animasyonu', 'motion', 'Simge efektleri', 'launch zıpla'),

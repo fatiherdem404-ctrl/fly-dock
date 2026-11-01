@@ -18,10 +18,7 @@ const ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,40}$/
 
 const packsRoot = () => path.join(app.getPath('userData'), 'packs')
 /** Icon packs that ship with the app: plain folders next to the program, never copied to the user's data. */
-const BUILTIN_ICON_PACKS = [
-  { id: 'fly-win11', name: 'Fly Windows 11', author: 'Fluent icon theme (GPL-3.0)' },
-  { id: 'fly-3d', name: 'Fly 3B', author: 'Fluent Emoji (MIT)' },
-]
+const BUILTIN_ICON_PACKS: { id: string; name: string; author: string }[] = []
 export const builtinIconRoot = () => (app.isPackaged ? path.join(process.resourcesPath, 'icon-packs') : path.join(app.getAppPath(), 'resources', 'icon-packs'))
 const isBuiltinIconPack = (id: string) => BUILTIN_ICON_PACKS.some((p) => p.id === id)
 

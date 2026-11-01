@@ -1,0 +1,10 @@
+{
+  "animations": {
+    "busy": {
+      "fps": 14
+    },
+    "working": {
+      "fps": 14
+    }
+  }
+}
