@@ -229,6 +229,8 @@ export interface DockSettings {
   showRunningApps: boolean
   launchAtLogin: boolean
   toggleHotkey: string
+  /** The language of the app: follow Windows, or always Turkish or English. Changing it restarts the app. */
+  language: 'auto' | 'tr' | 'en'
   // look
   theme: string
   iconPack: string
@@ -584,6 +586,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   showRunningApps: true,
   launchAtLogin: false,
   toggleHotkey: 'Control+Alt+D',
+  language: 'auto',
   theme: 'glass-dark',
   iconPack: 'fly-default',
   themeDesk: true,

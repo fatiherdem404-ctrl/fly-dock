@@ -27,7 +27,7 @@ const write = (key: string, value: unknown) => {
   }
 }
 
-/** Stands in for a program the pack has no picture for (Claude, WhatsApp…), to show how the card would carry its own icon. */
+/** Stands in for a program the pack has no picture for (Photoshop, WhatsApp…), to show how the card would carry its own icon. */
 const SAMPLE_APP = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a5a"/><stop offset="1" stop-color="#d9482a"/></linearGradient></defs><circle cx="32" cy="32" r="28" fill="url(#a)"/><path d="M20 38c4 8 20 8 24 0M24 25v4M40 25v4" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg>')
 
 /** Marks for the studio to find a glyph again: the library name, or the pasted markup. */
@@ -148,7 +148,7 @@ export function StudioTab({ set }: { set: Update }) {
               setEditing(key)
             }}>
               <b>Kendi programını ekle</b>
-              <input className="st-input" placeholder="exe adı, örn. claude" value={addKey} onChange={(e) => setAddKey(e.target.value)} />
+              <input className="st-input" placeholder="exe adı, örn. photoshop" value={addKey} onChange={(e) => setAddKey(e.target.value)} />
               <input className="st-input" placeholder="Görünen ad (isteğe bağlı)" value={addLabel} onChange={(e) => setAddLabel(e.target.value)} />
               <button className="st-btn st-btn--accent" type="submit" disabled={!addKey.trim()}>Ekle ve simge seç</button>
               <small>Programın exe dosyasının adı (uzantısız) paketteki anahtarı olur. Simgesini Lucide’dan seçebilir ya da SVG kodu yapıştırabilirsin.</small>
@@ -235,7 +235,7 @@ export function StudioTab({ set }: { set: Update }) {
         </Card>
         <Card icon="pack" title="Paketi oluştur" hint={`${all.length} simge, 256 piksel PNG olarak ayrı bir simge paketine yazılır; sonra Simge paketleri sayfasından dışa aktarabilirsin.`}>
           <Row label="Paket adı"><input className="st-input" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} /></Row>
-          <Row label="Eksik programlara kart ekle" hint="Pakette resmi olmayan programların (Claude, WhatsApp…) kendi simgesi bu kartın içine konur. Önizlemesi Programlar sekmesinin sonunda"><Switch label="Eksik programlara kart ekle" value={fallback} onChange={setFallback} /></Row>
+          <Row label="Eksik programlara kart ekle" hint="Pakette resmi olmayan programların (Photoshop, WhatsApp…) kendi simgesi bu kartın içine konur. Önizlemesi Programlar sekmesinin sonunda"><Switch label="Eksik programlara kart ekle" value={fallback} onChange={setFallback} /></Row>
           {fallback && <Row label="Program simgesi boyutu">{num('appIconSize', 40, 90, 1, '%')}</Row>}
           <Row label="Oluşunca kullan"><Switch label="Oluşunca kullan" value={use} onChange={setUse} /></Row>
           <div className="st-row-inline">

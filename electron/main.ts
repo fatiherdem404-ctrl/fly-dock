@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Fatih Erdem. See LICENSE and NOTICE.
+import './lang'
 import { app, BrowserWindow, Menu, Tray, nativeImage, dialog, shell, screen, globalShortcut, MenuItemConstructorOptions } from 'electron'
 import path from 'node:path'
 import { execFile, spawn } from 'node:child_process'
@@ -225,6 +226,8 @@ function applySettings(request: Partial<DockSettings>): DockSettings {
   const turnedOn = games.find((k) => partial[k] === true)
   if (turnedOn) partial = { ...partial, ...Object.fromEntries(games.filter((k) => k !== turnedOn).map((k) => [k, false])) }
   const next = updateSettings(partial)
+  // the language is fixed per run, so a new one needs a fresh start (in development the next npm run dev picks it up)
+  if (partial.language !== undefined && partial.language !== before.language && app.isPackaged) setTimeout(() => { app.relaunch(); app.quit() }, 400)
   if (partial.launchAtLogin !== undefined) launchAtLogin(next.launchAtLogin)
   if (partial.toggleHotkey !== undefined) registerHotkeys()
   if (partial.iconPack !== undefined) clearPackCaches()

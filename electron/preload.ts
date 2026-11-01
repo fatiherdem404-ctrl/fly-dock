@@ -17,6 +17,9 @@ const api = {
 
   /** Real file-system path of a File from a drop event (File.path is gone in modern Electron). */
   pathFor: (file: File) => webUtils.getPathForFile(file),
+
+  /** The language of this app run ('tr' or 'en'), asked once, synchronously, so texts are right from the first line. */
+  lang: ipcRenderer.sendSync('i18n:lang') as string,
 }
 
 contextBridge.exposeInMainWorld('api', api)
