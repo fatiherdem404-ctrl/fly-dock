@@ -7,6 +7,8 @@ import { readZip, writeZip, ZipEntry, ZipLimits } from './zip'
 import { DEFAULT_SETTINGS, DESK_KEYS, DESK_STYLES, LIVE_WALLPAPERS } from '../src/shared/types'
 import type { PackInfo, ThemeDef, ThemeVars, ThemeDesk, DockItem, DockSettings, LiveWallpaperId } from '../src/shared/types'
 import { sniff, MAX_TEXTURE_BYTES, storeTexture, textureBytes } from './textures'
+import { DEFAULT_DESIGN } from '../src/studio/render'
+import type { Design } from '../src/studio/render'
 
 export const PACK_EXTENSION = 'flypack'
 
@@ -277,7 +279,8 @@ export function validatePackArchive(buf: Buffer): { manifest: Manifest; files: Z
       if (!byName.has(safe)) throw new Error(`icon "${key}" points to ${safe}, which is not in the pack`)
       map[key] = safe
     }
-    files.push({ name: 'icons.json', data: Buffer.from(JSON.stringify({ map }, null, 2)) })
+    const card = sanitizeCard(iconsJson.card)
+    files.push({ name: 'icons.json', data: Buffer.from(JSON.stringify(card ? { map, card } : { map }, null, 2)) })
     for (const file of new Set(Object.values(map))) files.push(byName.get(file)!)
   }
   return { manifest, files }
@@ -392,6 +395,41 @@ export async function exportPackDialog(type: PackInfo['type'], id: string): Prom
 
 const iconMapCache = new Map<string, Record<string, string>>()
 
+const ENUMS: Record<string, string[]> = {
+  fill: ['solid', 'gradient', 'none'],
+  pattern: ['none', 'dots', 'grid', 'stripes', 'waves', 'sheen', 'burst', 'grain', 'hex'],
+  glyphMode: ['solid', 'gradient'],
+}
+
+/** A card design from a pack, kept only if every field has the right kind of value. */
+export function sanitizeCard(raw: unknown): Design | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const out: Record<string, string | number> = {}
+  for (const [key, def] of Object.entries(DEFAULT_DESIGN)) {
+    const v = (raw as Record<string, unknown>)[key]
+    if (typeof def === 'number') out[key] = typeof v === 'number' && Number.isFinite(v) ? Math.max(-1000, Math.min(1000, v)) : def
+    else if (ENUMS[key]) out[key] = typeof v === 'string' && ENUMS[key].includes(v) ? v : def
+    else out[key] = typeof v === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(v) ? v : def
+  }
+  return out as unknown as Design
+}
+
+const cardCache = new Map<string, Design | null>()
+
+/** The card an icon pack wants around program icons it has no picture for (null when it does not ask for one). */
+export function packCard(packId: string): Design | null {
+  if (!ID_PATTERN.test(packId)) return null
+  if (cardCache.has(packId)) return cardCache.get(packId)!
+  let card: Design | null = null
+  try {
+    card = sanitizeCard(JSON.parse(fs.readFileSync(path.join(packDir('icons', packId), 'icons.json'), 'utf8')).card)
+  } catch {
+    /* no card */
+  }
+  cardCache.set(packId, card)
+  return card
+}
+
 function iconMap(packId: string): Record<string, string> | null {
   if (!ID_PATTERN.test(packId)) return null
   const cached = iconMapCache.get(packId)
@@ -407,6 +445,7 @@ function iconMap(packId: string): Record<string, string> | null {
 
 export function clearPackCaches() {
   iconMapCache.clear()
+  cardCache.clear()
 }
 
 /** Image file inside the active icon pack for this item, if the pack has one. */

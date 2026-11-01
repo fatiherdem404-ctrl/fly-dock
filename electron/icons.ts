@@ -1,7 +1,8 @@
 // Icon resolution for dock items: custom file > active icon pack > shell icon of the target.
 import fs from 'node:fs'
 import { shellIcon, fileIcon } from './iconService'
-import { packIconFor } from './packs'
+import { packIconFor, packCard } from './packs'
+import { cardSvg } from '../src/studio/render'
 import { getSettings } from './store'
 import type { DockItem } from '../src/shared/types'
 
@@ -47,6 +48,12 @@ export async function iconForItem(item: DockItem): Promise<string | null> {
   if (item.type === 'wheel') return WHEEL_ICON
   if (item.type === 'power') return POWER_ICON
   if (item.type === 'group') return shellIcon(process.env.SystemRoot ?? 'C:/Windows')
-  if (item.targetPath) return shellIcon(item.targetPath)
+  if (item.targetPath) {
+    const real = await shellIcon(item.targetPath)
+    // a pack with a card puts the programs it has no picture for on that card, so the shelf stays one family
+    const card = packCard(getSettings().iconPack)
+    if (real && card && (item.type === 'app' || item.type === 'file')) return 'data:image/svg+xml;utf8,' + encodeURIComponent(cardSvg(card, '', { appIcon: real, uid: 'a' }))
+    return real
+  }
   return null
 }

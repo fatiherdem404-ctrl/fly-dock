@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { invoke } from '@/api'
 import { STUDIO_KEYS } from '@/studio/keys'
-import { DEFAULT_DESIGN, PATTERNS, TEMPLATES, Design, cardSvg, designFrom, rasterize } from '@/studio/render'
+import { DEFAULT_DESIGN, PATTERNS, TEMPLATES, Design, cardSvg, designFrom } from '@/studio/render'
+import { rasterize } from '@/studio/raster'
 import { Card, Message, Row, Segmented, Select, Slider, Switch, Update } from '../ui'
 
 // ---- Icon studio (development builds only): design the cards and glyphs of a whole icon pack ----
@@ -22,6 +23,9 @@ const write = (key: string, value: unknown) => {
     /* storage can be unavailable */
   }
 }
+
+/** Stands in for a program the pack has no picture for (Claude, WhatsApp…), to show how the card would carry its own icon. */
+const SAMPLE_APP = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a5a"/><stop offset="1" stop-color="#d9482a"/></linearGradient></defs><circle cx="32" cy="32" r="28" fill="url(#a)"/><path d="M20 38c4 8 20 8 24 0M24 25v4M40 25v4" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg>')
 
 const indexOfKey = (k: string) => STUDIO_KEYS.findIndex(([x]) => x === k)
 const GROUPS: [string, string, (k: string) => boolean][] = [
@@ -49,6 +53,8 @@ export function StudioTab({ set }: { set: Update }) {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<{ text: string; error?: boolean } | null>(null)
   const [use, setUse] = useState(true)
+  const [fallback, setFallback] = useState(() => read('fallback', true))
+  useEffect(() => write('fallback', fallback), [fallback])
   const newName = useRef('')
   const d = (patch: Partial<Design>) => setDesign((cur) => ({ ...cur, ...patch }))
   useEffect(() => write('design', design), [design])
@@ -67,7 +73,7 @@ export function StudioTab({ set }: { set: Update }) {
         const [key, , glyph] = STUDIO_KEYS[i]
         images[key] = await rasterize(cardSvg(design, glyph, { index: i, badge: key === 'trash-full', uid: 'x' }), 256)
       }
-      const r = await invoke('studio:make-pack', name, 'İkon stüdyosu', images)
+      const r = await invoke('studio:make-pack', name, 'İkon stüdyosu', images, fallback ? { ...design } : null)
       if (r.ok && r.pack) {
         if (use) set({ iconPack: r.pack.id })
         setMsg({ text: `“${r.pack.name}” paketi oluşturuldu${use ? ' ve kullanılıyor' : ''}: ${Object.keys(images).length} simge.` })
@@ -103,6 +109,12 @@ export function StudioTab({ set }: { set: Update }) {
               <figcaption>{c.label}</figcaption>
             </figure>
           ))}
+          {fallback && group === 'apps' && (
+            <figure>
+              <span dangerouslySetInnerHTML={{ __html: cardSvg(design, '', { appIcon: SAMPLE_APP, uid: 'smp' }) }} />
+              <figcaption>Pakette olmayan program</figcaption>
+            </figure>
+          )}
         </div>
       </div>
       <div className="sd__side">
@@ -159,6 +171,8 @@ export function StudioTab({ set }: { set: Update }) {
         </Card>
         <Card icon="pack" title="Paketi oluştur" hint={`${STUDIO_KEYS.length} simge, 256 piksel PNG olarak ayrı bir simge paketine yazılır; sonra Simge paketleri sayfasından dışa aktarabilirsin.`}>
           <Row label="Paket adı"><input className="st-input" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} /></Row>
+          <Row label="Eksik programlara kart ekle" hint="Pakette resmi olmayan programların (Claude, WhatsApp…) kendi simgesi bu kartın içine konur. Önizlemesi Programlar sekmesinin sonunda"><Switch label="Eksik programlara kart ekle" value={fallback} onChange={setFallback} /></Row>
+          {fallback && <Row label="Program simgesi boyutu">{num('appIconSize', 40, 90, 1, '%')}</Row>}
           <Row label="Oluşunca kullan"><Switch label="Oluşunca kullan" value={use} onChange={setUse} /></Row>
           <div className="st-row-inline">
             <button className="st-btn st-btn--accent" onClick={make} disabled={busy || !name.trim()}>{busy ? 'Üretiliyor…' : 'Paketi oluştur'}</button>

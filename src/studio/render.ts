@@ -31,6 +31,8 @@ export interface Design {
   glyphStroke: number
   glyphShadow: number
   glyphGlow: number
+  /** How big a real program icon sits on the card when the pack has no picture for it (% of the picture). */
+  appIconSize: number
   /** Each icon's colours turn a little further around the colour wheel (degrees per icon, 0 = all alike). */
   hueSpread: number
 }
@@ -41,7 +43,7 @@ export const DEFAULT_DESIGN: Design = {
   borderWidth: 0, borderColor: '#ffffff', borderOpacity: 0.35,
   bevel: 40, lightAngle: 300, gloss: 30,
   shadowBlur: 14, shadowY: 8, shadowOpacity: 0.4, shadowColor: '#000000',
-  glyphMode: 'solid', g1: '#ffffff', g2: '#d9e4ff', glyphSize: 52, glyphStroke: 2, glyphShadow: 30, glyphGlow: 0,
+  glyphMode: 'solid', g1: '#ffffff', g2: '#d9e4ff', glyphSize: 52, glyphStroke: 2, glyphShadow: 30, glyphGlow: 0, appIconSize: 62,
   hueSpread: 0,
 }
 
@@ -123,6 +125,8 @@ export interface DrawOptions {
   index?: number
   /** Small dot in the corner (a full recycle bin). */
   badge?: boolean
+  /** A real program icon (data URL) drawn instead of a glyph. */
+  appIcon?: string
   /** Unique prefix for ids, so many cards can share one page. */
   uid?: string
 }
@@ -178,24 +182,16 @@ export function cardSvg(d: Design, glyph: string, o: DrawOptions = {}): string {
   const art = GLYPHS[glyph] ?? ''
   const transform = `translate(${gx} ${gy}) scale(${k})`
   const stroke = `fill="none" stroke-width="${d.glyphStroke}" stroke-linecap="round" stroke-linejoin="round"`
-  if (glow > 0) body.push(`<g transform="${transform}" ${stroke} stroke="url(#${u}k)" filter="url(#${u}w)" opacity="${glow / 100}">${art}</g>`)
-  body.push(`<g transform="${transform}" ${stroke} stroke="url(#${u}k)"${filters.length ? ` filter="url(#${u}t)"` : ''}>${art}</g>`)
+  if (o.appIcon) {
+    const ps = (256 * d.appIconSize) / 100
+    body.push(`<image href="${o.appIcon}" x="${(256 - ps) / 2}" y="${(256 - ps) / 2}" width="${ps}" height="${ps}"${filters.length ? ` filter="url(#${u}t)"` : ''}/>`)
+  } else {
+    if (glow > 0) body.push(`<g transform="${transform}" ${stroke} stroke="url(#${u}k)" filter="url(#${u}w)" opacity="${glow / 100}">${art}</g>`)
+    body.push(`<g transform="${transform}" ${stroke} stroke="url(#${u}k)"${filters.length ? ` filter="url(#${u}t)"` : ''}>${art}</g>`)
+  }
   if (o.badge) body.push(`<circle cx="${256 - d.inset - 22}" cy="${d.inset + 22}" r="15" fill="#ff4d5e" stroke="#fff" stroke-width="3"/>`)
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><defs>${defs.join('')}</defs>${body.join('')}</svg>`
-}
-
-/** Draws an SVG to a PNG (base64, no prefix) at the given size. */
-export async function rasterize(svg: string, size = 256): Promise<string> {
-  const img = new Image()
-  img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
-  await img.decode()
-  const c = document.createElement('canvas')
-  c.width = c.height = size
-  const x = c.getContext('2d')!
-  x.imageSmoothingQuality = 'high'
-  x.drawImage(img, 0, 0, size, size)
-  return c.toDataURL('image/png').split(',')[1]
 }
 
 export const designFrom = (t: Template): Design => ({ ...DEFAULT_DESIGN, ...t.design })

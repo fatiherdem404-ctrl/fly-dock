@@ -435,8 +435,8 @@ function registerIpc() {
   })
   handle('iconpick:close', () => closeIconPicker())
   handle('builder:folder', (_e, keys) => pickBuilderFolder(keys))
-  handle('studio:make-pack', (_e, name, author, images) => {
-    const result = createPackFromPngs(name, author, images)
+  handle('studio:make-pack', (_e, name, author, images, card) => {
+    const result = createPackFromPngs(name, author, images, card)
     if (result.ok) {
       clearPackCaches()
       broadcast('themes:changed', null)

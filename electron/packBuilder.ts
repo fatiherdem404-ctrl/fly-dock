@@ -76,7 +76,7 @@ export function createBuilderPack(name: string, author: string, map: Record<stri
 }
 
 /** The icon studio's result: one finished PNG per key (base64), written as an ordinary pack through the same install checks. */
-export function createPackFromPngs(name: string, author: string, images: Record<string, string>): { ok: boolean; message: string; pack?: PackInfo } {
+export function createPackFromPngs(name: string, author: string, images: Record<string, string>, card: unknown = null): { ok: boolean; message: string; pack?: PackInfo } {
   const title = String(name).trim().slice(0, 60)
   if (!title) return { ok: false, message: 'Pakete bir ad ver.' }
   const entries: ZipEntry[] = []
@@ -95,7 +95,7 @@ export function createPackFromPngs(name: string, author: string, images: Record<
   const id = `${slug}-${Date.now().toString(36).slice(-4)}`
   entries.push(
     { name: 'pack.json', data: Buffer.from(JSON.stringify({ type: 'icons', id, name: title, author: String(author).trim().slice(0, 60) || undefined, version: '1.0' }, null, 2)) },
-    { name: 'icons.json', data: Buffer.from(JSON.stringify({ map: iconMap }, null, 2)) },
+    { name: 'icons.json', data: Buffer.from(JSON.stringify(card ? { map: iconMap, card } : { map: iconMap }, null, 2)) },
   )
   try {
     return { ok: true, message: title, pack: installPack(writeZip(entries)) }
