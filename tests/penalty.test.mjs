@@ -19,30 +19,46 @@ assert.ok(soft.vx > 0 && hard.vx > soft.vx, 'a longer pull is a faster shot')
 assert.equal(pen.launch({ x: 1, y: 1 }).power, 0, 'a tiny pull is no shot')
 assert.ok(pen.launch({ x: -9999, y: 0 }).power <= 1, 'power is capped')
 
-// the prediction agrees with the real flight (same maths)
-const W = 1200, floor = 600
-const line = pen.goalX(W)
-const l = pen.launch({ x: -150, y: 90 })
-const guess = pen.predict(360, floor - 24, l.vx, l.vy, 0, line, floor, 24)
-assert.ok(guess === null || guess.y < floor, 'a shot is predicted to cross the line above the ground, or not at all')
-
-// a curled shot ends higher or lower than a straight one
-const a = pen.predict(360, 500, 1100, -900, 0, line, floor, 24)
-const b = pen.predict(360, 500, 1100, -900, 1, line, floor, 24)
-assert.ok(a && b && Math.abs(a.y - b.y) > 20, 'the curl bends the flight')
-
-// every shot gets decided: goal, save, or out
-for (let n = 0; n < 12; n++) {
-  const p = pen.makePen()
-  const bl = ball.makeBall(...pen.spotOf(W, floor, 24), 24)
-  const events = []
-  const ev = { goal: () => events.push('goal'), save: () => events.push('save'), miss: () => events.push('miss'), conceded() {}, blocked() {} }
-  const pull = pen.launch({ x: -(80 + n * 12), y: 30 + n * 14 })
-  pen.shoot(p, bl, W, floor, pull.vx, pull.vy)
-  for (let i = 0; i < 60 * 8 && p.phase !== 'ready'; i++) pen.step(p, bl, 1 / 60, W, floor, ev, 300)
-  assert.equal(p.phase, 'ready', `shot ${n} comes to an end`)
-  assert.equal(events.length, 1, `shot ${n} is decided exactly once (${events})`)
+// the shot is predicted to cross the goal line, and the curl bends it sideways
+const W = 1200, floor = 700
+for (const pitch of ['horizontal', 'vertical']) {
+  const g = pen.geo(W, floor, pitch)
+  const l = pen.launch(pitch === 'horizontal' ? { x: -170, y: 0 } : { x: 0, y: 170 })
+  const straight = pen.predict(g, g.spot.x, g.spot.y, l.vx, l.vy, 0)
+  const curled = pen.predict(g, g.spot.x, g.spot.y, l.vx, l.vy, 1)
+  assert.ok(straight && Math.abs(straight.lat - g.center) < 5, pitch + ': a straight shot down the middle crosses the line in the middle')
+  assert.ok(curled && Math.abs(curled.lat - straight.lat) > 15, pitch + ': the curl bends the flight')
 }
+
+// every shot gets decided exactly once, on both pitches
+for (const pitch of ['horizontal', 'vertical']) {
+  for (let n = 0; n < 10; n++) {
+    const g = pen.geo(W, floor, pitch)
+    const p = pen.makePen()
+    const bl = ball.makeBall(g.spot.x, g.spot.y, 28)
+    const events = []
+    const ev = { goal: () => events.push('goal'), save: () => events.push('save'), miss: () => events.push('miss'), conceded() {}, blocked() {} }
+    const wide = (n - 5) * 14
+    const pull = pitch === 'horizontal' ? pen.launch({ x: -(120 + n * 9), y: wide }) : pen.launch({ x: wide, y: 120 + n * 9 })
+    pen.shoot(p, bl, W, floor, pitch, pull.vx, pull.vy)
+    for (let i = 0; i < 60 * 12 && p.phase !== 'ready'; i++) pen.step(p, bl, 1 / 60, W, floor, pitch, ev, { x: 300, y: 300 }, false)
+    assert.equal(p.phase, 'ready', pitch + ' shot ' + n + ' comes to an end')
+    assert.equal(events.length, 1, pitch + ' shot ' + n + ' is decided exactly once (' + events + ')')
+  }
+}
+
+// the keeper's return shot is decided too
+{
+  const g = pen.geo(W, floor, 'horizontal')
+  const p = pen.makePen()
+  const bl = ball.makeBall(g.spot.x, g.spot.y, 28)
+  const events = []
+  const ev = { goal() {}, save() {}, miss() {}, conceded: () => events.push('conceded'), blocked: () => events.push('blocked') }
+  pen.keeperShot(p, W, floor, 'horizontal')
+  for (let i = 0; i < 60 * 10 && p.phase !== 'ready'; i++) pen.step(p, bl, 1 / 60, W, floor, 'horizontal', ev, { x: 100, y: g.center }, false)
+  assert.equal(p.phase, 'ready', 'the return shot ends')
+}
+
 // the far-hoop basketball: the pull sets power and (through its direction) the height of the arc
 await build({ entryPoints: ['src/toys/shot.ts'], bundle: true, platform: 'node', format: 'esm', outfile: join(dir, 'shot.mjs'), logLevel: 'silent' })
 const shot = await import(pathToFileURL(join(dir, 'shot.mjs')).href)

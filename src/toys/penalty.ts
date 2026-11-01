@@ -1,15 +1,17 @@
-// The penalty game of the football toy: one goal on the right with a keeper in it. The ball is pulled back like a
-// sling (the pull sets direction and power), the mouse wheel sets the curve ("falso") and the keeper dives after it.
-// With the keeper's return shot on, he then fires one back at a goal on the left that the pointer defends.
-import { Ball, World, stepBall } from './ball'
+// The penalty game of the football toy, on the same pitch seen from above as the free kicks: the goal with the keeper is
+// at the far end (right, or at the top on a vertical pitch). The ball is pulled back like a sling (the pull sets
+// direction and power), the mouse wheel sets the curve ("falso") and the keeper moves along his line after it.
+// With the keeper's return shot on, he then fires one back at your own goal, which the pointer defends as a glove.
+import { Ball, bounceOffMover, makeBall, stepBall, World } from './ball'
+import { GOAL_W, Pitch, goalBoxes, goalPosts, inWhichGoal } from './pitch'
 
-export const PEN_GOAL_H = 190
-export const PEN_GOAL_D = 84
 export const PEN_MAX_PULL = 230
 const SPEED_PER_PX = 6.6
-const GRAVITY = 1900
-/** Sideways (vertical on screen) swerve of a curled ball, px/s² at full spin and 1000 px/s. */
-const CURL = 900
+/** Slowing down on the grass, per second, and how fast a spinning ball turns (rad/s at 1000 px/s and full spin). */
+const FRICTION = 1.05
+const CURL_ROT = 0.7
+const KEEPER_R = 30
+const GLOVE_R = 36
 
 export interface Pen {
   phase: 'ready' | 'flight' | 'result' | 'return' | 'returned'
@@ -17,62 +19,109 @@ export interface Pen {
   aim: { x: number; y: number } | null
   spin: number
   timer: number
-  keeper: { y: number; ty: number; delay: number; speed: number; reach: number; dive: number }
-  /** The keeper's shot at your goal. */
-  back: { x: number; y: number; vx: number; vy: number } | null
+  /** The keeper along his line (a lateral coordinate), where he is going, and his reaction. */
+  keeper: { pos: number; target: number; vel: number; delay: number; speed: number }
+  /** The keeper's shot at your goal, and the glove (a lateral coordinate) that defends it. */
+  back: Ball | null
   glove: number
+  gloveVel: number
   goals: number
   saves: number
   conceded: number
   verdict: string
-  /** Did the keeper's shot already get decided (so it is counted once)? */
   done: boolean
 }
 
 export const makePen = (): Pen => ({
   phase: 'ready', aim: null, spin: 0, timer: 0,
-  keeper: { y: 0, ty: 0, delay: 0, speed: 540, reach: 40, dive: 0 },
-  back: null, glove: 0, goals: 0, saves: 0, conceded: 0, verdict: '', done: false,
+  keeper: { pos: 0, target: 0, vel: 0, delay: 0, speed: 520 },
+  back: null, glove: 0, gloveVel: 0, goals: 0, saves: 0, conceded: 0, verdict: '', done: false,
 })
 
-export const goalX = (width: number) => width - PEN_GOAL_D - 40
-export const spotOf = (width: number, floor: number, r: number): [number, number] => [width * 0.3, floor - r]
-const keeperRest = (floor: number) => floor - 46
+export interface Geo {
+  pitch: Pitch
+  /** Which goal is shot at (index in goalBoxes) and which is yours. */
+  targetIdx: number
+  ownIdx: number
+  /** The coordinate of the goal mouths along the shooting axis, and the sign of "towards the target goal" along it. */
+  targetLine: number
+  ownLine: number
+  sign: 1 | -1
+  /** The middle of the goals along the other axis. */
+  center: number
+  spot: { x: number; y: number }
+}
+
+export function geo(width: number, floor: number, pitch: Pitch): Geo {
+  const [a, b] = goalBoxes(width, floor, pitch)
+  if (pitch === 'horizontal') {
+    const line = b.x
+    const dist = Math.min(520, width * 0.4)
+    return { pitch, targetIdx: 1, ownIdx: 0, targetLine: line, ownLine: a.x + a.w, sign: 1, center: floor / 2, spot: { x: line - dist, y: floor / 2 } }
+  }
+  const line = a.y + a.h
+  const dist = Math.min(420, floor * 0.45)
+  return { pitch, targetIdx: 0, ownIdx: 1, targetLine: line, ownLine: b.y, sign: -1, center: width / 2, spot: { x: width / 2, y: line + dist } }
+}
+
+/** The lateral coordinate (along the goal line) of a point, and a point from an along / lateral pair. */
+const lat = (g: Geo, x: number, y: number) => (g.pitch === 'horizontal' ? y : x)
+const along = (g: Geo, x: number, y: number) => (g.pitch === 'horizontal' ? x : y)
+const place = (g: Geo, along1: number, lat1: number): [number, number] => (g.pitch === 'horizontal' ? [along1, lat1] : [lat1, along1])
+
+/** The point the keeper stands at, on his line. */
+export function keeperPoint(g: Geo, pen: Pen): [number, number] {
+  const pos = pen.keeper.pos || g.center
+  return place(g, g.targetLine - g.sign * 22, pos)
+}
+/** The glove's point on your own line. */
+export function glovePoint(g: Geo, pen: Pen): [number, number] {
+  const pos = pen.glove || g.center
+  return place(g, g.ownLine + g.sign * 22, pos)
+}
 
 /** The launch speed from a pull. */
 export function launch(pull: { x: number; y: number }): { vx: number; vy: number; power: number } {
   const len = Math.hypot(pull.x, pull.y)
   const k = Math.min(len, PEN_MAX_PULL)
-  const power = k / PEN_MAX_PULL
   if (len < 4) return { vx: 0, vy: 0, power: 0 }
-  return { vx: (-pull.x / len) * k * SPEED_PER_PX, vy: (-pull.y / len) * k * SPEED_PER_PX, power }
+  return { vx: (-pull.x / len) * k * SPEED_PER_PX, vy: (-pull.y / len) * k * SPEED_PER_PX, power: k / PEN_MAX_PULL }
 }
 
-/** Where the ball will be when it gets to x = line, ignoring the keeper: the same maths as the real flight, step by step. */
-export function predict(x: number, y: number, vx: number, vy: number, spin: number, line: number, floor: number, r: number): { y: number; t: number } | null {
+/** A ball's velocity after dt: turned by the spin, slowed by the grass. */
+function bend(vx: number, vy: number, spin: number, dt: number): [number, number] {
+  const speed = Math.hypot(vx, vy)
+  const w = spin * CURL_ROT * (speed / 1000)
+  const c = Math.cos(w * dt), s = Math.sin(w * dt)
+  const k = Math.exp(-FRICTION * dt)
+  return [(vx * c - vy * s) * k, (vx * s + vy * c) * k]
+}
+
+/** Where the ball crosses the goal line, and when, ignoring walls and the keeper (the keeper reads this). */
+export function predict(g: Geo, x: number, y: number, vx: number, vy: number, spin: number): { lat: number; t: number } | null {
   let t = 0
-  for (let i = 0; i < 400; i++) {
+  for (let i = 0; i < 600; i++) {
     const dt = 1 / 120
-    vy += GRAVITY * dt + spin * CURL * (Math.abs(vx) / 1000) * dt
+    ;[vx, vy] = bend(vx, vy, spin, dt)
     x += vx * dt
     y += vy * dt
     t += dt
-    if (y > floor - r) return null
-    if (x >= line) return { y, t }
+    if ((along(g, x, y) - g.targetLine) * g.sign >= 0) return { lat: lat(g, x, y), t }
+    if (Math.hypot(vx, vy) < 20) return null
   }
   return null
 }
 
 /** The dotted path shown while aiming. */
-export function path(x: number, y: number, vx: number, vy: number, spin: number, floor: number, r: number, count = 26): [number, number][] {
+export function path(x: number, y: number, vx: number, vy: number, spin: number, count = 34): [number, number][] {
   const out: [number, number][] = []
-  for (let i = 0; i < count * 5; i++) {
+  for (let i = 0; i < count * 6; i++) {
     const dt = 1 / 60
-    vy += GRAVITY * dt + spin * CURL * (Math.abs(vx) / 1000) * dt
+    ;[vx, vy] = bend(vx, vy, spin, dt)
     x += vx * dt
     y += vy * dt
-    if (y > floor - r) break
-    if (i % 5 === 4) out.push([x, y])
+    if (i % 6 === 5) out.push([x, y])
+    if (Math.hypot(vx, vy) < 20) break
   }
   return out
 }
@@ -86,7 +135,8 @@ export interface PenEvents {
 }
 
 /** Sends the ball. */
-export function shoot(pen: Pen, ball: Ball, width: number, floor: number, vx: number, vy: number) {
+export function shoot(pen: Pen, ball: Ball, width: number, floor: number, pitch: Pitch, vx: number, vy: number) {
+  const g = geo(width, floor, pitch)
   ball.vx = vx
   ball.vy = vy
   ball.floorHits = 0
@@ -94,47 +144,55 @@ export function shoot(pen: Pen, ball: Ball, width: number, floor: number, vx: nu
   pen.phase = 'flight'
   pen.timer = 0
   pen.done = false
-  const line = goalX(width)
-  const hit = predict(ball.x, ball.y, vx, vy, pen.spin, line, floor, ball.r)
+  const hit = predict(g, ball.x, ball.y, vx, vy, pen.spin)
   // the keeper reads the shot with a little delay and a little error, and can only be so fast
   const k = pen.keeper
-  const top = floor - PEN_GOAL_H
-  const aimAt = hit ? Math.max(top + 30, Math.min(floor - 36, hit.y + (Math.random() - 0.5) * 170 + (Math.random() < 0.15 ? (Math.random() < 0.5 ? -90 : 90) : 0))) : keeperRest(floor)
-  k.ty = aimAt
+  const half = GOAL_W / 2
+  if (hit) {
+    const wild = Math.random() < 0.15 ? (Math.random() < 0.5 ? -80 : 80) : 0
+    k.target = Math.max(g.center - half + 20, Math.min(g.center + half - 20, hit.lat + (Math.random() - 0.5) * 150 + wild))
+  } else k.target = g.center
   k.delay = 0.2 + Math.random() * 0.22 + Math.min(0.2, Math.hypot(vx, vy) / 9000)
-  k.speed = 400 + Math.random() * 180
-  k.dive = hit ? 1 : 0
+  k.speed = 380 + Math.random() * 200
 }
 
-/** One frame of the penalty game. The ball itself is moved with the usual physics, plus the curl. */
-export function step(pen: Pen, ball: Ball, dt: number, width: number, floor: number, ev: PenEvents, glove: number) {
-  const line = goalX(width)
-  const top = floor - PEN_GOAL_H
+const world = (width: number, floor: number): World => ({ width, floor, gravity: 0, restitution: 0.6, rolling: 0 })
+
+/** One frame of the penalty game. */
+export function step(pen: Pen, ball: Ball, dt: number, width: number, floor: number, pitch: Pitch, ev: PenEvents, pointer: { x: number; y: number } | null, back: boolean) {
+  const g = geo(width, floor, pitch)
   const k = pen.keeper
-  pen.glove += (glove - pen.glove) * Math.min(1, dt * 14)
-  if (k.y === 0) k.y = keeperRest(floor)
+  const half = GOAL_W / 2 - 16
+  if (!k.pos) k.pos = g.center
+  if (!pen.glove) pen.glove = g.center
+  const posts = goalPosts(width, floor, pitch)
+  const prevKeeper = k.pos
+  const prevGlove = pen.glove
+  // the glove follows the pointer along your own line (smoothed), always
+  if (pointer) {
+    const want = Math.max(g.center - half, Math.min(g.center + half, lat(g, pointer.x, pointer.y)))
+    pen.glove += (want - pen.glove) * Math.min(1, dt * 16)
+  }
+  pen.gloveVel = dt > 0 ? (pen.glove - prevGlove) / dt : 0
 
   if (pen.phase === 'flight') {
     pen.timer += dt
-    // curl: a vertical swerve that grows with the speed along the ground
-    ball.vy += pen.spin * CURL * (Math.abs(ball.vx) / 1000) * dt
-    const world: World = { width: width * 2, floor, gravity: GRAVITY, restitution: 0.55, rolling: 0.9 }
-    stepBall(ball, dt, world, [{ ax: line, ay: top, bx: width, by: top, restitution: 0.55 }])
-    // the keeper
-    if (pen.timer > k.delay && k.dive) k.y += Math.sign(k.ty - k.y) * Math.min(Math.abs(k.ty - k.y), k.speed * dt)
-    else if (!k.dive) k.y += (keeperRest(floor) - k.y) * Math.min(1, dt * 4)
-    const kx = line + 34
-    if (!pen.done && Math.abs(ball.x - kx) < k.reach && Math.abs(ball.y - k.y) < 30 + ball.r * 0.5) {
+    ;[ball.vx, ball.vy] = bend(ball.vx, ball.vy, pen.spin, dt)
+    stepBall(ball, dt, world(width, floor), posts)
+    if (pen.timer > k.delay) k.pos += Math.sign(k.target - k.pos) * Math.min(Math.abs(k.target - k.pos), k.speed * dt)
+    k.vel = dt > 0 ? (k.pos - prevKeeper) / dt : 0
+    const [kx, ky] = keeperPoint(g, pen)
+    const kvx = pitch === 'horizontal' ? 0 : k.vel
+    const kvy = pitch === 'horizontal' ? k.vel : 0
+    if (!pen.done && bounceOffMover(ball, kx, ky, KEEPER_R, kvx, kvy, 0.45)) {
       pen.done = true
       pen.saves += 1
-      ball.vx = -Math.abs(ball.vx) * 0.35
-      ball.vy = -260
       pen.verdict = 'KURTARDI!'
       ev.save()
       end(pen, 1.3)
       return
     }
-    if (!pen.done && ball.x >= line + 6 && ball.y > top && ball.y < floor) {
+    if (!pen.done && inWhichGoal(ball, width, floor, pitch) === g.targetIdx) {
       pen.done = true
       pen.goals += 1
       pen.verdict = 'GOL!'
@@ -142,10 +200,9 @@ export function step(pen: Pen, ball: Ball, dt: number, width: number, floor: num
       end(pen, 1.4)
       return
     }
-    // gone: over the bar, behind the line high up, off the screen, or the ball has stopped
-    if (!pen.done && (ball.x > width + 40 || ball.x < -40 || (ball.x > line && ball.y <= top - 6) || (pen.timer > 1 && Math.hypot(ball.vx, ball.vy) < 40))) {
+    if (!pen.done && (Math.hypot(ball.vx, ball.vy) < 25 || pen.timer > 6)) {
       pen.done = true
-      pen.verdict = 'DIŞARI'
+      pen.verdict = ball.touches > 0 ? 'DİREK!' : 'DIŞARI'
       ev.miss()
       end(pen, 1.1)
     }
@@ -154,86 +211,84 @@ export function step(pen: Pen, ball: Ball, dt: number, width: number, floor: num
 
   if (pen.phase === 'result') {
     pen.timer -= dt
-    stepBall(ball, dt, { width: width * 2, floor, gravity: GRAVITY, restitution: 0.5, rolling: 0.9 }, [])
-    k.y += (keeperRest(floor) - k.y) * Math.min(1, dt * 3)
+    ;[ball.vx, ball.vy] = bend(ball.vx, ball.vy, 0, dt)
+    stepBall(ball, dt, world(width, floor), posts)
+    k.pos += (g.center - k.pos) * Math.min(1, dt * 2.5)
     if (pen.timer <= 0) {
       pen.verdict = ''
-      const [sx, sy] = spotOf(width, floor, ball.r)
-      Object.assign(ball, { x: sx, y: sy, vx: 0, vy: 0, floorHits: 0, touches: 0 })
-      pen.phase = 'ready'
+      Object.assign(ball, { x: g.spot.x, y: g.spot.y, vx: 0, vy: 0, floorHits: 0, touches: 0 })
+      if (back) keeperShot(pen, width, floor, pitch)
+      else pen.phase = 'ready'
     }
     return
   }
 
-  if (pen.phase === 'return') {
-    // the keeper's shot at the goal on the left, which the pointer defends
+  if (pen.phase === 'return' || pen.phase === 'returned') {
     const b = pen.back
     if (!b) { pen.phase = 'ready'; return }
-    b.vy += GRAVITY * dt
-    b.x += b.vx * dt
-    b.y += b.vy * dt
-    if (b.y > floor - 14) { b.y = floor - 14; b.vy *= -0.5 }
-    const gx = 60
-    if (!pen.done && b.x <= gx + 14) {
-      pen.done = true
-      const reach = 56
-      if (Math.abs(b.y - pen.glove) < reach) {
+    ;[b.vx, b.vy] = bend(b.vx, b.vy, 0, dt)
+    stepBall(b, dt, world(width, floor), posts)
+    if (pen.phase === 'return') {
+      pen.timer += dt
+      const [gx, gy] = glovePoint(g, pen)
+      const gvx = pitch === 'horizontal' ? 0 : pen.gloveVel
+      const gvy = pitch === 'horizontal' ? pen.gloveVel : 0
+      if (!pen.done && bounceOffMover(b, gx, gy, GLOVE_R, gvx, gvy, 0.45)) {
+        pen.done = true
         pen.verdict = 'KURTARDIN!'
         ev.blocked()
-        b.vx = Math.abs(b.vx) * 0.4
-        b.vy = -300
-      } else if (b.y > top - 20) {
+        pen.phase = 'returned'
+        pen.timer = 1.2
+      } else if (!pen.done && inWhichGoal(b, width, floor, pitch) === g.ownIdx) {
+        pen.done = true
         pen.conceded += 1
         pen.verdict = 'GOL YEDİN'
         ev.conceded()
-      } else {
+        pen.phase = 'returned'
+        pen.timer = 1.2
+      } else if (!pen.done && (Math.hypot(b.vx, b.vy) < 25 || pen.timer > 6)) {
+        pen.done = true
         pen.verdict = 'DIŞARI'
+        pen.phase = 'returned'
+        pen.timer = 0.8
       }
-      pen.phase = 'returned'
-      pen.timer = 1.2
-    }
-    if (b.x < -60) { pen.done = true; pen.phase = 'returned'; pen.timer = 0.6 }
-    return
-  }
-
-  if (pen.phase === 'returned') {
-    pen.timer -= dt
-    const b = pen.back
-    if (b) {
-      b.vy += GRAVITY * dt
-      b.x += b.vx * dt
-      b.y += b.vy * dt
-      if (b.y > floor - 14) { b.y = floor - 14; b.vy *= -0.4; b.vx *= 0.8 }
-    }
-    if (pen.timer <= 0) {
-      pen.back = null
-      pen.verdict = ''
-      pen.phase = 'ready'
+    } else {
+      pen.timer -= dt
+      if (pen.timer <= 0) {
+        pen.back = null
+        pen.verdict = ''
+        pen.phase = 'ready'
+      }
     }
     return
   }
-  // ready: the ball waits on the spot (unless it is being pulled back) and the keeper bounces on his toes
-  const [sx, sy] = spotOf(width, floor, ball.r)
-  Object.assign(ball, { x: sx, y: sy, vx: 0, vy: 0 })
-  k.y += (keeperRest(floor) - k.y) * Math.min(1, dt * 5)
+  // ready: the ball waits on the spot (unless it is being pulled back) and the keeper settles in the middle
+  Object.assign(ball, { x: g.spot.x, y: g.spot.y, vx: 0, vy: 0 })
+  k.pos += (g.center - k.pos) * Math.min(1, dt * 4)
 }
 
-/** After a shot has been decided: wait, then (maybe) the keeper's turn. */
+/** After a shot has been decided: wait a moment. */
 function end(pen: Pen, seconds: number) {
   pen.phase = 'result'
   pen.timer = seconds
 }
 
-/** Fires the keeper's return shot at the left goal. */
-export function keeperShot(pen: Pen, width: number, floor: number) {
-  const x0 = goalX(width) - 30
-  const y0 = floor - 60
-  const gx = 60
-  const speed = 760 + Math.random() * 420
-  const T = (x0 - gx) / speed
-  const target = floor - 20 - Math.random() * (PEN_GOAL_H - 40)
-  pen.back = { x: x0, y: y0, vx: -speed, vy: (target - y0 - 0.5 * GRAVITY * T * T) / T }
+/** Fires the keeper's return shot at your own goal. */
+export function keeperShot(pen: Pen, width: number, floor: number, pitch: Pitch) {
+  const g = geo(width, floor, pitch)
+  const [ox, oy] = place(g, g.targetLine - g.sign * 90, g.center + (Math.random() - 0.5) * 120)
+  const targetLat = g.center + (Math.random() - 0.5) * (GOAL_W - 60)
+  const [tx, ty] = place(g, g.ownLine, targetLat)
+  const dx = tx - ox, dy = ty - oy
+  const L = Math.hypot(dx, dy)
+  const T = 0.95 + Math.random() * 0.4
+  const speed = (L * FRICTION) / (1 - Math.exp(-FRICTION * T))
+  const b = makeBall(ox, oy, 15)
+  b.vx = (dx / L) * speed
+  b.vy = (dy / L) * speed
+  pen.back = b
   pen.phase = 'return'
   pen.done = false
+  pen.timer = 0
   pen.verdict = ''
 }

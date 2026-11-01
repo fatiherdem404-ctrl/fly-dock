@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { invoke, useEvent } from '@/api'
 import type { DockSettings, ToyMode, ToyScores } from '@/shared/types'
 import { DEFAULT_TOY_SCORES } from '@/shared/types'
-import { PEN_GOAL_D, PEN_GOAL_H, PEN_MAX_PULL, Pen, goalX, keeperShot, launch, makePen, path as penPath, shoot as penShoot, spotOf, step as penStep } from '@/toys/penalty'
+import { PEN_MAX_PULL, Pen, geo as penGeo, glovePoint, keeperPoint, launch, makePen, path as penPath, shoot as penShoot, step as penStep } from '@/toys/penalty'
 import { SHOT_MAX_PULL, Shot, launchShot, makeShot, pickSpot, shotPath } from '@/toys/shot'
 import { Bowling } from '@/toys/bowling'
 import { Dart } from '@/toys/dart'
@@ -118,6 +118,7 @@ interface Sim {
   /** The penalty game of the football toy, and whether its ball has been put on the spot. */
   pen: Pen
   penOn: boolean
+  penKey: string
   /** The basketball's far-hoop mode: the aim in progress, and whether the mode was already set up. */
   shot: Shot
   farOn: boolean
@@ -333,93 +334,59 @@ function drawFist(c: CanvasRenderingContext2D, x: number, y: number) {
   c.restore()
 }
 
-/** The goalkeeper: a little figure in the goal, stretching up or down after the ball. */
-function drawKeeper(c: CanvasRenderingContext2D, x: number, y: number, rest: number) {
-  const stretch = Math.max(-1, Math.min(1, (rest - y) / 70))
+/** The goalkeeper seen from above: shoulders, head towards the pitch, big gloves at the ends of his arms. */
+function drawKeeper(c: CanvasRenderingContext2D, x: number, y: number, horizontal: boolean, facing: 1 | -1) {
   c.save()
   c.translate(x, y)
+  if (horizontal) c.rotate(Math.PI / 2) // the line he moves along is then vertical
   shadowed(c)
-  // legs
-  c.fillStyle = '#23304f'
-  c.beginPath()
-  c.roundRect(-13, 12, 11, 30 + Math.max(0, -stretch) * 6, 4)
-  c.roundRect(2, 12, 11, 30 + Math.max(0, -stretch) * 6, 4)
-  c.fill()
-  // jersey
+  const f = horizontal ? -facing : -facing
   c.fillStyle = '#ffc83d'
   c.beginPath()
-  c.roundRect(-16, -22, 32, 38, 9)
+  c.ellipse(0, 0, 25, 12, 0, 0, TAU)
   c.fill()
-  c.fillStyle = 'rgba(0,0,0,0.12)'
-  c.fillRect(-16, 2, 32, 4)
-  // arms reach up when he jumps
-  c.strokeStyle = '#ffc83d'
-  c.lineWidth = 9
-  c.lineCap = 'round'
-  const up = 0.5 + Math.max(0, stretch) * 0.9
-  for (const s of [-1, 1]) {
-    c.beginPath()
-    c.moveTo(s * 15, -16)
-    c.lineTo(s * (24 + up * 8), -16 - up * 28)
-    c.stroke()
-    c.fillStyle = '#34c759'
-    c.beginPath()
-    c.arc(s * (24 + up * 8), -16 - up * 28, 7, 0, TAU)
-    c.fill()
-  }
-  // head, looking at the ball
+  c.fillStyle = 'rgba(0,0,0,0.14)'
+  c.fillRect(-25, -2, 50, 3)
+  c.fillStyle = '#34c759'
+  for (const s of [-1, 1]) { c.beginPath(); c.arc(s * 33, f * 3, 9, 0, TAU); c.fill() }
   c.fillStyle = '#f2c9a0'
   c.beginPath()
-  c.arc(0, -34, 11, 0, TAU)
+  c.arc(0, f * 2, 9, 0, TAU)
   c.fill()
   c.fillStyle = '#3a2a1c'
   c.beginPath()
-  c.arc(0, -38, 11, Math.PI, TAU)
+  c.arc(0, f * -1, 9, 0, TAU)
   c.fill()
   c.restore()
 }
 
-/** Everything the penalty game draws besides the ball: goal, keeper, the pull, the power, the curl. */
+/** Everything the penalty game draws besides the ball: pitch, keeper, your glove, the pull, the power, the curl. */
 function drawPenalty(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, width: number, floor: number) {
   const pen = sim.pen
-  const gx = goalX(width)
-  const top = floor - PEN_GOAL_H
-  // goal on the right: net, bar and posts
-  c.fillStyle = 'rgba(255,255,255,0.1)'
-  c.fillRect(gx, top, PEN_GOAL_D, PEN_GOAL_H)
-  c.strokeStyle = 'rgba(255,255,255,0.4)'
-  c.lineWidth = 1
+  const horizontal = s.toyPitch === 'horizontal'
+  const g = penGeo(width, floor, s.toyPitch)
+  drawPitch(c, s, width, floor)
+  // the penalty spot
+  c.fillStyle = 'rgba(255,255,255,0.85)'
   c.beginPath()
-  for (let i = 1; i < 8; i++) {
-    c.moveTo(gx, top + (PEN_GOAL_H / 8) * i); c.lineTo(gx + PEN_GOAL_D, top + (PEN_GOAL_H / 8) * i)
-    c.moveTo(gx + (PEN_GOAL_D / 7) * i, top); c.lineTo(gx + (PEN_GOAL_D / 7) * i, floor)
-  }
-  c.stroke()
-  c.strokeStyle = '#ffffff'
-  c.lineWidth = 6
-  c.lineCap = 'round'
-  c.beginPath()
-  c.moveTo(gx, floor); c.lineTo(gx, top); c.lineTo(gx + PEN_GOAL_D, top)
-  c.stroke()
-  const rest = floor - 46
-  drawKeeper(c, gx + 34, pen.keeper.y || rest, rest)
-  // your own goal on the left, defended with the pointer, when the keeper shoots back
+  c.arc(g.spot.x, g.spot.y, 4, 0, TAU)
+  c.fill()
+  const [kx, ky] = keeperPoint(g, pen)
+  drawKeeper(c, kx, ky, horizontal, g.sign)
+  // your own goal, defended with the pointer, when the keeper shoots back
   if (s.toyKeeperShoots) {
-    c.fillStyle = 'rgba(255,255,255,0.08)'
-    c.fillRect(0, top, 60, PEN_GOAL_H)
-    c.strokeStyle = 'rgba(255,255,255,0.8)'
-    c.lineWidth = 5
-    c.beginPath()
-    c.moveTo(60, floor); c.lineTo(60, top); c.lineTo(0, top)
-    c.stroke()
-    const gy = pen.phase === 'return' || pen.phase === 'returned' ? pen.glove : floor - PEN_GOAL_H / 2
+    const [gx, gy] = glovePoint(g, pen)
+    c.save()
+    shadowed(c)
     c.fillStyle = '#34c759'
     c.strokeStyle = 'rgba(0,0,0,0.35)'
     c.lineWidth = 2
     c.beginPath()
-    c.roundRect(34, gy - 48, 20, 96, 9)
+    if (horizontal) c.roundRect(gx - 10, gy - 40, 20, 80, 10)
+    else c.roundRect(gx - 40, gy - 10, 80, 20, 10)
     c.fill()
     c.stroke()
+    c.restore()
     if (pen.back && ready(PICS.football)) c.drawImage(PICS.football, pen.back.x - 15, pen.back.y - 15, 30, 30)
   }
   // the pull
@@ -439,7 +406,7 @@ function drawPenalty(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, wid
     // where it would go
     if (l.power > 0.04) {
       c.fillStyle = 'rgba(255,255,255,0.75)'
-      for (const [px, py] of penPath(ball.x, ball.y, l.vx, l.vy, pen.spin, floor, ball.r)) {
+      for (const [px, py] of penPath(ball.x, ball.y, l.vx, l.vy, pen.spin)) {
         c.beginPath()
         c.arc(px, py, 2.6, 0, TAU)
         c.fill()
@@ -737,7 +704,7 @@ function Toys({ s }: { s: DockSettings }) {
   const [hud, setHud] = useState<{ cards: HudCard[]; result: HudResult | null }>({ cards: [], result: null })
   const newGame = () => ({ round: { active: false, left: 0, score: 0 }, session: 0 })
   const sim = useRef<Sim>({
-    balls: {}, pointer: null, samples: [], drag: null, capture: false, scores: { ...DEFAULT_TOY_SCORES }, shotFrom: 0, pen: makePen(), penOn: false, shot: makeShot(), farOn: false, pitchKey: '', mini: {}, miniDown: false, miniWas: { pong: false, bowling: false, dart: false },
+    balls: {}, pointer: null, samples: [], drag: null, capture: false, scores: { ...DEFAULT_TOY_SCORES }, shotFrom: 0, pen: makePen(), penOn: false, penKey: '', shot: makeShot(), farOn: false, pitchKey: '', mini: {}, miniDown: false, miniWas: { pong: false, bowling: false, dart: false },
     games: { basket: newGame(), football: newGame(), bounce: newGame() },
     result: null, flash: null, respawn: 0, hover: false, size: '', armed: null, toolDir: 1, toolTilt: 0, toolPos: null, toolVx: 0, toolVy: 0, struck: {},
     bounce: { playing: false, combo: 0, respawn: 0 }, cursor: '',
@@ -996,7 +963,7 @@ function Toys({ s }: { s: DockSettings }) {
         st.pen.aim = null
         if (fb && l.power > 0.06) {
           startRound('football')
-          penShoot(st.pen, fb, window.innerWidth, floorOf(settingsRef.current, window.innerHeight), l.vx, l.vy)
+          penShoot(st.pen, fb, window.innerWidth, floorOf(settingsRef.current, window.innerHeight), settingsRef.current.toyPitch, l.vx, l.vy)
           tone(settingsRef.current.toySound, 220, 90, 0.11, 'triangle', 0.18)
         }
         const q = st.pointer
@@ -1181,12 +1148,14 @@ function Toys({ s }: { s: DockSettings }) {
       }
       // the penalty game takes over the football while it is the chosen kind of football
       const penalty = cur.toyFootball && cur.toyFootballStyle === 'penalty'
-      if (penalty !== st.penOn) {
+      const penKey = penalty ? `${cur.toyPitch}|${w}x${floor}` : ''
+      if (penKey !== st.penKey) {
+        st.penKey = penKey
         st.penOn = penalty
         const fb = st.balls.football
         st.pen = makePen()
         if (fb) {
-          const [sx, sy] = penalty ? spotOf(w, floor, fb.r) : startPosition('football', w, floor, side)
+          const [sx, sy] = penalty ? [penGeo(w, floor, cur.toyPitch).spot.x, penGeo(w, floor, cur.toyPitch).spot.y] : startPosition('football', w, floor, side)
           Object.assign(fb, { x: sx, y: sy, vx: 0, vy: 0, floorHits: 0, touches: 0 })
         }
       }
@@ -1194,8 +1163,7 @@ function Toys({ s }: { s: DockSettings }) {
         const ball = st.balls[kind]
         if (!ball) continue
         if (kind === 'football' && penalty) {
-          const was = st.pen.phase
-          penStep(st.pen, ball, dt, w, floor, {
+          penStep(st.pen, ball, dt, w, floor, cur.toyPitch, {
             goal: () => {
               saveScores({ football: st.scores.football + 1 })
               point('football')
@@ -1208,13 +1176,7 @@ function Toys({ s }: { s: DockSettings }) {
             miss: () => { st.flash = { text: 'DIŞARI', left: 1 }; tone(cur.toySound, 300, 150, 0.2, 'triangle', 0.08) },
             conceded: () => { st.flash = { text: 'GOL YEDİN', left: 1.3 }; tone(cur.toySound, 300, 110, 0.4, 'sawtooth', 0.1) },
             blocked: () => { st.flash = { text: 'KURTARDIN!', left: 1.2 }; tone(cur.toySound, 660, 990, 0.2, 'triangle', 0.1) },
-          }, st.pointer?.y ?? floor - 60)
-          // a shot is over: with the return shot on, it is the keeper's turn before the ball is put on the spot again
-          if (was === 'result' && st.pen.phase === 'ready' && cur.toyKeeperShoots) {
-            keeperShot(st.pen, w, floor)
-            const [sx, sy] = spotOf(w, floor, ball.r)
-            Object.assign(ball, { x: sx, y: sy, vx: 0, vy: 0 })
-          }
+          }, st.pointer ? { x: st.pointer.x, y: st.pointer.y } : null, cur.toyKeeperShoots)
           continue
         }
         if (kind === 'basket' && far && st.shot.state === 'ready') {
@@ -1413,7 +1375,7 @@ function Toys({ s }: { s: DockSettings }) {
   return (
     <div className="toys" ref={root}>
       <canvas ref={canvas} className="toys__canvas" />
-      <Hud cards={hud.cards} result={hud.result} showCursor={s.toyShowCursor} corner={s.toyFootball && s.toyFootballStyle === 'free' && s.toyPitch === 'vertical'} />
+      <Hud cards={hud.cards} result={hud.result} showCursor={s.toyShowCursor} corner={s.toyFootball && (s.toyFootballStyle === 'free' || s.toyFootballStyle === 'penalty') && s.toyPitch === 'vertical'} />
     </div>
   )
 }
