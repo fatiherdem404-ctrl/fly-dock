@@ -14,6 +14,7 @@ import { WindowsTab } from '@/settings/pages/WindowsPage'
 import { ThemeTab } from '@/settings/pages/ThemesPage'
 import { WallpaperTab } from '@/settings/pages/WallpaperPage'
 import { CursorsTab } from '@/settings/pages/CursorsPage'
+import { StudioTab } from '@/settings/pages/StudioPage'
 import { SoundTab } from '@/settings/pages/SoundPage'
 import { ItemsTab } from '@/settings/pages/ItemsPage'
 import { WheelTab } from '@/settings/pages/WheelPage'
@@ -135,6 +136,7 @@ export default function SettingsView() {
             {tab === 'tweaks' && <TweaksTab />}
             {tab === 'wallpaper' && <WallpaperTab s={settings} set={set} />}
             {tab === 'cursors' && <CursorsTab s={settings} />}
+            {tab === 'studio' && <StudioTab set={set} />}
             {tab === 'sound' && <SoundTab s={settings} set={set} />}
             {tab === 'widgets' && <WidgetsTab />}
             {tab === 'toys' && <ToysTab s={settings} set={set} />}

@@ -74,3 +74,32 @@ export function createBuilderPack(name: string, author: string, map: Record<stri
     return { ok: false, message: (err as Error).message }
   }
 }
+
+/** The icon studio's result: one finished PNG per key (base64), written as an ordinary pack through the same install checks. */
+export function createPackFromPngs(name: string, author: string, images: Record<string, string>): { ok: boolean; message: string; pack?: PackInfo } {
+  const title = String(name).trim().slice(0, 60)
+  if (!title) return { ok: false, message: 'Pakete bir ad ver.' }
+  const entries: ZipEntry[] = []
+  const iconMap: Record<string, string> = {}
+  let n = 0
+  for (const [key, b64] of Object.entries(images ?? {})) {
+    if (!/^[a-z0-9][a-z0-9._-]{0,39}$/.test(key) || typeof b64 !== 'string' || b64.length > 4_000_000) continue
+    const data = Buffer.from(b64, 'base64')
+    if (data.length < 64 || data.readUInt32BE(0) !== 0x89504e47) continue // PNGs only
+    const entryName = `icons/${String(++n).padStart(3, '0')}.png`
+    entries.push({ name: entryName, data })
+    iconMap[key] = entryName
+  }
+  if (n === 0) return { ok: false, message: 'Hiç simge üretilemedi.' }
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'paket'
+  const id = `${slug}-${Date.now().toString(36).slice(-4)}`
+  entries.push(
+    { name: 'pack.json', data: Buffer.from(JSON.stringify({ type: 'icons', id, name: title, author: String(author).trim().slice(0, 60) || undefined, version: '1.0' }, null, 2)) },
+    { name: 'icons.json', data: Buffer.from(JSON.stringify({ map: iconMap }, null, 2)) },
+  )
+  try {
+    return { ok: true, message: title, pack: installPack(writeZip(entries)) }
+  } catch (err) {
+    return { ok: false, message: (err as Error).message }
+  }
+}

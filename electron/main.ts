@@ -19,7 +19,7 @@ import { showEntryMenu } from './entryMenu'
 import { menuIsOpen } from './contextMenu'
 import { listLibrary, libraryThumb, pickImage, addLibraryFolder, removeLibraryFolder } from './iconLibrary'
 import { showIconPicker, closeIconPicker, pickerInfo, applyPickedIcon } from './iconPicker'
-import { builderKeys, pickBuilderFolder, createBuilderPack } from './packBuilder'
+import { builderKeys, pickBuilderFolder, createBuilderPack, createPackFromPngs } from './packBuilder'
 import { initDockWindows, syncDocks, setLayout, applyLayer, dockIsOnTop, isDockHidden, setFullscreenHidden, toggleDockVisibility, disposeDockWindows } from './dockWindows'
 import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN } from './windows'
 import {
@@ -435,6 +435,14 @@ function registerIpc() {
   })
   handle('iconpick:close', () => closeIconPicker())
   handle('builder:folder', (_e, keys) => pickBuilderFolder(keys))
+  handle('studio:make-pack', (_e, name, author, images) => {
+    const result = createPackFromPngs(name, author, images)
+    if (result.ok) {
+      clearPackCaches()
+      broadcast('themes:changed', null)
+    }
+    return result
+  })
   handle('builder:create', (_e, name, author, map) => {
     const result = createBuilderPack(name, author, map)
     if (result.ok) {

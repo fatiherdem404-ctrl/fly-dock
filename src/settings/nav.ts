@@ -1,6 +1,6 @@
 import type { IconName } from '@/icons'
 
-export type Tab = 'dock' | 'desk' | 'theme' | 'wallpaper' | 'icons' | 'cursors' | 'motion' | 'windows' | 'sound' | 'items' | 'wheel' | 'widgets' | 'toys' | 'tweaks' | 'general'
+export type Tab = 'dock' | 'desk' | 'theme' | 'wallpaper' | 'icons' | 'studio' | 'cursors' | 'motion' | 'windows' | 'sound' | 'items' | 'wheel' | 'widgets' | 'toys' | 'tweaks' | 'general'
 
 export interface TabInfo {
   id: Tab
@@ -10,12 +10,16 @@ export interface TabInfo {
   blurb: string
 }
 
+/** The icon studio is a tool for building the default icon pack; it only exists in development builds. */
+export const STUDIO = !!(import.meta.env.DEV || import.meta.env.VITE_STUDIO)
+
 export const TAB_INFO: Record<Tab, TabInfo> = {
   dock: { id: 'dock', label: 'Dock', icon: 'dock', blurb: 'Yeri, simgeleri, etiketleri ve davranışı' },
   desk: { id: 'desk', label: 'Zemin ve raf', icon: 'desk', blurb: 'Simgelerin durduğu raf: malzeme, derinlik, köşeler' },
   theme: { id: 'theme', label: 'Temalar', icon: 'theme', blurb: 'Renkler, cam, yazı tipi ve eşlik eden raf ile arka plan' },
   wallpaper: { id: 'wallpaper', label: 'Duvar kâğıdı', icon: 'image', blurb: 'Canlı arka planlar, resim, video ve slayt' },
   icons: { id: 'icons', label: 'Simge paketleri', icon: 'pack', blurb: 'Programların simgelerini toplu değiştir' },
+  studio: { id: 'studio', label: 'İkon stüdyosu', icon: 'edit', blurb: 'Geliştirme sürümüne özel: kart, renk ve derinlikle kendi simge paketini tasarla' },
   cursors: { id: 'cursors', label: 'İmleçler', icon: 'cursor', blurb: 'Fare imleçlerini bir paketle değiştir' },
   motion: { id: 'motion', label: 'Animasyonlar', icon: 'motion', blurb: 'Hız, hareket, açılış ve pencere efektleri' },
   windows: { id: 'windows', label: 'Dock pencereleri', icon: 'window', blurb: 'Klasör, grup ve kontrol paneli penceresinin boyutu ve yeri' },
@@ -29,7 +33,7 @@ export const TAB_INFO: Record<Tab, TabInfo> = {
 }
 
 export const NAV_GROUPS: { title: string; tabs: Tab[] }[] = [
-  { title: 'Görünüm', tabs: ['dock', 'desk', 'theme', 'wallpaper', 'icons', 'cursors'] },
+  { title: 'Görünüm', tabs: ['dock', 'desk', 'theme', 'wallpaper', 'icons', ...(STUDIO ? (['studio'] as Tab[]) : []), 'cursors'] },
   { title: 'Davranış', tabs: ['motion', 'windows', 'sound'] },
   { title: 'İçerik', tabs: ['items', 'wheel', 'widgets', 'toys'] },
   { title: 'Sistem', tabs: ['tweaks', 'general'] },

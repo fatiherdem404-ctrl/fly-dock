@@ -650,6 +650,7 @@ export interface InvokeMap {
   'iconpick:info': { args: [target: string]; result: { name: string; current: string | null; custom: boolean } | null }
   'iconpick:apply': { args: [target: string, file: string | null]; result: { ok: boolean; message: string } }
   'iconpick:close': { args: []; result: void }
+  'studio:make-pack': { args: [name: string, author: string, images: Record<string, string>]; result: { ok: boolean; message: string; pack?: PackInfo } }
   'builder:create': { args: [name: string, author: string, map: Record<string, string>]; result: { ok: boolean; message: string; pack?: PackInfo } }
   'confirm:answer': { args: [id: string, answer: boolean, text?: string]; result: void }
   'entry:menu': { args: [request: EntryMenuRequest]; result: void }
