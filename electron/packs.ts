@@ -20,7 +20,7 @@ const ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,40}$/
 
 const packsRoot = () => path.join(app.getPath('userData'), 'packs')
 /** Icon packs that ship with the app: plain folders next to the program, never copied to the user's data. */
-const BUILTIN_ICON_PACKS: { id: string; name: string; author: string }[] = []
+const BUILTIN_ICON_PACKS: { id: string; name: string; author: string }[] = [{ id: 'fly-default', name: 'Fly Varsayılan', author: 'Fly Dock' }]
 export const builtinIconRoot = () => (app.isPackaged ? path.join(process.resourcesPath, 'icon-packs') : path.join(app.getAppPath(), 'resources', 'icon-packs'))
 const isBuiltinIconPack = (id: string) => BUILTIN_ICON_PACKS.some((p) => p.id === id)
 
