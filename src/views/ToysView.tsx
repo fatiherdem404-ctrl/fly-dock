@@ -4,6 +4,10 @@ import type { DockSettings, ToyMode, ToyScores } from '@/shared/types'
 import { DEFAULT_TOY_SCORES } from '@/shared/types'
 import { PEN_GOAL_D, PEN_GOAL_H, PEN_MAX_PULL, Pen, goalX, keeperShot, launch, makePen, path as penPath, shoot as penShoot, spotOf, step as penStep } from '@/toys/penalty'
 import { SHOT_MAX_PULL, Shot, launchShot, makeShot, pickSpot, shotPath } from '@/toys/shot'
+import { Bowling } from '@/toys/bowling'
+import { Dart } from '@/toys/dart'
+import { Env, MiniGame, inside } from '@/toys/mini'
+import { Pong } from '@/toys/pong'
 import { goalBoxes, goalPosts, inWhichGoal, slide } from '@/toys/pitch'
 import { Ball, Segment, World, bounceOffMover, makeBall, scoredThroughRim, stepBall, throwVelocity } from '@/toys/ball'
 import handUrl from '@/assets/toys/hand.png'
@@ -17,6 +21,16 @@ import soccerUrl from '@/assets/toys/soccer.png'
 
 type GameId = 'basket' | 'football' | 'bounce'
 type BallKind = GameId
+/** The small panel games: Pong, bowling and darts. */
+type MiniId = 'pong' | 'bowling' | 'dart'
+const MINI_IDS: MiniId[] = ['pong', 'bowling', 'dart']
+const MINI_INFO: Record<MiniId, { title: string; best: keyof ToyScores }> = {
+  pong: { title: 'Pong', best: 'pongBest' },
+  bowling: { title: 'Bowling', best: 'bowlingBest' },
+  dart: { title: 'Dart', best: 'dartBest' },
+}
+const miniOn = (s: DockSettings, id: MiniId) => (id === 'pong' ? s.toyPong : id === 'bowling' ? s.toyBowling : s.toyDart)
+const miniKey = (id: MiniId) => (id === 'pong' ? 'toyPong' : id === 'bowling' ? 'toyBowling' : 'toyDart')
 type Round = { active: boolean; left: number; score: number }
 
 const ALL: BallKind[] = ['basket', 'football', 'bounce']
@@ -50,7 +64,7 @@ const ready = (img: HTMLImageElement) => img.complete && img.naturalWidth > 0
 
 /** What the on-screen scoreboard shows for one game. */
 interface HudCard {
-  id: GameId
+  id: GameId | MiniId
   title: string
   unit: string
   timed: boolean
@@ -109,6 +123,10 @@ interface Sim {
   farOn: boolean
   /** What the pitch was last set up for: its shape and the size of the window. */
   pitchKey: string
+  /** The panel games, and whether the left button went down inside one of them. */
+  mini: Partial<Record<MiniId, MiniGame>>
+  miniDown: boolean
+  miniWas: Record<MiniId, boolean>
   /** Racket and tennis ball: a rally is on, the pointer is the racket, and hits in a row are counted. */
   bounce: { playing: boolean; combo: number; respawn: number }
   cursor: string
@@ -625,6 +643,7 @@ function drawScene(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, width
   }
   if (s.toyFootball && s.toyFootballStyle === 'penalty') drawPenalty(c, s, sim, width, floor)
   else if (s.toyFootball && s.toyFootballStyle === 'free') drawPitch(c, s, width, floor)
+  for (const id of MINI_IDS) if (miniOn(s, id)) sim.mini[id]?.draw(c, width, floor, floor, sim.pointer ? { x: sim.pointer.x, y: sim.pointer.y } : null)
   if (sim.flash) {
     const t = Math.min(1, sim.flash.left / 0.4)
     c.globalAlpha = t
@@ -650,7 +669,10 @@ const clock = (seconds: number) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 }
 
-function GameIcon({ id }: { id: GameId }) {
+function GameIcon({ id }: { id: GameId | MiniId }) {
+  if (id === 'pong') return <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="9" width="4" height="14" rx="2" fill="#5aa2ff" /><rect x="25" y="12" width="4" height="14" rx="2" fill="#ff6a8a" /><circle cx="17" cy="15" r="3" fill="#fff" /></svg>
+  if (id === 'bowling') return <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="11" cy="21" r="8" fill="#2b3a99" /><circle cx="9" cy="19" r="1.2" fill="#0a0f33" /><circle cx="12" cy="19" r="1.2" fill="#0a0f33" /><rect x="21" y="6" width="6" height="16" rx="3" fill="#fff" stroke="#d63a3a" strokeWidth="2" /></svg>
+  if (id === 'dart') return <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="#15181f" /><circle cx="16" cy="16" r="9" fill="#efe3c2" /><circle cx="16" cy="16" r="5" fill="#c8312f" /><circle cx="16" cy="16" r="1.8" fill="#1f8a4b" /></svg>
   if (id === 'basket') return <img src={basketballUrl} alt="" />
   if (id === 'football') return <img src={soccerUrl} alt="" />
   return (
@@ -715,7 +737,7 @@ function Toys({ s }: { s: DockSettings }) {
   const [hud, setHud] = useState<{ cards: HudCard[]; result: HudResult | null }>({ cards: [], result: null })
   const newGame = () => ({ round: { active: false, left: 0, score: 0 }, session: 0 })
   const sim = useRef<Sim>({
-    balls: {}, pointer: null, samples: [], drag: null, capture: false, scores: { ...DEFAULT_TOY_SCORES }, shotFrom: 0, pen: makePen(), penOn: false, shot: makeShot(), farOn: false, pitchKey: '',
+    balls: {}, pointer: null, samples: [], drag: null, capture: false, scores: { ...DEFAULT_TOY_SCORES }, shotFrom: 0, pen: makePen(), penOn: false, shot: makeShot(), farOn: false, pitchKey: '', mini: {}, miniDown: false, miniWas: { pong: false, bowling: false, dart: false },
     games: { basket: newGame(), football: newGame(), bounce: newGame() },
     result: null, flash: null, respawn: 0, hover: false, size: '', armed: null, toolDir: 1, toolTilt: 0, toolPos: null, toolVx: 0, toolVy: 0, struck: {},
     bounce: { playing: false, combo: 0, respawn: 0 }, cursor: '',
@@ -740,6 +762,33 @@ function Toys({ s }: { s: DockSettings }) {
       invoke('toys:scores', patch)
     }
     const dims = () => ({ w: window.innerWidth, h: window.innerHeight })
+    /** A panel game is over: its record is kept and the result card shown. */
+    const finishMini = (id: MiniId, score: number) => {
+      const key = MINI_INFO[id].best
+      const best = st.scores[key]
+      const wins = id === 'pong'
+      const record = !wins && score > best
+      if (record) saveScores({ [key]: score })
+      st.result = { game: MINI_INFO[id].title, title: wins ? 'Kazandın!' : record ? 'Yeni rekor!' : 'Oyun bitti', score, unit: wins ? 'sayı' : id === 'bowling' ? 'lobut' : 'puan', best: wins ? st.scores.pongBest + 1 : record ? score : best, record, left: 4.5 }
+      const sound = settingsRef.current.toySound
+      if (record || wins) [523, 659, 784, 1047].forEach((f, i) => tone(sound, f, f, 0.2, 'triangle', 0.1, i * 0.12))
+    }
+    const envFor = (id: MiniId): Env => ({
+      flash: (text, seconds = 1.2) => { st.flash = { text, left: seconds } },
+      tone: (from, to, seconds, type = 'sine', volume = 0.1, delay = 0) => tone(settingsRef.current.toySound, from, to, seconds, type, volume, delay),
+      finish: (score) => finishMini(id, score),
+      win: () => saveScores({ pongBest: st.scores.pongBest + 1 }),
+    })
+    st.mini = { pong: new Pong(envFor('pong')), bowling: new Bowling(envFor('bowling')), dart: new Dart(envFor('dart')) }
+    /** The panel game whose panel the point is over (only games that are on). */
+    const miniAt = (x: number, y: number): MiniId | null => {
+      const { w, h } = dims()
+      for (const id of MINI_IDS) {
+        const m = st.mini[id]
+        if (m && miniOn(settingsRef.current, id) && inside(m.area(w, h, floorOf(settingsRef.current, h)), x, y)) return id
+      }
+      return null
+    }
     /** A timed round starts with the first touch of the ball. */
     const startRound = (id: GameId) => {
       const g = st.games[id]
@@ -793,10 +842,10 @@ function Toys({ s }: { s: DockSettings }) {
     }
     /** Decides what the pointer is and whether the window takes the mouse. */
     /** The game whose close button (✕ on its scoreboard card) is under the pointer. */
-    const closeAt = (x: number, y: number): { act: 'close' | 'cursor'; game: GameId } | null => {
+    const closeAt = (x: number, y: number): { act: 'close' | 'cursor'; game: GameId | MiniId } | null => {
       for (const el of Array.from(document.querySelectorAll<HTMLElement>('.hud-card__close, .hud-card__cursor'))) {
         const r = el.getBoundingClientRect()
-        if (x >= r.left - 4 && x <= r.right + 4 && y >= r.top - 4 && y <= r.bottom + 4) return { act: el.classList.contains('hud-card__cursor') ? 'cursor' : 'close', game: el.dataset.game as GameId }
+        if (x >= r.left - 4 && x <= r.right + 4 && y >= r.top - 4 && y <= r.bottom + 4) return { act: el.classList.contains('hud-card__cursor') ? 'cursor' : 'close', game: el.dataset.game as GameId | MiniId }
       }
       return null
     }
@@ -811,8 +860,9 @@ function Toys({ s }: { s: DockSettings }) {
       const sb = st.balls.basket
       const farHover = farOn() && st.shot.state === 'ready' && !!sb && Math.hypot(sb.x - x, sb.y - y) <= sb.r + 18
       const farBusy = farOn() && !!st.shot.aim
-      setCapture(!!over || !!st.armed || !!st.drag || playing || !!close || penHover || penBusy || farHover || farBusy)
-      setCursor(close ? 'pointer' : penBusy || farBusy ? (settingsRef.current.toyShowCursor ? '' : 'none') : penHover || farHover ? 'grab' : st.drag || st.armed || playing ? (settingsRef.current.toyShowCursor ? '' : 'none') : over ? 'grab' : '')
+      const mini = miniAt(x, y)
+      setCapture(!!over || !!st.armed || !!st.drag || playing || !!close || penHover || penBusy || farHover || farBusy || !!mini || st.miniDown)
+      setCursor(close ? 'pointer' : mini || st.miniDown ? (mini === 'bowling' || settingsRef.current.toyShowCursor ? '' : 'none') : penBusy || farBusy ? (settingsRef.current.toyShowCursor ? '' : 'none') : penHover || farHover ? 'grab' : st.drag || st.armed || playing ? (settingsRef.current.toyShowCursor ? '' : 'none') : over ? 'grab' : '')
     }
     /** A rally of the racket and the baseball has ended: the ball touched the floor. */
     const dropBounce = () => {
@@ -865,7 +915,14 @@ function Toys({ s }: { s: DockSettings }) {
       const closing = closeAt(e.clientX, e.clientY)
       if (closing) {
         if (closing.act === 'cursor') invoke('settings:update', { toyShowCursor: !settingsRef.current.toyShowCursor })
-        else invoke('settings:update', { [closing.game === 'basket' ? 'toyBasket' : closing.game === 'football' ? 'toyFootball' : 'toyBounce']: false })
+        else invoke('settings:update', { [closing.game === 'basket' ? 'toyBasket' : closing.game === 'football' ? 'toyFootball' : closing.game === 'bounce' ? 'toyBounce' : miniKey(closing.game)]: false })
+        return
+      }
+      const mid = miniAt(e.clientX, e.clientY)
+      if (mid) {
+        st.miniDown = true
+        st.mini[mid]!.down(e.clientX, e.clientY)
+        setCapture(true)
         return
       }
       const bk = st.balls.basket
@@ -907,7 +964,14 @@ function Toys({ s }: { s: DockSettings }) {
         st.drag = { kind: 'ball', ball: over.ball, dx: ball.x - e.clientX, dy: ball.y - e.clientY }
       }
     }
-    const onUp = () => {
+    const onUp = (e?: MouseEvent) => {
+      if (st.miniDown) {
+        st.miniDown = false
+        for (const id of MINI_IDS) if (miniOn(settingsRef.current, id)) st.mini[id]?.up(e?.clientX ?? 0, e?.clientY ?? 0)
+        const q = st.pointer
+        if (q) refresh(q.x, q.y)
+        return
+      }
       if (st.shot.aim) {
         const bk = st.balls.basket
         const l = launchShot(st.shot.aim, window.innerWidth)
@@ -972,6 +1036,8 @@ function Toys({ s }: { s: DockSettings }) {
     window.addEventListener('mouseup', onUp)
     window.addEventListener('contextmenu', onContext)
     const onWheel = (e: WheelEvent) => {
+      const mid = st.pointer ? miniAt(st.pointer.x, st.pointer.y) : null
+      if (mid) st.mini[mid]?.wheel(e.deltaY)
       if (!penaltyOn() || !(st.pen.aim || st.pen.phase === 'ready')) return
       st.pen.spin = Math.max(-1, Math.min(1, Math.round((st.pen.spin + (e.deltaY < 0 ? 0.2 : -0.2)) * 10) / 10))
     }
@@ -995,6 +1061,13 @@ function Toys({ s }: { s: DockSettings }) {
         else best = `Seri ${st.bounce.combo}  ·  Rekor ${sc.bounceCombo}`
         const hint = id === 'basket' ? (cur.toyBasketStyle === 'far' ? 'Hazır: topu geri çek, bırak' : 'Hazır: topu tutunca başlar') : id === 'bounce' || jugglingOf(cur) ? 'Hazır: topa tıkla ve başla' : cur.toyFootballStyle === 'penalty' ? 'Hazır: topu geri çek, bırak' : 'Hazır: topa vurunca başlar'
         cards.push({ id, title: GAME_INFO[id].title, unit: unitOf(cur, id), timed, active: g.round.active, score: timed ? g.round.score : g.session, left: Math.round(g.round.left * 10) / 10, best, hint })
+      }
+      for (const id of MINI_IDS) {
+        if (!miniOn(cur, id)) continue
+        const m = st.mini[id]
+        if (!m) continue
+        const h = m.hud()
+        cards.push({ id, title: MINI_INFO[id].title, unit: h.unit, timed: false, active: h.active, score: h.score, left: 0, best: id === 'pong' ? `${h.best}  ·  Galibiyet ${st.scores.pongBest}` : `${h.best}  ·  Rekor ${st.scores[MINI_INFO[id].best]}`, hint: h.hint })
       }
       const result = st.result ? { game: st.result.game, title: st.result.title, score: st.result.score, unit: st.result.unit, best: st.result.best, record: st.result.record } : null
       const key = JSON.stringify([cards, result])
@@ -1259,6 +1332,15 @@ function Toys({ s }: { s: DockSettings }) {
           ball.vx = 0
           ball.vy = 0
         }
+      }
+      // the panel games
+      for (const id of MINI_IDS) {
+        const on = miniOn(cur, id)
+        const m = st.mini[id]
+        if (!m) continue
+        if (on) m.step(dt, st.pointer ? { x: st.pointer.x, y: st.pointer.y } : null, st.miniDown, w, h, floor)
+        else if (st.miniWas[id]) m.reset()
+        st.miniWas[id] = on
       }
       for (const id of GAME_IDS) {
         const r = st.games[id].round

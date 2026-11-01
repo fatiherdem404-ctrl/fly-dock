@@ -20,6 +20,13 @@ function GameGlyph({ game }: { game: 'basket' | 'football' | 'bounce' }) {
   )
 }
 
+/** The little picture of the panel games. */
+function MiniGlyph({ game }: { game: 'pong' | 'bowling' | 'dart' }) {
+  if (game === 'pong') return <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="9" width="4" height="14" rx="2" fill="#5aa2ff" /><rect x="25" y="12" width="4" height="14" rx="2" fill="#ff6a8a" /><circle cx="17" cy="15" r="3" fill="#fff" /></svg>
+  if (game === 'bowling') return <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="11" cy="21" r="8" fill="#2b3a99" /><circle cx="9" cy="19" r="1.2" fill="#0a0f33" /><circle cx="12" cy="19" r="1.2" fill="#0a0f33" /><rect x="21" y="6" width="6" height="16" rx="3" fill="#fff" stroke="#d63a3a" strokeWidth="2" /></svg>
+  return <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="#15181f" /><circle cx="16" cy="16" r="9" fill="#efe3c2" /><circle cx="16" cy="16" r="5" fill="#c8312f" /><circle cx="16" cy="16" r="1.8" fill="#1f8a4b" /></svg>
+}
+
 /** A small picture of each game, drawn once: the pitch with its ball. */
 function GamePic({ game }: { game: 'basket' | 'football' | 'bounce' }) {
   return (
@@ -65,9 +72,12 @@ function Scores(_props: { tab: string }) {
         <div><b>{scores.basketBest}</b><small>Basketbol rekoru (60 sn)</small><em>toplam {scores.basket}</em></div>
         <div><b>{scores.footballBest}</b><small>Futbol rekoru (60 sn)</small><em>toplam {scores.football}</em></div>
         <div><b>{scores.juggleBest}</b><small>Futbol sektirme rekoru (60 sn)</small><em>en uzun seri {scores.juggleCombo}</em></div>
+        <div><b>{scores.pongBest}</b><small>Pong galibiyeti</small><em>kazanılan maç</em></div>
+        <div><b>{scores.bowlingBest}</b><small>Bowling rekoru</small><em>en çok lobut (50 üzerinden)</em></div>
+        <div><b>{scores.dartBest}</b><small>Dart rekoru</small><em>en yüksek puan</em></div>
         <div><b>{scores.bounceBest}</b><small>Top sektirme rekoru (60 sn)</small><em>en uzun seri {scores.bounceCombo}</em></div>
       </div>
-      <Row label="Skorları sıfırla"><button className="st-btn" onClick={() => invoke('toys:scores', { basket: 0, basketBest: 0, football: 0, footballBest: 0, bounceBest: 0, bounceCombo: 0, juggleBest: 0, juggleCombo: 0 }).then(setScores)}><Icon name="refresh" size={15} />Sıfırla</button></Row>
+      <Row label="Skorları sıfırla"><button className="st-btn" onClick={() => invoke('toys:scores', { basket: 0, basketBest: 0, football: 0, footballBest: 0, bounceBest: 0, bounceCombo: 0, juggleBest: 0, juggleCombo: 0, pongBest: 0, bowlingBest: 0, dartBest: 0 }).then(setScores)}><Icon name="refresh" size={15} />Sıfırla</button></Row>
     </Card>
   )
 }
@@ -82,6 +92,12 @@ export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
       {extra}
       <Row label={`${title} açık`}><Switch label={title} value={s[key]} onChange={(v) => set({ [key]: v })} /></Row>
       <Row label="Mod" hint="Serbest: sadece oyna, sayaç tutulur. Süreye karşı: 60 saniyede en yüksek skor, rekor kaydedilir."><Segmented<ToyMode> value={s[modeKey]} onChange={(v) => set({ [modeKey]: v })} options={[['free', 'Serbest'], ['timed', 'Süreye karşı']]} /></Row>
+    </Card>
+  )
+  const panelGame = (key: 'toyPong' | 'toyBowling' | 'toyDart', id: 'pong' | 'bowling' | 'dart', title: string, hint: string, how: string) => (
+    <Card glyph={<MiniGlyph game={id} />} icon="toys" tab="Oyunlar" title={title} hint={hint}>
+      <p className="st-prose">{how}</p>
+      <Row label={`${title} açık`}><Switch label={title} value={s[key]} onChange={(v) => set({ [key]: v })} /></Row>
     </Card>
   )
   return (
@@ -99,6 +115,9 @@ export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
           {s.toyFootballStyle === 'penalty' && <Row label="Kaleci de sana atsın" hint="Sen attıktan sonra kaleci karşı kaleye şut çeker; imleçle kalenin önünde eldiven olarak savunursun"><Switch label="Kaleci sana da atsın" value={s.toyKeeperShoots} onChange={(toyKeeperShoots) => set({ toyKeeperShoots })} /></Row>}
         </>
       ))}
+      {panelGame('toyPong', 'pong', 'Pong', 'Bilgisayara karşı klasik pong.', 'Ortadaki panelde oynanır: raketi farenle yönet, top her vuruşta hızlanır, ilk yedi sayıya ulaşan kazanır. Başlamak için panele tıkla.')}
+      {panelGame('toyBowling', 'bowling', 'Bowling', 'Beş tur, on lobut.', 'Topu sapan gibi geri çek: uzunluk gücü, yön atış açısını belirler; fare tekerleği falsoyu ayarlar. Her turda iki atışın var; strike ve spare yazıyla gösterilir.')}
+      {panelGame('toyDart', 'dart', 'Dart', 'Üç ok, beş tur.', 'Nişan al, fare tuşunu basılı tutarak elini sakinleştir (çember küçülür), bırakınca ok atılır. Çift ve üçlü halkalar ile bull gerçek dart tahtası gibi puan verir.')}
       {game('toyBounce', 'toyBounceMode', 'bounce', 'Top sektirme', 'Raketle tenis topunu havada tut.', 'Topa tıkla, havaya fırlasın; imleç yatay bir raket olur. Topu yere düşürmeden sektir, her vuruş bir puan. Top düşünce seri biter; sağ tık oyunu bırakır.')}
       <Scores tab="Oyunlar" />
       <Card icon="window" tab="Yerleşim" title="Pencere katmanı" hint="Oyunlar diğer pencerelerin üstünde mi dursun, onlar gibi davransın mı, yoksa masaüstü gibi altta mı kalsın.">
