@@ -242,6 +242,8 @@ export interface DockSettings {
   wallpaperFit: WallpaperFit
   wallpaperPauseFullscreen: boolean
   wallpaperPauseBattery: boolean
+  /** Live scenes react to the cursor. */
+  wallpaperReact: boolean
   /** Folders whose pictures show up in the icon picker. */
   iconFolders: string[]
   // desktop toys
@@ -325,14 +327,18 @@ export const DESK_KEYS = [
 export type DeskKey = (typeof DESK_KEYS)[number]
 export type ThemeDesk = Partial<Pick<DockSettings, DeskKey>>
 
-export type LiveWallpaperId = 'aurora' | 'flow' | 'stars' | 'waves' | 'bubbles'
+export type LiveWallpaperId = 'aurora' | 'flow' | 'stars' | 'waves' | 'bubbles' | 'network' | 'ripples' | 'fireflies' | 'galaxy'
 /** The scenes the app draws itself; no file needed. [id, name, one line about it] */
 export const LIVE_WALLPAPERS: [LiveWallpaperId, string, string][] = [
   ['aurora', 'Aurora', 'Yavaşça süzülen renkli ışık bulutları'],
   ['flow', 'Akış', 'Yumuşak, sürekli değişen renk geçişi'],
   ['stars', 'Yıldızlı gece', 'Parlayan yıldızlar ve ara sıra kayan bir yıldız'],
   ['waves', 'Dalgalar', 'Katman katman, usulca sallanan dalgalar'],
-  ['bubbles', 'Baloncuklar', 'Yukarı süzülen saydam baloncuklar'],
+  ['bubbles', 'Baloncuklar', 'Yukarı süzülen saydam baloncuklar; fare yaklaşınca kaçışırlar'],
+  ['network', 'Ağ', 'Birbirine bağlanan noktalar; fare bir düğüm olup çevresini kendine çeker'],
+  ['ripples', 'Dalgacıklar', 'Sakin su; farenin geçtiği her yerde halkalar yayılır'],
+  ['fireflies', 'Ateş böcekleri', 'Karanlıkta uçuşan ışıklar; fareye gelip etrafında dönerler'],
+  ['galaxy', 'Galaksi', 'Dönen bir galaksi; merkezi fareyi izler, hızlı harekette parlar'],
 ]
 
 export type WallpaperMode = 'off' | 'theme' | 'single' | 'folder'
@@ -514,6 +520,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   wallpaperFit: 'fill',
   wallpaperPauseFullscreen: true,
   wallpaperPauseBattery: true,
+  wallpaperReact: true,
   iconFolders: [],
   toyBasket: false,
   toyFootball: false,
@@ -640,6 +647,8 @@ export interface EventMap {
   'wallpaper:changed': WallpaperInfo
   'window:maximized': boolean
   'sound:play': SoundEvent
+  /** Where the cursor is over this wallpaper window (0..1 across the display) and whether it is on that display at all. */
+  'wallpaper:pointer': { x: number; y: number; on: boolean }
 }
 
 export type InvokeChannel = keyof InvokeMap

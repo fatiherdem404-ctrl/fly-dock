@@ -40,6 +40,8 @@ let fullscreen = false
 let onBattery = false
 let locked = false
 let handlerInstalled = false
+let pointerTimer: NodeJS.Timeout | null = null
+const lastPointer = new Map<number, string>()
 
 const kindOf = (file: string): 'image' | 'video' | null => {
   const ext = path.extname(file).toLowerCase()
@@ -180,7 +182,38 @@ async function createWindow(display: Electron.Display) {
   win.on('closed', () => windows.delete(display.id))
 }
 
+/**
+ * The wallpaper sits behind the desktop icons and gets no mouse events, so while a live scene is showing the app
+ * reads the cursor about 30 times a second and tells each wallpaper window where it is (only what changed).
+ */
+function startPointerFeed() {
+  if (pointerTimer) return
+  pointerTimer = setInterval(() => {
+    if (windows.size === 0 || paused() || !getSettings().wallpaperReact) return
+    const p = screen.getCursorScreenPoint()
+    for (const display of screen.getAllDisplays()) {
+      const win = windows.get(display.id)
+      if (!win || win.isDestroyed() || win.webContents.isDestroyed()) continue
+      const b = display.bounds
+      const on = p.x >= b.x && p.x < b.x + b.width && p.y >= b.y && p.y < b.y + b.height
+      const x = Math.round(((p.x - b.x) / b.width) * 1000) / 1000
+      const y = Math.round(((p.y - b.y) / b.height) * 1000) / 1000
+      const key = on ? `${x},${y}` : 'off'
+      if (lastPointer.get(display.id) === key) continue
+      lastPointer.set(display.id, key)
+      win.webContents.send('wallpaper:pointer', { x, y, on })
+    }
+  }, 33)
+}
+
+function stopPointerFeed() {
+  if (pointerTimer) clearInterval(pointerTimer)
+  pointerTimer = null
+  lastPointer.clear()
+}
+
 function destroyAll() {
+  stopPointerFeed()
   for (const win of windows.values()) {
     if (win.isDestroyed()) continue
     helper.desktopDetach(handleOf(win)).catch(() => {})
@@ -229,6 +262,8 @@ export function sync() {
     }
   }
   for (const d of displays) if (!windows.has(d.id)) void createWindow(d)
+  if (current.kind === 'live') startPointerFeed()
+  else stopPointerFeed()
   push()
 }
 

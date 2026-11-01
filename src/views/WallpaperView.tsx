@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { invoke, useActiveTheme, useEvent } from '@/api'
-import { startLive, hueOf } from '@/live'
+import { startLive, hueOf, makePointer, feedPointer, Pointer } from '@/live'
 import type { DockSettings, WallpaperFit, WallpaperInfo, WallpaperSource } from '@/shared/types'
 
 const FIT_CSS: Record<WallpaperFit, { size: string; repeat: string; object: string }> = {
@@ -11,12 +11,12 @@ const FIT_CSS: Record<WallpaperFit, { size: string; repeat: string; object: stri
   tile: { size: 'auto', repeat: 'repeat', object: 'cover' },
 }
 
-function LiveLayer({ id, hue, paused }: { id: string; hue: number; paused: boolean }) {
+function LiveLayer({ id, hue, paused, pointer }: { id: string; hue: number; paused: boolean; pointer: Pointer }) {
   const canvas = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
     if (paused || !canvas.current) return
-    return startLive(canvas.current, id, hue)
-  }, [id, hue, paused])
+    return startLive(canvas.current, id, hue, undefined, pointer)
+  }, [id, hue, paused, pointer])
   return <canvas ref={canvas} className="wp__canvas" />
 }
 
@@ -31,11 +31,11 @@ function VideoLayer({ url, fit, paused }: { url: string; fit: WallpaperFit; paus
   return <video ref={video} className="wp__media" src={url} autoPlay loop muted playsInline style={{ objectFit: FIT_CSS[fit].object as 'cover' }} />
 }
 
-function Layer({ source, fit, hue, paused, visible }: { source: WallpaperSource; fit: WallpaperFit; hue: number; paused: boolean; visible: boolean }) {
+function Layer({ source, fit, hue, paused, visible, pointer }: { source: WallpaperSource; fit: WallpaperFit; hue: number; paused: boolean; visible: boolean; pointer: Pointer }) {
   const f = FIT_CSS[fit]
   return (
     <div className="wp__layer" style={{ opacity: visible ? 1 : 0 }}>
-      {source.kind === 'live' && <LiveLayer id={source.live ?? 'aurora'} hue={hue} paused={paused} />}
+      {source.kind === 'live' && <LiveLayer id={source.live ?? 'aurora'} hue={hue} paused={paused} pointer={pointer} />}
       {source.kind === 'video' && source.url && <VideoLayer url={source.url} fit={fit} paused={paused} />}
       {source.kind === 'image' && source.url && <div className="wp__media" style={{ backgroundImage: `url("${source.url}")`, backgroundSize: f.size, backgroundRepeat: f.repeat, backgroundPosition: 'center' }} />}
     </div>
@@ -65,6 +65,9 @@ export default function WallpaperView() {
   }, [])
   useEvent('wallpaper:changed', setInfo)
   useEvent('settings:changed', setSettings)
+  const pointer = useRef(makePointer()).current
+  ;(window as unknown as { __wpPointer: Pointer }).__wpPointer = pointer
+  useEvent('wallpaper:pointer', (p) => feedPointer(pointer, p.x, p.y, p.on))
   useActiveTheme(settings?.theme)
 
   const [hue, setHue] = useState(215)
@@ -96,7 +99,7 @@ export default function WallpaperView() {
   return (
     <div className="wp">
       {layers.map((l) => (
-        <Layer key={l.key} source={l.source} fit={info?.fit ?? 'fill'} hue={hue} paused={info?.paused ?? false} visible={l.visible} />
+        <Layer key={l.key} source={l.source} fit={info?.fit ?? 'fill'} hue={hue} paused={info?.paused ?? false} visible={l.visible} pointer={pointer} />
       ))}
     </div>
   )
