@@ -25,6 +25,10 @@ export interface Pen {
   back: Ball | null
   glove: number
   gloveVel: number
+  /** Where the ball waits for the next free kick: it changes every time. */
+  spot: { x: number; y: number }
+  /** The ball has touched the keeper (or the glove) on its way: it counts as a save unless it still goes in. */
+  touched: boolean
   goals: number
   saves: number
   conceded: number
@@ -35,7 +39,7 @@ export interface Pen {
 export const makePen = (): Pen => ({
   phase: 'ready', aim: null, spin: 0, timer: 0,
   keeper: { pos: 0, target: 0, vel: 0, delay: 0, speed: 520 },
-  back: null, glove: 0, gloveVel: 0, goals: 0, saves: 0, conceded: 0, verdict: '', done: false,
+  back: null, glove: 0, gloveVel: 0, spot: { x: 0, y: 0 }, touched: false, goals: 0, saves: 0, conceded: 0, verdict: '', done: false,
 })
 
 export interface Geo {
@@ -62,6 +66,17 @@ export function geo(width: number, floor: number, pitch: Pitch): Geo {
   const line = a.y + a.h
   const dist = Math.min(420, floor * 0.45)
   return { pitch, targetIdx: 0, ownIdx: 1, targetLine: line, ownLine: b.y, sign: -1, center: width / 2, spot: { x: width / 2, y: line + dist } }
+}
+
+/** A new place to take the free kick from: in front of the goal, never in the same place twice in a row. */
+export function randomSpot(g: Geo, width: number, floor: number): { x: number; y: number } {
+  const r = Math.random
+  if (g.pitch === 'horizontal') {
+    const [x, y] = place(g, g.targetLine - (270 + r() * Math.min(300, width * 0.3)), g.center + (r() * 2 - 1) * Math.min(floor / 2 - 90, 280))
+    return { x, y }
+  }
+  const [x, y] = place(g, g.targetLine + (250 + r() * Math.min(260, floor * 0.3)), g.center + (r() * 2 - 1) * Math.min(width / 2 - 100, 330))
+  return { x, y }
 }
 
 /** The lateral coordinate (along the goal line) of a point, and a point from an along / lateral pair. */
@@ -144,6 +159,7 @@ export function shoot(pen: Pen, ball: Ball, width: number, floor: number, pitch:
   pen.phase = 'flight'
   pen.timer = 0
   pen.done = false
+  pen.touched = false
   const hit = predict(g, ball.x, ball.y, vx, vy, pen.spin)
   // the keeper reads the shot with a little delay and a little error, and can only be so fast
   const k = pen.keeper
@@ -184,14 +200,8 @@ export function step(pen: Pen, ball: Ball, dt: number, width: number, floor: num
     const [kx, ky] = keeperPoint(g, pen)
     const kvx = pitch === 'horizontal' ? 0 : k.vel
     const kvy = pitch === 'horizontal' ? k.vel : 0
-    if (!pen.done && bounceOffMover(ball, kx, ky, KEEPER_R, kvx, kvy, 0.45)) {
-      pen.done = true
-      pen.saves += 1
-      pen.verdict = 'KURTARDI!'
-      ev.save()
-      end(pen, 1.3)
-      return
-    }
+    // the keeper is solid: the ball bounces off him, and only then do we know what became of it
+    if (!pen.done && bounceOffMover(ball, kx, ky, KEEPER_R, kvx, kvy, 0.45)) pen.touched = true
     if (!pen.done && inWhichGoal(ball, width, floor, pitch) === g.targetIdx) {
       pen.done = true
       pen.goals += 1
@@ -202,9 +212,15 @@ export function step(pen: Pen, ball: Ball, dt: number, width: number, floor: num
     }
     if (!pen.done && (Math.hypot(ball.vx, ball.vy) < 25 || pen.timer > 6)) {
       pen.done = true
-      pen.verdict = ball.touches > 0 ? 'DİREK!' : 'DIŞARI'
-      ev.miss()
-      end(pen, 1.1)
+      if (pen.touched) {
+        pen.saves += 1
+        pen.verdict = 'KURTARDI!'
+        ev.save()
+      } else {
+        pen.verdict = ball.touches > 0 ? 'DİREK!' : 'DIŞARI'
+        ev.miss()
+      }
+      end(pen, 1.2)
     }
     return
   }
@@ -216,7 +232,8 @@ export function step(pen: Pen, ball: Ball, dt: number, width: number, floor: num
     k.pos += (g.center - k.pos) * Math.min(1, dt * 2.5)
     if (pen.timer <= 0) {
       pen.verdict = ''
-      Object.assign(ball, { x: g.spot.x, y: g.spot.y, vx: 0, vy: 0, floorHits: 0, touches: 0 })
+      pen.spot = randomSpot(g, width, floor)
+      Object.assign(ball, { x: pen.spot.x, y: pen.spot.y, vx: 0, vy: 0, floorHits: 0, touches: 0 })
       if (back) keeperShot(pen, width, floor, pitch)
       else pen.phase = 'ready'
     }
@@ -233,13 +250,8 @@ export function step(pen: Pen, ball: Ball, dt: number, width: number, floor: num
       const [gx, gy] = glovePoint(g, pen)
       const gvx = pitch === 'horizontal' ? 0 : pen.gloveVel
       const gvy = pitch === 'horizontal' ? pen.gloveVel : 0
-      if (!pen.done && bounceOffMover(b, gx, gy, GLOVE_R, gvx, gvy, 0.45)) {
-        pen.done = true
-        pen.verdict = 'KURTARDIN!'
-        ev.blocked()
-        pen.phase = 'returned'
-        pen.timer = 1.2
-      } else if (!pen.done && inWhichGoal(b, width, floor, pitch) === g.ownIdx) {
+      if (!pen.done && bounceOffMover(b, gx, gy, GLOVE_R, gvx, gvy, 0.45)) pen.touched = true
+      if (!pen.done && inWhichGoal(b, width, floor, pitch) === g.ownIdx) {
         pen.done = true
         pen.conceded += 1
         pen.verdict = 'GOL YEDİN'
@@ -248,9 +260,10 @@ export function step(pen: Pen, ball: Ball, dt: number, width: number, floor: num
         pen.timer = 1.2
       } else if (!pen.done && (Math.hypot(b.vx, b.vy) < 25 || pen.timer > 6)) {
         pen.done = true
-        pen.verdict = 'DIŞARI'
+        pen.verdict = pen.touched ? 'KURTARDIN!' : 'DIŞARI'
+        if (pen.touched) ev.blocked()
         pen.phase = 'returned'
-        pen.timer = 0.8
+        pen.timer = pen.touched ? 1.2 : 0.8
       }
     } else {
       pen.timer -= dt
@@ -262,8 +275,9 @@ export function step(pen: Pen, ball: Ball, dt: number, width: number, floor: num
     }
     return
   }
-  // ready: the ball waits on the spot (unless it is being pulled back) and the keeper settles in the middle
-  Object.assign(ball, { x: g.spot.x, y: g.spot.y, vx: 0, vy: 0 })
+  // ready: the ball waits on its spot (unless it is being pulled back) and the keeper settles in the middle
+  if (!pen.spot.x) pen.spot = randomSpot(g, width, floor)
+  Object.assign(ball, { x: pen.spot.x, y: pen.spot.y, vx: 0, vy: 0 })
   k.pos += (g.center - k.pos) * Math.min(1, dt * 4)
 }
 
@@ -289,6 +303,7 @@ export function keeperShot(pen: Pen, width: number, floor: number, pitch: Pitch)
   pen.back = b
   pen.phase = 'return'
   pen.done = false
+  pen.touched = false
   pen.timer = 0
   pen.verdict = ''
 }

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { invoke } from '@/api'
 import Icon from '@/icons'
 import { DEFAULT_TOY_SCORES, DockLayer, DockSettings, ToyMode, ToyScores } from '@/shared/types'
-import { Card, Cards, Pages, Row, Segmented, Switch, Update } from '../ui'
+import { Card, Cards, Pages, Row, Segmented, Slider, Switch, Update } from '../ui'
 import { LayerPreview } from '../previews'
 import { Frame } from '../previews'
 import basketballUrl from '@/assets/toys/basketball.png'
@@ -108,9 +108,10 @@ export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
           {s.toyBasketStyle === 'far' && <Row label="Yol çizgisi" hint="Nişan alırken topun gideceği yolu noktalarla gösterir"><Switch label="Yol çizgisi" value={s.toyShotLine} onChange={(toyShotLine) => set({ toyShotLine })} /></Row>}
         </>
       ))}
-      {game('toyFootball', 'toyFootballMode', 'football', 'Futbol', 'Serbest vuruş, penaltı ya da top sektirme.', 'Serbest vuruşta saha yukarıdan görünür: imleç topun yanına gelince krampona dönüşür, topa hızlıca vurup karşı kaleye sokarsın. Penaltıda saha aynı, kale karşıda: topu sapan gibi geri çek, yön ve gücü çekişin belirler; fare tekerleği topa falso (kavis) verir, kaleci çizgisinde yanlara kayarak durdurmaya çalışır. Top sektirmede topa tıkla, krampon sana geçer; topu yere düşürmeden havada tut, her vuruş bir puan.', (
+      {game('toyFootball', 'toyFootballMode', 'football', 'Futbol', 'Serbest oyun, serbest vuruş ya da top sektirme.', 'Serbest oyunda saha yukarıdan görünür: imleç topun yanına gelince krampona dönüşür, topa hızlıca vurup karşı kaleye sokarsın. Serbest vuruşta kale karşıda ve top her seferinde başka bir yerde: topu sapan gibi geri çek, yön ve gücü çekişin belirler; fare tekerleği topa falso (kavis) verir, kaleci çizgisinde yanlara kayarak durdurmaya çalışır. Top sektirmede topa tıkla, krampon sana geçer; topu yere düşürmeden havada tut, her vuruş bir puan.', (
         <>
-          <Row label="Futbol türü" hint="Serbest vuruş: yukarıdan görünen saha ve iki kale. Penaltı: aynı saha, karşıda kale ve kaleci. Top sektirme: topu kramponla havada tut"><Segmented<'free' | 'penalty' | 'juggle'> value={s.toyFootballStyle} onChange={(toyFootballStyle) => set({ toyFootballStyle })} options={[['free', 'Serbest vuruş'], ['penalty', 'Penaltı'], ['juggle', 'Top sektirme']]} /></Row>
+          <Row label="Futbol türü" hint="Serbest oyun: iki kale, topa vur. Serbest vuruş: karşıda kale ve kaleci, top her seferinde başka yerde. Top sektirme: topu kramponla havada tut"><Segmented<'free' | 'penalty' | 'juggle'> value={s.toyFootballStyle} onChange={(toyFootballStyle) => set({ toyFootballStyle })} options={[['free', 'Serbest oyun'], ['penalty', 'Serbest vuruş'], ['juggle', 'Top sektirme']]} /></Row>
+          {(s.toyFootballStyle === 'free' || s.toyFootballStyle === 'penalty') && <Row label="Saha rengi saydamlığı" hint="0'da sahanın yeşili görünmez, yalnızca çizgiler ve kaleler kalır; masaüstün bütünüyle görünür"><Slider value={Math.round(s.toyPitchAlpha * 100)} min={0} max={80} step={1} unit=" %" onChange={(v) => set({ toyPitchAlpha: v / 100 })} /></Row>}
           {(s.toyFootballStyle === 'free' || s.toyFootballStyle === 'penalty') && <Row label="Saha yönü" hint="Saha yukarıdan görünür, iki kale de tam görünür. Yatay: kaleler sol ve sağda. Dikey: biri altta, biri üstte"><Segmented<'horizontal' | 'vertical'> value={s.toyPitch} onChange={(toyPitch) => set({ toyPitch })} options={[['horizontal', 'Yatay'], ['vertical', 'Dikey']]} /></Row>}
           {s.toyFootballStyle === 'penalty' && <Row label="Kaleci de sana atsın" hint="Sen attıktan sonra kaleci karşı kaleye şut çeker; imleçle kalenin önünde eldiven olarak savunursun"><Switch label="Kaleci sana da atsın" value={s.toyKeeperShoots} onChange={(toyKeeperShoots) => set({ toyKeeperShoots })} /></Row>}
         </>

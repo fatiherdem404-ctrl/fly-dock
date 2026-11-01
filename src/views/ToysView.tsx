@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { invoke, useEvent } from '@/api'
 import type { DockSettings, ToyMode, ToyScores } from '@/shared/types'
 import { DEFAULT_TOY_SCORES } from '@/shared/types'
-import { PEN_MAX_PULL, Pen, geo as penGeo, glovePoint, keeperPoint, launch, makePen, path as penPath, shoot as penShoot, step as penStep } from '@/toys/penalty'
+import { PEN_MAX_PULL, Pen, geo as penGeo, randomSpot, glovePoint, keeperPoint, launch, makePen, path as penPath, shoot as penShoot, step as penStep } from '@/toys/penalty'
 import { SHOT_MAX_PULL, Shot, launchShot, makeShot, pickSpot, shotPath } from '@/toys/shot'
+import { dial, gaugeSpot, powerGauge } from '@/toys/gauges'
 import { Bowling } from '@/toys/bowling'
 import { Dart } from '@/toys/dart'
 import { Env, MiniGame, inside } from '@/toys/mini'
@@ -369,7 +370,7 @@ function drawPenalty(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, wid
   // the penalty spot
   c.fillStyle = 'rgba(255,255,255,0.85)'
   c.beginPath()
-  c.arc(g.spot.x, g.spot.y, 4, 0, TAU)
+  c.arc(pen.spot.x || g.spot.x, pen.spot.y || g.spot.y, 4, 0, TAU)
   c.fill()
   const [kx, ky] = keeperPoint(g, pen)
   drawKeeper(c, kx, ky, horizontal, g.sign)
@@ -412,26 +413,9 @@ function drawPenalty(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, wid
         c.fill()
       }
     }
-    // power bar
-    const bx = ball.x - 46, by = ball.y + 38
-    c.fillStyle = 'rgba(10,14,28,0.75)'
-    c.beginPath(); c.roundRect(bx, by, 92, 12, 6); c.fill()
-    const grd = c.createLinearGradient(bx, 0, bx + 92, 0)
-    grd.addColorStop(0, '#46d36b'); grd.addColorStop(0.6, '#ffcc33'); grd.addColorStop(1, '#ff4d4d')
-    c.fillStyle = grd
-    c.beginPath(); c.roundRect(bx + 2, by + 2, Math.max(4, 88 * l.power), 8, 4); c.fill()
-    c.fillStyle = '#fff'
-    c.font = "700 11px 'Segoe UI', system-ui, sans-serif"
-    c.textAlign = 'center'
-    c.fillText('GÜÇ', ball.x, by + 26)
-    // curl meter
-    const cy = by + 40
-    c.fillStyle = 'rgba(10,14,28,0.75)'
-    c.beginPath(); c.roundRect(bx, cy, 92, 12, 6); c.fill()
-    c.fillStyle = '#6aa6ff'
-    c.beginPath(); c.arc(bx + 46 + pen.spin * 40, cy + 6, 6, 0, TAU); c.fill()
-    c.fillStyle = '#fff'
-    c.fillText('FALSO  (fare tekerleği)', ball.x, cy + 26)
+    const spot = gaugeSpot(ball.x, ball.y, floor)
+    powerGauge(c, spot.px, spot.py, l.power)
+    dial(c, spot.dx, spot.dy, pen.spin, 'FALSO · tekerlek')
   } else if (ball && pen.phase === 'ready') {
     c.fillStyle = 'rgba(255,255,255,0.9)'
     c.font = "600 12px 'Segoe UI', system-ui, sans-serif"
@@ -479,21 +463,9 @@ function drawShotAid(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, wid
         c.fill()
       }
     }
-    const bar = (label: string, y: number, v: number, a: string, b: string) => {
-      const bx = ball.x - 46
-      c.fillStyle = 'rgba(10,14,28,0.75)'
-      c.beginPath(); c.roundRect(bx, y, 92, 12, 6); c.fill()
-      const g = c.createLinearGradient(bx, 0, bx + 92, 0)
-      g.addColorStop(0, a); g.addColorStop(1, b)
-      c.fillStyle = g
-      c.beginPath(); c.roundRect(bx + 2, y + 2, Math.max(4, 88 * v), 8, 4); c.fill()
-      c.fillStyle = '#fff'
-      c.font = "700 11px 'Segoe UI', system-ui, sans-serif"
-      c.textAlign = 'center'
-      c.fillText(label, ball.x, y - 5)
-    }
-    bar('GÜÇ', ball.y - 100, l.power, '#46d36b', '#ff4d4d')
-    bar('YÜKSEKLİK', ball.y - 60, l.height, '#6aa6ff', '#b36bff')
+    const spot = gaugeSpot(ball.x, ball.y, floor)
+    powerGauge(c, spot.px, spot.py, l.power)
+    dial(c, spot.dx, spot.dy, l.height, 'YÜKSEKLİK', 'height')
   } else if (shot.state === 'ready') {
     c.fillStyle = 'rgba(255,255,255,0.9)'
     c.font = "600 12px 'Segoe UI', system-ui, sans-serif"
@@ -506,9 +478,10 @@ function drawShotAid(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, wid
 function drawPitch(c: CanvasRenderingContext2D, s: DockSettings, width: number, floor: number) {
   const o = s.toyPitch
   c.save()
-  c.fillStyle = 'rgba(30, 120, 62, 0.28)'
+  const grass = Math.max(0, Math.min(1, s.toyPitchAlpha))
+  c.fillStyle = `rgba(30, 120, 62, ${grass})`
   c.fillRect(0, 0, width, floor)
-  c.fillStyle = 'rgba(255,255,255,0.04)'
+  c.fillStyle = `rgba(255,255,255,${0.04 * (grass / 0.3)})`
   const stripe = o === 'horizontal' ? width / 12 : floor / 10
   for (let i = 0; i < 12; i += 2) {
     if (o === 'horizontal') c.fillRect(i * stripe, 0, stripe, floor)
@@ -1155,7 +1128,8 @@ function Toys({ s }: { s: DockSettings }) {
         const fb = st.balls.football
         st.pen = makePen()
         if (fb) {
-          const [sx, sy] = penalty ? [penGeo(w, floor, cur.toyPitch).spot.x, penGeo(w, floor, cur.toyPitch).spot.y] : startPosition('football', w, floor, side)
+          if (penalty) st.pen.spot = randomSpot(penGeo(w, floor, cur.toyPitch), w, floor)
+          const [sx, sy] = penalty ? [st.pen.spot.x, st.pen.spot.y] : startPosition('football', w, floor, side)
           Object.assign(fb, { x: sx, y: sy, vx: 0, vy: 0, floorHits: 0, touches: 0 })
         }
       }

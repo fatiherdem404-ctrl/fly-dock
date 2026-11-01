@@ -1,5 +1,6 @@
 // Bowling seen from above: pull the ball back like a sling for direction and power, turn the mouse wheel for the hook.
 // Ten pins, two throws a frame, five frames: the score is the number of pins you bring down.
+import { dial, powerGauge } from './gauges'
 import { Area, Env, MiniGame, MiniHud, TAU, clamp, label, panel } from './mini'
 
 const FRAMES = 5
@@ -291,20 +292,9 @@ export class Bowling implements MiniGame {
       c.moveTo(b.x, b.y)
       c.lineTo(b.x - Math.cos(ang) * 300 * 0.55, b.y - Math.sin(ang) * 300)
       c.stroke()
-      const bx = a.x + 14, by = a.y + a.h - 78
-      c.fillStyle = 'rgba(255,255,255,0.12)'
-      c.beginPath(); c.roundRect(bx, by, 80, 10, 5); c.fill()
-      c.fillStyle = '#46d36b'
-      c.beginPath(); c.roundRect(bx, by, Math.max(4, 80 * (len / MAX_PULL)), 10, 5); c.fill()
-      label(c, 'GÜÇ', bx + 40, by - 8, 11)
+      powerGauge(c, a.x + 82, a.y + a.h - 70, len / MAX_PULL)
     }
-    // the hook
-    const hx = a.x + a.w - 94, hy = a.y + a.h - 78
-    c.fillStyle = 'rgba(255,255,255,0.12)'
-    c.beginPath(); c.roundRect(hx, hy, 80, 10, 5); c.fill()
-    c.fillStyle = '#6aa6ff'
-    c.beginPath(); c.arc(hx + 40 + this.hook * 36, hy + 5, 6, 0, TAU); c.fill()
-    label(c, 'FALSO (fare tekerleği)', hx + 40, hy - 8, 11)
+    dial(c, a.x + a.w - 52, a.y + a.h - 74, this.hook, 'FALSO · tekerlek')
     label(c, `Tur ${Math.min(this.frame, FRAMES)}/${FRAMES}  ·  atış ${this.throwNo}  ·  ${this.total} lobut`, cx, a.y + 22, 13, '#ffffff', 700)
     if (this.phase === 'ready' && !this.aim) label(c, this.frame === 1 && this.throwNo === 1 && this.total === 0 ? 'Topu geri çek ve bırak' : 'Topu geri çek', cx, a.y + a.h - 18, 12)
     if (this.phase === 'over') label(c, 'Yeniden oynamak için tıkla', cx, a.y + a.h - 18, 13, '#ffffff', 700)

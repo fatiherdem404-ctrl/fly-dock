@@ -268,6 +268,8 @@ export interface DockSettings {
   toyKeeperShoots: boolean
   /** The free-kick pitch seen from above: goals on the left and right, or at the bottom and the top. */
   toyPitch: 'horizontal' | 'vertical'
+  /** How solid the green of the pitch is (0 = only the lines and goals, so the desktop shows through). */
+  toyPitchAlpha: number
   toyBounceMode: ToyMode
   /** The panel games. */
   toyPong: boolean
@@ -609,6 +611,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   toyFootballStyle: 'free',
   toyKeeperShoots: false,
   toyPitch: 'horizontal',
+  toyPitchAlpha: 0.3,
   toyBounceMode: 'timed',
   toyPong: false,
   toyBowling: false,
