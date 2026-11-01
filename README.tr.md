@@ -3,7 +3,7 @@
 
 Masaüstün için modern dock — RocketDock'tan ilham alan, açık kaynaklı Windows dock'u: widget'lar, temalar ve ikon paketleri.
 
-[English](README.md) · [Sorunlar](https://github.com/PLACEHOLDER/fly-dock/issues)
+[English](README.md) · [Sorunlar](https://github.com/fatiherdem404-ctrl/fly-dock/issues)
 
 > Durum: erken geliştirme (Faz 0). Henüz günlük kullanıma uygun değil.
 
@@ -53,3 +53,5 @@ Ad, uygulama kimliği, bağlantılar, tepsi metni, pencere başlığı, kurulum 
 GPL-3.0-only — bkz. [LICENSE](LICENSE). Telif © 2026 Fatih Erdem.
 
 Kod serbestçe kullanılabilir ve değiştirilebilir. "Fly Dock" adı ve logo lisansın parçası değildir: resmî sürümü belirtir. Değiştirilmiş bir sürüm yayımlarsan başka bir ad ve logo kullan, telif notlarını koru ve değiştirildiğini belirt — ayrıntılar [NOTICE](NOTICE) dosyasında.
+
+Üçüncü taraf lisansları: [THIRD-PARTY.md](THIRD-PARTY.md).

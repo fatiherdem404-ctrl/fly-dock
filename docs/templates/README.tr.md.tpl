@@ -53,3 +53,5 @@ Ad, uygulama kimliği, bağlantılar, tepsi metni, pencere başlığı, kurulum 
 {{license}} — bkz. [LICENSE](LICENSE). Telif © {{copyrightYear}} {{company}}.
 
 Kod serbestçe kullanılabilir ve değiştirilebilir. "{{name}}" adı ve logo lisansın parçası değildir: resmî sürümü belirtir. Değiştirilmiş bir sürüm yayımlarsan başka bir ad ve logo kullan, telif notlarını koru ve değiştirildiğini belirt — ayrıntılar [NOTICE](NOTICE) dosyasında.
+
+Üçüncü taraf lisansları: [THIRD-PARTY.md](THIRD-PARTY.md).
