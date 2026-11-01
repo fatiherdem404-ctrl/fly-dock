@@ -5,6 +5,7 @@ import { DEFAULT_TOY_SCORES } from '@/shared/types'
 import { Ball, Segment, World, bounceOffMover, inGoal, kickBall, makeBall, scoredThroughRim, stepBall, throwVelocity } from '@/toys/ball'
 import { Pet, drop, makePet, pickUp, stepPet, stroke } from '@/toys/pet'
 import { drawPet, drawPetExtras } from '@/toys/petDraw'
+import { drawSprite, frameFor, preloadPet } from '@/toys/petSprites'
 import handUrl from '@/assets/toys/hand.png'
 import fistUrl from '@/assets/toys/fist.png'
 import reachUrl from '@/assets/toys/reach.png'
@@ -108,6 +109,8 @@ interface Sim {
   bounce: { playing: boolean; combo: number; respawn: number }
   /** Pet animation: a clock, and how far through its walking cycle it is. */
   clock: number
+  /** Seconds until the pet says something on its own. */
+  talk: number
   gait: number
   lastPetX: number
   cursor: string
@@ -206,6 +209,65 @@ function tone(on: boolean, from: number, to: number, seconds: number, type: Osci
     osc.stop(t0 + seconds + 0.02)
   } catch {
     /* no audio device: the toys stay silent */
+  }
+}
+
+/** One voiced sound: a pitch glide through a band-pass filter, which is what gives a meow or a bark its vowel. */
+function note(on: boolean, from: number, to: number, seconds: number, type: OscillatorType, volume: number, delay: number, filterHz: number, q: number) {
+  if (!on) return
+  try {
+    audio ??= new AudioContext()
+    if (audio.state === 'suspended') void audio.resume()
+    const t0 = audio.currentTime + delay
+    const osc = audio.createOscillator()
+    const filter = audio.createBiquadFilter()
+    const gain = audio.createGain()
+    osc.type = type
+    osc.frequency.setValueAtTime(from, t0)
+    osc.frequency.exponentialRampToValueAtTime(Math.max(30, to), t0 + seconds)
+    filter.type = 'bandpass'
+    filter.frequency.value = filterHz
+    filter.Q.value = q
+    gain.gain.setValueAtTime(0.0001, t0)
+    gain.gain.exponentialRampToValueAtTime(volume, t0 + Math.min(0.04, seconds / 3))
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + seconds)
+    osc.connect(filter).connect(gain).connect(audio.destination)
+    osc.start(t0)
+    osc.stop(t0 + seconds + 0.03)
+  } catch {
+    /* no audio device */
+  }
+}
+
+type Voice = 'happy' | 'lift' | 'call' | 'huff' | 'proud'
+
+/** What a cat or a dog says: a meow with a purr, or a bark, for the moment it is in. */
+function petVoice(on: boolean, kind: 'cat' | 'dog', voice: Voice) {
+  if (!on) return
+  if (kind === 'cat') {
+    if (voice === 'lift') {
+      note(on, 700, 1100, 0.14, 'sawtooth', 0.09, 0, 1500, 5)
+      note(on, 1100, 800, 0.25, 'sawtooth', 0.08, 0.12, 1300, 5)
+    } else if (voice === 'huff') {
+      note(on, 400, 300, 0.08, 'triangle', 0.05, 0, 900, 2)
+    } else {
+      note(on, 520, 820, 0.18, 'sawtooth', 0.08, 0, 1400, 5)
+      note(on, 820, 520, 0.34, 'sawtooth', 0.08, 0.16, 1100, 5)
+      if (voice === 'happy' || voice === 'proud') for (let i = 0; i < 36; i++) note(on, 78, 70, 0.035, 'sawtooth', 0.05, 0.55 + i * 0.045, 260, 1)
+    }
+    return
+  }
+  if (voice === 'lift') {
+    note(on, 950, 1400, 0.08, 'square', 0.05, 0, 1800, 3)
+    note(on, 1400, 700, 0.18, 'square', 0.05, 0.07, 1500, 3)
+  } else if (voice === 'huff') {
+    note(on, 220, 140, 0.09, 'sawtooth', 0.07, 0, 800, 2)
+  } else if (voice === 'proud') {
+    note(on, 330, 130, 0.14, 'sawtooth', 0.14, 0, 900, 3)
+    note(on, 360, 140, 0.16, 'sawtooth', 0.14, 0.22, 950, 3)
+  } else {
+    note(on, 300, 120, 0.13, 'sawtooth', 0.13, 0, 900, 3)
+    if (voice === 'happy') note(on, 340, 130, 0.14, 'sawtooth', 0.12, 0.2, 950, 3)
   }
 }
 
@@ -550,12 +612,13 @@ function Toys({ s }: { s: DockSettings }) {
     balls: {}, pet: null, pointer: null, samples: [], drag: null, capture: false, scores: { ...DEFAULT_TOY_SCORES }, rally: 0,
     games: { basket: newGame(), football: newGame(), tennis: newGame(), bounce: newGame() },
     result: null, flash: null, respawn: 0, hover: false, size: '', armed: null, toolDir: 1, toolTilt: 0, toolPos: null, toolVx: 0, toolVy: 0, struck: {},
-    carried: false, stickThrown: false, throwFrom: 0, bounce: { playing: false, combo: 0, respawn: 0 }, clock: 0, gait: 0, lastPetX: 0, cursor: '',
+    carried: false, stickThrown: false, throwFrom: 0, bounce: { playing: false, combo: 0, respawn: 0 }, clock: 0, talk: 20, gait: 0, lastPetX: 0, cursor: '',
   })
 
   useEffect(() => {
     const st = sim.current
     ;(window as unknown as { __toys: Sim }).__toys = st
+    preloadPet(settingsRef.current.toyPetKind)
     invoke('toys:scores').then((scores) => (st.scores = scores))
     const setCapture = (on: boolean) => {
       if (st.capture === on) return
@@ -716,6 +779,7 @@ function Toys({ s }: { s: DockSettings }) {
           if (stick) stick.grabbed = false
         }
         pickUp(st.pet)
+        petVoice(settingsRef.current.toySound, settingsRef.current.toyPetKind, 'lift')
         st.drag = { kind: 'pet', dx: st.pet.x - e.clientX, dy: st.pet.y - e.clientY, moved: 0, at: performance.now() }
       }
     }
@@ -743,8 +807,7 @@ function Toys({ s }: { s: DockSettings }) {
           st.pet.timer = 0.1
           stroke(st.pet)
           const cur = settingsRef.current
-          tone(cur.toySound, cur.toyPetKind === 'dog' ? 380 : 620, cur.toyPetKind === 'dog' ? 520 : 940, 0.16, 'triangle', 0.1)
-          tone(cur.toySound, cur.toyPetKind === 'dog' ? 440 : 780, cur.toyPetKind === 'dog' ? 330 : 1100, 0.14, 'triangle', 0.1, 0.12)
+          petVoice(cur.toySound, cur.toyPetKind, 'happy')
         } else drop(st.pet, v.vx * 0.5, v.vy * 0.5)
       }
       const p = st.pointer
@@ -1035,22 +1098,27 @@ function Toys({ s }: { s: DockSettings }) {
             stick.vx = 0
             stick.vy = 0
           }
-          tone(cur.toySound, 300, 450, 0.1, 'triangle', 0.1)
+          petVoice(cur.toySound, cur.toyPetKind, 'huff')
         } else if (event === 'drop') {
           st.carried = false
           if (stick) {
             stick.vx = pet.dir * 40
             stick.vy = -120
           }
-          tone(cur.toySound, 480, 340, 0.12, 'triangle', 0.1)
+          petVoice(cur.toySound, cur.toyPetKind, 'proud')
         }
         if (st.carried && stick) {
           // the stick rides in the dog's mouth
-          stick.x = pet.x + pet.dir * size * 0.55
-          stick.y = pet.y - size * 0.5
+          stick.x = pet.x + pet.dir * size * 0.5
+          stick.y = pet.y - size * 0.6
           stick.vx = 0
           stick.vy = 0
           stick.angle = pet.dir > 0 ? 0.2 : -0.2
+        }
+        st.talk -= dt
+        if (st.talk <= 0) {
+          st.talk = 25 + Math.random() * 40
+          if (pet.state === 'idle' || pet.state === 'sit' || pet.state === 'walk') petVoice(cur.toySound, cur.toyPetKind, 'call')
         }
         // the walking cycle moves on with the ground the pet really covers, so the feet never slide
         const moved = Math.abs(pet.x - st.lastPetX)
@@ -1074,7 +1142,16 @@ function Toys({ s }: { s: DockSettings }) {
         drawScene(c, cur, st, w, floor)
         if (pet) {
           const size = cur.toyPetSize
-          drawPet(c, pet.x, pet.y, size, pet.dir, { kind: cur.toyPetKind, state: pet.state, time: st.clock, gait: st.gait })
+          if (pet.state !== 'held') {
+            // a soft shadow keeps the pet on the ground, and it shrinks while the pet is in the air
+            const lift = Math.max(0, floor - pet.y)
+            c.fillStyle = `rgba(0,0,0,${Math.max(0.06, 0.24 - lift / 600)})`
+            c.beginPath()
+            c.ellipse(pet.x, floor - 1, size * 0.38 * Math.max(0.5, 1 - lift / 500), size * 0.07, 0, 0, Math.PI * 2)
+            c.fill()
+          }
+          const frame = frameFor(cur.toyPetKind, pet.state, st.clock, st.gait)
+          if (!drawSprite(c, cur.toyPetKind, pet.state, frame, pet.x, pet.y, size, pet.dir)) drawPet(c, pet.x, pet.y, size, pet.dir, { kind: cur.toyPetKind, state: pet.state, time: st.clock, gait: st.gait })
           if (st.carried && st.balls.stick) drawBall(c, st.balls.stick, 'stick', floor)
           drawPetExtras(c, pet.x, pet.y, size, pet.state, st.clock, cur.toyPetName || 'Dostum', st.hover || pet.state === 'happy' || pet.state === 'held')
         }
