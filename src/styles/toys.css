@@ -39,3 +39,5 @@ html[data-view='toys'], html[data-view='toys'] body, html[data-view='toys'] #roo
 
 .hud-card__cursor { pointer-events: auto; flex: none; width: 22px; height: 22px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.12); color: #dfe6f8; font-size: 11px; line-height: 1; cursor: pointer; }
 .hud-card__cursor:hover { background: rgba(90, 162, 255, 0.85); color: #fff; }
+/* on a vertical pitch the top goal is where the scoreboard would be, so it moves to the corner */
+.hud--corner { left: 16px; top: 14px; transform: none; flex-direction: column; }

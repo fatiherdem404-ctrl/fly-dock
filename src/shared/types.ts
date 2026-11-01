@@ -266,6 +266,8 @@ export interface DockSettings {
   toyFootballStyle: 'free' | 'penalty' | 'juggle'
   /** In the penalty game the keeper shoots back at a goal on the left that the pointer defends. */
   toyKeeperShoots: boolean
+  /** The free-kick pitch seen from above: goals on the left and right, or at the bottom and the top. */
+  toyPitch: 'horizontal' | 'vertical'
   toyBounceMode: ToyMode
   toySound: boolean
   /** Keep the system pointer visible while a game turns it into a hand, boot or racket. */
@@ -598,6 +600,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
   toyFootballMode: 'timed',
   toyFootballStyle: 'free',
   toyKeeperShoots: false,
+  toyPitch: 'horizontal',
   toyBounceMode: 'timed',
   toySound: true,
   toyShowCursor: false,

@@ -4,7 +4,8 @@ import type { DockSettings, ToyMode, ToyScores } from '@/shared/types'
 import { DEFAULT_TOY_SCORES } from '@/shared/types'
 import { PEN_GOAL_D, PEN_GOAL_H, PEN_MAX_PULL, Pen, goalX, keeperShot, launch, makePen, path as penPath, shoot as penShoot, spotOf, step as penStep } from '@/toys/penalty'
 import { SHOT_MAX_PULL, Shot, launchShot, makeShot, pickSpot, shotPath } from '@/toys/shot'
-import { Ball, Segment, World, bounceOffMover, inGoal, makeBall, scoredThroughRim, stepBall, throwVelocity } from '@/toys/ball'
+import { goalBoxes, goalPosts, inWhichGoal, slide } from '@/toys/pitch'
+import { Ball, Segment, World, bounceOffMover, makeBall, scoredThroughRim, stepBall, throwVelocity } from '@/toys/ball'
 import handUrl from '@/assets/toys/hand.png'
 import fistUrl from '@/assets/toys/fist.png'
 import reachUrl from '@/assets/toys/reach.png'
@@ -106,6 +107,8 @@ interface Sim {
   /** The basketball's far-hoop mode: the aim in progress, and whether the mode was already set up. */
   shot: Shot
   farOn: boolean
+  /** What the pitch was last set up for: its shape and the size of the window. */
+  pitchKey: string
   /** Racket and tennis ball: a rally is on, the pointer is the racket, and hits in a row are counted. */
   bounce: { playing: boolean; combo: number; respawn: number }
   cursor: string
@@ -116,8 +119,6 @@ const SPEC: Record<BallKind, { r: number; gravity: number; restitution: number; 
   football: { r: 28, gravity: 1900, restitution: 0.62, rolling: 0.9 },
   bounce: { r: 15, gravity: 1900, restitution: 0.8, rolling: 1 },
 }
-const GOAL_DEPTH = 64
-const GOAL_HEIGHT = 150
 const TAU = Math.PI * 2
 /** How close the pointer has to come before it turns into a hand, a boot or a racket. */
 const AURA: Record<'basket' | 'football', number> = { basket: 70, football: 90 }
@@ -146,13 +147,6 @@ function segmentsFor(kind: BallKind, width: number, floor: number, side: 'left' 
       { ax: h.boardX, ay: h.boardTop, bx: h.boardX, by: h.boardBottom, restitution: 0.5 },
       { ax: h.far, ay: h.rimY, bx: h.far, by: h.rimY, restitution: 0.55 },
       { ax: h.near, ay: h.rimY, bx: h.near, by: h.rimY, restitution: 0.55 },
-    ]
-  }
-  if (kind === 'football') {
-    const top = floor - GOAL_HEIGHT
-    return [
-      { ax: 0, ay: top, bx: GOAL_DEPTH, by: top, restitution: 0.5 },
-      { ax: width - GOAL_DEPTH, ay: top, bx: width, by: top, restitution: 0.5 },
     ]
   }
   return []
@@ -195,7 +189,8 @@ function tone(on: boolean, from: number, to: number, seconds: number, type: Osci
 type Circle = { x: number; y: number; r: number }
 
 /** The solid parts of the tool at the pointer: where a ball can hit it. */
-function toolCircles(kind: 'football' | 'bounce', x: number, y: number, dir: number, tilt: number): Circle[] {
+function toolCircles(kind: 'football' | 'bounce', x: number, y: number, dir: number, tilt: number, flat = false): Circle[] {
+  if (kind === 'football' && flat) return [{ x, y, r: 26 }] // seen from above the boot is a single disc
   if (kind === 'bounce') {
     // a flat racket head: three overlapping discs along its face, tilted a little with the swing
     const c = Math.cos(tilt), s = Math.sin(tilt)
@@ -212,12 +207,13 @@ function toolCircles(kind: 'football' | 'bounce', x: number, y: number, dir: num
 
 // ---- drawing ----
 
-function drawBall(c: CanvasRenderingContext2D, b: Ball, kind: BallKind, floor: number) {
+function drawBall(c: CanvasRenderingContext2D, b: Ball, kind: BallKind, floor: number, flat = false) {
   const height = Math.max(0, floor - (b.y + b.r))
   const shade = Math.max(0.08, 0.32 - height / 900)
   c.fillStyle = `rgba(0,0,0,${shade})`
   c.beginPath()
-  c.ellipse(b.x, floor - 2, b.r * Math.max(0.35, 1 - height / 700), b.r * 0.22, 0, 0, TAU)
+  if (flat) c.ellipse(b.x + 3, b.y + 5, b.r, b.r * 0.9, 0, 0, TAU) // seen from above the shadow sits right under the ball
+  else c.ellipse(b.x, floor - 2, b.r * Math.max(0.35, 1 - height / 700), b.r * 0.22, 0, 0, TAU)
   c.fill()
   c.save()
   c.translate(b.x, b.y)
@@ -521,6 +517,75 @@ function drawShotAid(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, wid
   }
 }
 
+/** The pitch from above: grass, lines, and both goals in full. */
+function drawPitch(c: CanvasRenderingContext2D, s: DockSettings, width: number, floor: number) {
+  const o = s.toyPitch
+  c.save()
+  c.fillStyle = 'rgba(30, 120, 62, 0.28)'
+  c.fillRect(0, 0, width, floor)
+  c.fillStyle = 'rgba(255,255,255,0.04)'
+  const stripe = o === 'horizontal' ? width / 12 : floor / 10
+  for (let i = 0; i < 12; i += 2) {
+    if (o === 'horizontal') c.fillRect(i * stripe, 0, stripe, floor)
+    else c.fillRect(0, i * stripe, width, stripe)
+  }
+  c.strokeStyle = 'rgba(255,255,255,0.55)'
+  c.lineWidth = 3
+  c.strokeRect(6, 6, width - 12, floor - 12)
+  c.beginPath()
+  if (o === 'horizontal') { c.moveTo(width / 2, 6); c.lineTo(width / 2, floor - 6) } else { c.moveTo(6, floor / 2); c.lineTo(width - 6, floor / 2) }
+  c.stroke()
+  c.beginPath()
+  c.arc(width / 2, floor / 2, 70, 0, TAU)
+  c.stroke()
+  // the boxes in front of the goals
+  const [a, b] = goalBoxes(width, floor, o)
+  c.lineWidth = 2
+  c.strokeStyle = 'rgba(255,255,255,0.4)'
+  for (const g of [a, b]) {
+    if (o === 'horizontal') c.strokeRect(g === a ? 6 : width - 6 - 190, g.y - 60, 190, g.h + 120)
+    else c.strokeRect(g.x - 60, g === a ? 6 : floor - 6 - 190, g.w + 120, 190)
+  }
+  // the goals, drawn whole: net, three sides, the mouth open towards the pitch
+  for (const g of [a, b]) {
+    c.fillStyle = 'rgba(255,255,255,0.14)'
+    c.fillRect(g.x, g.y, g.w, g.h)
+    c.strokeStyle = 'rgba(255,255,255,0.4)'
+    c.lineWidth = 1
+    c.beginPath()
+    for (let i = 1; i < 9; i++) {
+      c.moveTo(g.x, g.y + (g.h / 9) * i); c.lineTo(g.x + g.w, g.y + (g.h / 9) * i)
+      c.moveTo(g.x + (g.w / 9) * i, g.y); c.lineTo(g.x + (g.w / 9) * i, g.y + g.h)
+    }
+    c.stroke()
+    c.strokeStyle = '#ffffff'
+    c.lineWidth = 6
+    c.lineCap = 'round'
+    c.lineJoin = 'round'
+    c.beginPath()
+    if (o === 'horizontal') {
+      if (g === a) { c.moveTo(g.x + g.w, g.y); c.lineTo(g.x, g.y); c.lineTo(g.x, g.y + g.h); c.lineTo(g.x + g.w, g.y + g.h) }
+      else { c.moveTo(g.x, g.y); c.lineTo(g.x + g.w, g.y); c.lineTo(g.x + g.w, g.y + g.h); c.lineTo(g.x, g.y + g.h) }
+    } else if (g === a) { c.moveTo(g.x, g.y + g.h); c.lineTo(g.x, g.y); c.lineTo(g.x + g.w, g.y); c.lineTo(g.x + g.w, g.y + g.h) }
+    else { c.moveTo(g.x, g.y); c.lineTo(g.x, g.y + g.h); c.lineTo(g.x + g.w, g.y + g.h); c.lineTo(g.x + g.w, g.y) }
+    c.stroke()
+  }
+  c.restore()
+}
+
+/** The boot seen from above: pointing the way the pointer is moving. */
+function drawBootTop(c: CanvasRenderingContext2D, x: number, y: number, vx: number, vy: number, angle: number) {
+  if (!ready(PICS.boot)) return
+  c.save()
+  c.translate(x, y)
+  shadowed(c)
+  c.rotate(angle)
+  c.drawImage(PICS.boot, -128, -37, 140, 84 * 0.9)
+  c.restore()
+  void vx
+  void vy
+}
+
 function drawScene(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, width: number, floor: number) {
   if (s.toyBasket && s.toyBasketStyle === 'far') drawShotAid(c, s, sim, width, floor)
   if (s.toyBasket) {
@@ -559,32 +624,7 @@ function drawScene(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, width
     c.stroke()
   }
   if (s.toyFootball && s.toyFootballStyle === 'penalty') drawPenalty(c, s, sim, width, floor)
-  else if (s.toyFootball && s.toyFootballStyle !== 'juggle') {
-    const top = floor - GOAL_HEIGHT
-    const goal = (x: number, w: number) => {
-      c.fillStyle = 'rgba(255,255,255,0.1)'
-      c.fillRect(x, top, w, GOAL_HEIGHT)
-      c.strokeStyle = 'rgba(255,255,255,0.45)'
-      c.lineWidth = 1
-      c.beginPath()
-      for (let i = 1; i < 6; i++) {
-        c.moveTo(x, top + (GOAL_HEIGHT / 6) * i); c.lineTo(x + w, top + (GOAL_HEIGHT / 6) * i)
-        c.moveTo(x + (w / 6) * i, top); c.lineTo(x + (w / 6) * i, floor)
-      }
-      c.stroke()
-      c.strokeStyle = '#ffffff'
-      c.lineWidth = 5
-      c.lineCap = 'round'
-      c.beginPath()
-      c.moveTo(x === 0 ? 0 : x, top)
-      c.lineTo(x === 0 ? w : x + w, top)
-      c.moveTo(x === 0 ? w : x, top)
-      c.lineTo(x === 0 ? w : x, floor)
-      c.stroke()
-    }
-    goal(0, GOAL_DEPTH)
-    goal(width - GOAL_DEPTH, GOAL_DEPTH)
-  }
+  else if (s.toyFootball && s.toyFootballStyle === 'free') drawPitch(c, s, width, floor)
   if (sim.flash) {
     const t = Math.min(1, sim.flash.left / 0.4)
     c.globalAlpha = t
@@ -601,7 +641,7 @@ function drawScene(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, width
   }
   for (const kind of ALL) {
     const ball = sim.balls[kind]
-    if (ball) drawBall(c, ball, kind, floor)
+    if (ball) drawBall(c, ball, kind, floor, kind === 'football' && s.toyFootball && s.toyFootballStyle === 'free')
   }
 }
 
@@ -622,10 +662,10 @@ function GameIcon({ id }: { id: GameId }) {
 }
 
 /** The scoreboard: one card per game that is on, and the result card after a timed round. */
-function Hud({ cards, result, showCursor }: { cards: HudCard[]; result: HudResult | null; showCursor: boolean }) {
+function Hud({ cards, result, showCursor, corner }: { cards: HudCard[]; result: HudResult | null; showCursor: boolean; corner: boolean }) {
   return (
     <>
-      <div className="hud">
+      <div className={corner ? "hud hud--corner" : "hud"}>
         {cards.map((card) => (
           <div key={card.id} className={`hud-card${card.timed && card.active && card.left <= 10 ? ' hud-card--urgent' : ''}`} data-active={card.active}>
             <div className="hud-card__head">
@@ -675,7 +715,7 @@ function Toys({ s }: { s: DockSettings }) {
   const [hud, setHud] = useState<{ cards: HudCard[]; result: HudResult | null }>({ cards: [], result: null })
   const newGame = () => ({ round: { active: false, left: 0, score: 0 }, session: 0 })
   const sim = useRef<Sim>({
-    balls: {}, pointer: null, samples: [], drag: null, capture: false, scores: { ...DEFAULT_TOY_SCORES }, shotFrom: 0, pen: makePen(), penOn: false, shot: makeShot(), farOn: false,
+    balls: {}, pointer: null, samples: [], drag: null, capture: false, scores: { ...DEFAULT_TOY_SCORES }, shotFrom: 0, pen: makePen(), penOn: false, shot: makeShot(), farOn: false, pitchKey: '',
     games: { basket: newGame(), football: newGame(), bounce: newGame() },
     result: null, flash: null, respawn: 0, hover: false, size: '', armed: null, toolDir: 1, toolTilt: 0, toolPos: null, toolVx: 0, toolVy: 0, struck: {},
     bounce: { playing: false, combo: 0, respawn: 0 }, cursor: '',
@@ -1035,7 +1075,7 @@ function Toys({ s }: { s: DockSettings }) {
         st.toolTilt += (target - st.toolTilt) * Math.min(1, 12 * dt)
         if (toolKind === 'football') {
           const ball = st.balls[toolKind]
-          if (ball && Math.abs(ball.x - p.x) > 14) st.toolDir = ball.x > p.x ? 1 : -1
+          if (ball && Math.abs(ball.x - p.x) > (juggling() ? 120 : 14)) st.toolDir = ball.x > p.x ? 1 : -1
         }
       } else toolPath = []
       // the pointer stands still between events: its speed fades out
@@ -1057,6 +1097,14 @@ function Toys({ s }: { s: DockSettings }) {
           const [sx, sy] = startPosition('basket', w, floor, side)
           Object.assign(bb, { x: sx, y: sy, vx: 0, vy: 0, floorHits: 0, touches: 0 })
         }
+      }
+      // the pitch (free kicks): the ball starts in the middle, and again when the shape of the pitch changes
+      const pitchOn = cur.toyFootball && cur.toyFootballStyle === 'free'
+      const pitchKey = pitchOn ? `${cur.toyPitch}|${w}x${floor}` : ''
+      if (pitchKey !== st.pitchKey) {
+        st.pitchKey = pitchKey
+        const fb = st.balls.football
+        if (pitchOn && fb) Object.assign(fb, { x: w / 2, y: floor / 2, vx: 0, vy: 0, floorHits: 0, touches: 0 })
       }
       // the penalty game takes over the football while it is the chosen kind of football
       const penalty = cur.toyFootball && cur.toyFootballStyle === 'penalty'
@@ -1102,7 +1150,8 @@ function Toys({ s }: { s: DockSettings }) {
           continue
         }
         const spec = SPEC[kind]
-        const world: World = { width: w, floor, gravity: spec.gravity, restitution: spec.restitution, rolling: spec.rolling }
+        const flat = kind === 'football' && pitchOn
+        const world: World = flat ? { width: w, floor, gravity: 0, restitution: 0.72, rolling: 0 } : { width: w, floor, gravity: spec.gravity, restitution: spec.restitution, rolling: spec.rolling }
         const hitsBefore = ball.floorHits
         const prevY = ball.y
         const speedBefore = Math.abs(ball.vy)
@@ -1118,7 +1167,8 @@ function Toys({ s }: { s: DockSettings }) {
           }
           continue
         }
-        stepBall(ball, dt, world, kind === 'football' && juggling() ? [] : segmentsFor(kind, w, floor, side))
+        stepBall(ball, dt, world, kind === 'football' && juggling() ? [] : flat ? goalPosts(w, floor, cur.toyPitch) : segmentsFor(kind, w, floor, side))
+        if (flat) slide(ball, dt)
         if (ball.floorHits > hitsBefore && speedBefore > 260) tone(cur.toySound, 150, 70, 0.09, 'sine', Math.min(0.2, speedBefore / 6000))
         if (ball.y > floor - ball.r) ball.y = floor - ball.r
 
@@ -1126,11 +1176,14 @@ function Toys({ s }: { s: DockSettings }) {
         if (toolKind && p && ((toolKind === 'football' && kind === 'football') || (toolKind === 'bounce' && kind === 'bounce'))) {
           let touched = false
           for (const spot of toolPath) {
-            for (const circle of toolCircles(toolKind, spot.x, spot.y, st.toolDir, st.toolTilt)) {
+            for (const circle of toolCircles(toolKind, spot.x, spot.y, st.toolDir, st.toolTilt, kind === 'football' && pitchOn)) {
+              // a rally ball lands on top of the racket: from underneath, or on its way up, it passes through (no sticking, no double count)
+              if (isRally(kind) && (ball.y > circle.y + 6 || ball.vy < -120)) continue
               const e = toolKind === 'football' ? 0.7 : 0.95
               if (bounceOffMover(ball, circle.x, circle.y, circle.r, tv.vx, tv.vy, e)) {
                 touched = true
                 if (isRally(kind)) {
+                  ball.y = Math.min(ball.y, circle.y - circle.r - ball.r - 1)
                   // a rally ball is kept alive: it always goes back up, steered by where on the racket it landed
                   if (ball.vy > -720) ball.vy = -720 - Math.min(260, Math.abs(tv.vy) * 0.2)
                   ball.vx = Math.max(-900, Math.min(900, ball.vx * 0.5 + (ball.x - circle.x) * 5 + tv.vx * 0.2))
@@ -1171,8 +1224,8 @@ function Toys({ s }: { s: DockSettings }) {
             tone(cur.toySound, 990, 990, 0.2, 'sine', 0.12, 0.1)
             if (swish) tone(cur.toySound, 1320, 1320, 0.25, 'sine', 0.1, 0.22)
           }
-        } else if (kind === 'football' && !juggling() && st.respawn <= 0 && !ball.grabbed) {
-          if (inGoal(ball, 'left', w, GOAL_DEPTH, floor, GOAL_HEIGHT) || inGoal(ball, 'right', w, GOAL_DEPTH, floor, GOAL_HEIGHT)) {
+        } else if (kind === 'football' && pitchOn && st.respawn <= 0 && !ball.grabbed) {
+          if (inWhichGoal(ball, w, floor, cur.toyPitch) >= 0) {
             saveScores({ football: st.scores.football + 1 })
             point('football')
             st.flash = { text: 'GOL!', left: 1.4 }
@@ -1201,8 +1254,8 @@ function Toys({ s }: { s: DockSettings }) {
         st.respawn -= dt
         const ball = st.balls.football
         if (st.respawn <= 0 && ball) {
-          ball.x = startPosition('football', w, floor, side)[0]
-          ball.y = floor - 260
+          ball.x = w / 2
+          ball.y = floor / 2
           ball.vx = 0
           ball.vy = 0
         }
@@ -1248,7 +1301,10 @@ function Toys({ s }: { s: DockSettings }) {
             if (st.drag && st.drag.kind === 'ball' && st.drag.ball === 'basket') drawGrip(c, dragged)
             else drawFist(c, p.x, p.y)
           } else if (st.armed === 'basket') drawReach(c, p.x, p.y)
-          else if (toolKind === 'football') drawBoot(c, p.x, p.y, st.toolDir, st.toolTilt)
+          else if (toolKind === 'football') {
+            if (cur.toyFootball && cur.toyFootballStyle === 'free') drawBootTop(c, p.x, p.y, st.toolVx, st.toolVy, Math.hypot(st.toolVx, st.toolVy) > 60 ? Math.atan2(st.toolVy, st.toolVx) : 0)
+            else drawBoot(c, p.x, p.y, st.toolDir, st.toolTilt)
+          }
           else if (toolKind === 'bounce') {
             // the racket lies flat, face up, its head centred on the pointer and its handle trailing to the left;
             // it leans a little into the sideways swing
@@ -1275,7 +1331,7 @@ function Toys({ s }: { s: DockSettings }) {
   return (
     <div className="toys" ref={root}>
       <canvas ref={canvas} className="toys__canvas" />
-      <Hud cards={hud.cards} result={hud.result} showCursor={s.toyShowCursor} />
+      <Hud cards={hud.cards} result={hud.result} showCursor={s.toyShowCursor} corner={s.toyFootball && s.toyFootballStyle === 'free' && s.toyPitch === 'vertical'} />
     </div>
   )
 }
