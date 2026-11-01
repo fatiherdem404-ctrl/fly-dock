@@ -16,7 +16,7 @@ const NPAL = 24
 
 let W = 0, H = 0, CX = 0, CY = 0, FOCAL = 1, UNIT = 1
 let N = 1700, built = false
-let emaDt = 0.016, tune = 0
+let work = 4, tune = 0
 
 // parçacık verisi (hepsi düz diziler: hızlı ve çöp üretmez)
 const gr = new Float32Array(MAXN), gth = new Float32Array(MAXN), gy = new Float32Array(MAXN), gw = new Float32Array(MAXN)
@@ -240,6 +240,7 @@ function explode(x, y, focusD) {
 const bx = new Float32Array(MAXN), by = new Float32Array(MAXN), bz = new Float32Array(MAXN)
 
 function draw(ctx, t, dt, pointer) {
+  const began = performance.now()
   // ---- zaman çizelgesi: galaksi -> şekil -> galaksi ----
   const prev = cyc
   cyc = (cyc + dt) % CYCLE
@@ -394,11 +395,12 @@ function draw(ctx, t, dt, pointer) {
   ctx.globalCompositeOperation = 'source-over'
 
   // ---- kalite ayarı: kareler yavaşsa parçacık azalır, rahatsa artar ----
-  emaDt += (dt - emaDt) * 0.05
+  // kare hızı ekrana ve ayara göre değişir; bu yüzden kareyi çizmenin kendi maliyetine bakıyoruz
+  work += (performance.now() - began - work) * 0.08
   tune += dt
-  if (tune > 0.6) {
+  if (tune > 0.7) {
     tune = 0
-    if (emaDt > 0.026 && N > MINN) N = Math.max(MINN, N - 160)
-    else if (emaDt < 0.0185 && N < MAXN) N = Math.min(MAXN, N + 70)
+    if (work > 11 && N > MINN) N = Math.max(MINN, N - 160)
+    else if (work < 6 && N < MAXN) N = Math.min(MAXN, N + 60)
   }
 }
