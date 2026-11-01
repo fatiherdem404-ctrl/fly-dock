@@ -273,8 +273,6 @@ export interface DockSettings {
   toyBounceMode: ToyMode
   /** The panel games. */
   toyPong: boolean
-  toyBowling: boolean
-  toyDart: boolean
   toySound: boolean
   /** Keep the system pointer visible while a game turns it into a hand, boot or racket. */
   toyShowCursor: boolean
@@ -285,7 +283,7 @@ export interface DockSettings {
   toyHoopSide: 'left' | 'right'
 }
 
-export const DEFAULT_TOY_SCORES: ToyScores = { basket: 0, basketBest: 0, football: 0, footballBest: 0, bounceBest: 0, bounceCombo: 0, juggleBest: 0, juggleCombo: 0, pongBest: 0, bowlingBest: 0, dartBest: 0 }
+export const DEFAULT_TOY_SCORES: ToyScores = { basket: 0, basketBest: 0, football: 0, footballBest: 0, bounceBest: 0, bounceCombo: 0, juggleBest: 0, juggleCombo: 0, pongBest: 0 }
 
 export type ToyMode = 'free' | 'timed'
 
@@ -306,10 +304,8 @@ export interface ToyScores {
   /** Most keep-ups with the football in one 60-second round, and the longest run. */
   juggleBest: number
   juggleCombo: number
-  /** Pong matches won, best bowling game (pins) and best darts game (points). */
+  /** Pong matches won. */
   pongBest: number
-  bowlingBest: number
-  dartBest: number
 }
 
 export type WidgetType = 'clock' | 'analog' | 'calendar' | 'weather' | 'system' | 'media' | 'battery' | 'note'
@@ -614,8 +610,6 @@ export const DEFAULT_SETTINGS: DockSettings = {
   toyPitchAlpha: 0.3,
   toyBounceMode: 'timed',
   toyPong: false,
-  toyBowling: false,
-  toyDart: false,
   toySound: true,
   toyShowCursor: false,
   toyLayer: 'above',

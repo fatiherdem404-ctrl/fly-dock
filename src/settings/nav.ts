@@ -27,7 +27,7 @@ export const TAB_INFO: Record<Tab, TabInfo> = {
   items: { id: 'items', label: 'Öğeler', icon: 'items', blurb: 'Dock’taki programlar ve kısayolları' },
   wheel: { id: 'wheel', label: 'Kontrol paneli', icon: 'controlpanel', blurb: 'Windows ayarlarına ve araçlarına hızlı erişim listesi' },
   widgets: { id: 'widgets', label: 'Widget’lar', icon: 'widgets', blurb: 'Saat, takvim, hava durumu ve daha fazlası; temana uyumlu' },
-  toys: { id: 'toys', label: 'Mini oyunlar', icon: 'toys', blurb: 'Masaüstünde oynanan basketbol, futbol, sektirme, pong, bowling ve dart' },
+  toys: { id: 'toys', label: 'Mini oyunlar', icon: 'toys', blurb: 'Masaüstünde oynanan basketbol, futbol, sektirme ve pong' },
   tweaks: { id: 'tweaks', label: 'Tweaks', icon: 'tools', blurb: 'Güvenli, geri alınabilir Windows ayarları' },
   general: { id: 'general', label: 'Genel', icon: 'general', blurb: 'Başlangıç, yedek ve hakkında' },
 }

@@ -27,6 +27,8 @@ export interface Env {
 }
 
 export interface MiniGame {
+  /** Games that need the mouse only in a small place (a button) say so here; otherwise the whole panel takes it. */
+  captures?(x: number, y: number): boolean
   /** The panel the game is played in; the window takes the mouse while the pointer is over it. */
   area(w: number, h: number, floor: number): Area
   step(dt: number, pointer: { x: number; y: number } | null, down: boolean, w: number, h: number, floor: number): void

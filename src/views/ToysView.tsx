@@ -5,8 +5,6 @@ import { DEFAULT_TOY_SCORES } from '@/shared/types'
 import { PEN_MAX_PULL, Pen, geo as penGeo, randomSpot, glovePoint, keeperPoint, launch, makePen, path as penPath, shoot as penShoot, step as penStep } from '@/toys/penalty'
 import { SHOT_MAX_PULL, Shot, launchShot, makeShot, pickSpot, shotPath } from '@/toys/shot'
 import { dial, gaugeSpot, powerGauge } from '@/toys/gauges'
-import { Bowling } from '@/toys/bowling'
-import { Dart } from '@/toys/dart'
 import { Env, MiniGame, inside } from '@/toys/mini'
 import { Pong } from '@/toys/pong'
 import { goalBoxes, goalPosts, inWhichGoal, slide } from '@/toys/pitch'
@@ -22,16 +20,14 @@ import soccerUrl from '@/assets/toys/soccer.png'
 
 type GameId = 'basket' | 'football' | 'bounce'
 type BallKind = GameId
-/** The small panel games: Pong, bowling and darts. */
-type MiniId = 'pong' | 'bowling' | 'dart'
-const MINI_IDS: MiniId[] = ['pong', 'bowling', 'dart']
+/** The panel games (for now only Pong, played over the whole screen). */
+type MiniId = 'pong'
+const MINI_IDS: MiniId[] = ['pong']
 const MINI_INFO: Record<MiniId, { title: string; best: keyof ToyScores }> = {
   pong: { title: 'Pong', best: 'pongBest' },
-  bowling: { title: 'Bowling', best: 'bowlingBest' },
-  dart: { title: 'Dart', best: 'dartBest' },
 }
-const miniOn = (s: DockSettings, id: MiniId) => (id === 'pong' ? s.toyPong : id === 'bowling' ? s.toyBowling : s.toyDart)
-const miniKey = (id: MiniId) => (id === 'pong' ? 'toyPong' : id === 'bowling' ? 'toyBowling' : 'toyDart')
+const miniOn = (s: DockSettings, id: MiniId) => (id === 'pong' ? s.toyPong : false)
+const miniKey = (_id: MiniId) => 'toyPong' as const
 type Round = { active: boolean; left: number; score: number }
 
 const ALL: BallKind[] = ['basket', 'football', 'bounce']
@@ -583,6 +579,7 @@ function drawScene(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, width
   }
   if (s.toyFootball && s.toyFootballStyle === 'penalty') drawPenalty(c, s, sim, width, floor)
   else if (s.toyFootball && s.toyFootballStyle === 'free') drawPitch(c, s, width, floor)
+  if (s.toyPong && sim.mini.pong) (sim.mini.pong as Pong).alpha = s.toyPitchAlpha
   for (const id of MINI_IDS) if (miniOn(s, id)) sim.mini[id]?.draw(c, width, floor, floor, sim.pointer ? { x: sim.pointer.x, y: sim.pointer.y } : null)
   if (sim.flash) {
     const t = Math.min(1, sim.flash.left / 0.4)
@@ -611,8 +608,6 @@ const clock = (seconds: number) => {
 
 function GameIcon({ id }: { id: GameId | MiniId }) {
   if (id === 'pong') return <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="9" width="4" height="14" rx="2" fill="#5aa2ff" /><rect x="25" y="12" width="4" height="14" rx="2" fill="#ff6a8a" /><circle cx="17" cy="15" r="3" fill="#fff" /></svg>
-  if (id === 'bowling') return <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="11" cy="21" r="8" fill="#2b3a99" /><circle cx="9" cy="19" r="1.2" fill="#0a0f33" /><circle cx="12" cy="19" r="1.2" fill="#0a0f33" /><rect x="21" y="6" width="6" height="16" rx="3" fill="#fff" stroke="#d63a3a" strokeWidth="2" /></svg>
-  if (id === 'dart') return <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="#15181f" /><circle cx="16" cy="16" r="9" fill="#efe3c2" /><circle cx="16" cy="16" r="5" fill="#c8312f" /><circle cx="16" cy="16" r="1.8" fill="#1f8a4b" /></svg>
   if (id === 'basket') return <img src={basketballUrl} alt="" />
   if (id === 'football') return <img src={soccerUrl} alt="" />
   return (
@@ -677,7 +672,7 @@ function Toys({ s }: { s: DockSettings }) {
   const [hud, setHud] = useState<{ cards: HudCard[]; result: HudResult | null }>({ cards: [], result: null })
   const newGame = () => ({ round: { active: false, left: 0, score: 0 }, session: 0 })
   const sim = useRef<Sim>({
-    balls: {}, pointer: null, samples: [], drag: null, capture: false, scores: { ...DEFAULT_TOY_SCORES }, shotFrom: 0, pen: makePen(), penOn: false, penKey: '', shot: makeShot(), farOn: false, pitchKey: '', mini: {}, miniDown: false, miniWas: { pong: false, bowling: false, dart: false },
+    balls: {}, pointer: null, samples: [], drag: null, capture: false, scores: { ...DEFAULT_TOY_SCORES }, shotFrom: 0, pen: makePen(), penOn: false, penKey: '', shot: makeShot(), farOn: false, pitchKey: '', mini: {}, miniDown: false, miniWas: { pong: false },
     games: { basket: newGame(), football: newGame(), bounce: newGame() },
     result: null, flash: null, respawn: 0, hover: false, size: '', armed: null, toolDir: 1, toolTilt: 0, toolPos: null, toolVx: 0, toolVy: 0, struck: {},
     bounce: { playing: false, combo: 0, respawn: 0 }, cursor: '',
@@ -709,7 +704,7 @@ function Toys({ s }: { s: DockSettings }) {
       const wins = id === 'pong'
       const record = !wins && score > best
       if (record) saveScores({ [key]: score })
-      st.result = { game: MINI_INFO[id].title, title: wins ? 'Kazandın!' : record ? 'Yeni rekor!' : 'Oyun bitti', score, unit: wins ? 'sayı' : id === 'bowling' ? 'lobut' : 'puan', best: wins ? st.scores.pongBest + 1 : record ? score : best, record, left: 4.5 }
+      st.result = { game: MINI_INFO[id].title, title: wins ? 'Kazandın!' : record ? 'Yeni rekor!' : 'Oyun bitti', score, unit: 'sayı', best: wins ? st.scores.pongBest + 1 : record ? score : best, record, left: 4.5 }
       const sound = settingsRef.current.toySound
       if (record || wins) [523, 659, 784, 1047].forEach((f, i) => tone(sound, f, f, 0.2, 'triangle', 0.1, i * 0.12))
     }
@@ -719,13 +714,16 @@ function Toys({ s }: { s: DockSettings }) {
       finish: (score) => finishMini(id, score),
       win: () => saveScores({ pongBest: st.scores.pongBest + 1 }),
     })
-    st.mini = { pong: new Pong(envFor('pong')), bowling: new Bowling(envFor('bowling')), dart: new Dart(envFor('dart')) }
+    st.mini = { pong: new Pong(envFor('pong')) }
     /** The panel game whose panel the point is over (only games that are on). */
     const miniAt = (x: number, y: number): MiniId | null => {
       const { w, h } = dims()
       for (const id of MINI_IDS) {
         const m = st.mini[id]
-        if (m && miniOn(settingsRef.current, id) && inside(m.area(w, h, floorOf(settingsRef.current, h)), x, y)) return id
+        if (m && miniOn(settingsRef.current, id)) {
+          const area = m.area(w, h, floorOf(settingsRef.current, h))
+          if (m.captures ? m.captures(x, y) : inside(area, x, y)) return id
+        }
       }
       return null
     }
@@ -802,7 +800,7 @@ function Toys({ s }: { s: DockSettings }) {
       const farBusy = farOn() && !!st.shot.aim
       const mini = miniAt(x, y)
       setCapture(!!over || !!st.armed || !!st.drag || playing || !!close || penHover || penBusy || farHover || farBusy || !!mini || st.miniDown)
-      setCursor(close ? 'pointer' : mini || st.miniDown ? (mini === 'bowling' || settingsRef.current.toyShowCursor ? '' : 'none') : penBusy || farBusy ? (settingsRef.current.toyShowCursor ? '' : 'none') : penHover || farHover ? 'grab' : st.drag || st.armed || playing ? (settingsRef.current.toyShowCursor ? '' : 'none') : over ? 'grab' : '')
+      setCursor(close ? 'pointer' : mini || st.miniDown ? (settingsRef.current.toyShowCursor ? '' : 'none') : penBusy || farBusy ? (settingsRef.current.toyShowCursor ? '' : 'none') : penHover || farHover ? 'grab' : st.drag || st.armed || playing ? (settingsRef.current.toyShowCursor ? '' : 'none') : over ? 'grab' : '')
     }
     /** A rally of the racket and the baseball has ended: the ball touched the floor. */
     const dropBounce = () => {
@@ -1007,7 +1005,7 @@ function Toys({ s }: { s: DockSettings }) {
         const m = st.mini[id]
         if (!m) continue
         const h = m.hud()
-        cards.push({ id, title: MINI_INFO[id].title, unit: h.unit, timed: false, active: h.active, score: h.score, left: 0, best: id === 'pong' ? `${h.best}  ·  Galibiyet ${st.scores.pongBest}` : `${h.best}  ·  Rekor ${st.scores[MINI_INFO[id].best]}`, hint: h.hint })
+        cards.push({ id, title: MINI_INFO[id].title, unit: h.unit, timed: false, active: h.active, score: h.score, left: 0, best: `${h.best}  ·  Galibiyet ${st.scores.pongBest}`, hint: h.hint })
       }
       const result = st.result ? { game: st.result.game, title: st.result.title, score: st.result.score, unit: st.result.unit, best: st.result.best, record: st.result.record } : null
       const key = JSON.stringify([cards, result])
