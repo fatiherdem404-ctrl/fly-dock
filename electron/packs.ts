@@ -48,7 +48,7 @@ const BUILTIN_THEMES: ThemeDef[] = [
   { id: 'glass-dark', name: 'Glass Dark', author: 'built-in', vars: GLASS_DARK, desk: { deskStyle: 'macos', deskDepth: 0, deskEdge: 0, deskOpacity: 1, deskRadTL: 24, deskRadTR: 24, deskRadBL: 24, deskRadBR: 24 }, wallpaper: { live: 'aurora' } },
   {
     id: 'frost-light',
-    name: 'Frost Light',
+    name: 'Glass Light',
     author: 'built-in',
     wallpaper: { live: 'flow' },
     desk: { deskStyle: 'glass', deskDepth: 0, deskEdge: 0, deskOpacity: 0.95, deskRadTL: 24, deskRadTR: 24, deskRadBL: 24, deskRadBR: 24 },

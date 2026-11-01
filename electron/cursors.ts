@@ -131,7 +131,9 @@ export async function applyCursorPack(id: string): Promise<CursorStatus> {
       status = r.applied > 0 ? { active: id, message: r.failed > 0 ? `${r.failed} imleç uygulanamadı` : '' } : { active: '', message: 'İmleçler uygulanamadı' }
     }
   } catch (e) {
-    status = { active: '', message: e instanceof Error ? e.message : 'İmleçler uygulanamadı' }
+    const text = e instanceof Error ? e.message : ''
+    // a helper built before cursors existed does not know the command: the app has to be restarted so it is rebuilt
+    status = { active: '', message: /unknown method/.test(text) ? 'Yardımcı program eski sürüm. Uygulamayı kapatıp yeniden başlat (geliştirmede npm run dev).' : text || 'İmleçler uygulanamadı' }
   }
   return status
 }
