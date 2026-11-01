@@ -8,9 +8,15 @@ export const SCENE_HELP = `// Sahne kodu: aşağıdaki işlevlerden istediğini 
 `
 
 import voidScene from './studio/scenes/void.js?raw'
+import silkScene from './studio/scenes/silk.js?raw'
+import synthScene from './studio/scenes/synth.js?raw'
+import lavaScene from './studio/scenes/lava.js?raw'
 
 export const SCENE_TEMPLATES: { id: string; name: string; code: string }[] = [
   { id: 'void', name: 'VOID: 3B toz evreni', code: voidScene },
+  { id: 'silk', name: 'AKIŞ: ipek şeritler', code: silkScene },
+  { id: 'synth', name: 'SYNTH: neon ufuk', code: synthScene },
+  { id: 'lava', name: 'LAV: sıvı ışık', code: lavaScene },
   {
     id: 'blank',
     name: 'Boş sahne',
