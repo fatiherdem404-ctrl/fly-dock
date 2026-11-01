@@ -83,19 +83,19 @@ export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
       {game('toyTennis', 'toyTennisMode', 'tennis', 'Tenis', 'Ortada bir file, hafif bir top.', 'İmleç topun yanına gelince rakete dönüşür. Serbestte en uzun seri, süreye karşıda 60 saniyedeki vuruş sayısı kaydedilir.')}
       {game('toyBounce', 'toyBounceMode', 'bounce', 'Sektirme', 'Raketle beyzbol topunu havada tut.', 'Topa tıkla, havaya fırlasın; imleç raketin olur. Topu yere düşürmeden sektir, her vuruş bir puan. Düşerse seri biter; sağ tık oyunu bırakır.')}
       <Scores tab="Oyunlar" />
-      <Card icon="window" tab="Yerleşim" title="Pencere katmanı" hint="Oyuncaklar diğer pencerelerin üstünde mi dursun, onlar gibi davransın mı, yoksa masaüstü gibi altta mı kalsın.">
+      <Card icon="window" tab="Yerleşim" title="Pencere katmanı" hint="Oyunlar diğer pencerelerin üstünde mi dursun, onlar gibi davransın mı, yoksa masaüstü gibi altta mı kalsın.">
         <Cards<DockLayer> size="s" value={s.toyLayer} onChange={(toyLayer) => set({ toyLayer })} options={[
           { id: 'above', label: 'Üstte', hint: 'Hep önde', preview: <LayerPreview layer="above" /> },
           { id: 'normal', label: 'Normal', hint: 'Pencereler kapatabilir', preview: <LayerPreview layer="normal" /> },
           { id: 'below', label: 'Altta', hint: 'Masaüstü gibi', preview: <LayerPreview layer="below" /> },
         ]} />
       </Card>
-      <Card icon="location" tab="Yerleşim" title="Konum" hint="Oyuncakların bastığı zemin ve potanın yeri.">
+      <Card icon="location" tab="Yerleşim" title="Konum" hint="Oyunların bastığı zemin ve potanın yeri.">
         <Row label="Zemin" hint="Dock altta ve açıksa 'Dock’un üstü' onun rafını zemin yapar"><Segmented value={s.toyFloor} onChange={(toyFloor) => set({ toyFloor })} options={[['dock', 'Dock’un üstü'], ['screen', 'Ekranın altı']]} /></Row>
         <Row label="Pota" hint="Basketbol potasının durduğu kenar"><Segmented value={s.toyHoopSide} onChange={(toyHoopSide) => set({ toyHoopSide })} options={[['right', 'Sağda'], ['left', 'Solda']]} /></Row>
       </Card>
       <Card icon="sound" tab="Oyunlar" title="Ses">
-        <Row label="Oyuncak sesleri" hint="Top sekmesi, sepet ve gol sesleri"><Switch label="Ses" value={s.toySound} onChange={(toySound) => set({ toySound })} /></Row>
+        <Row label="Oyun sesleri" hint="Top sekmesi, sepet ve gol sesleri"><Switch label="Ses" value={s.toySound} onChange={(toySound) => set({ toySound })} /></Row>
       </Card>
     </Pages>
   )
