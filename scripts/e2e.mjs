@@ -21,7 +21,8 @@ writeFileSync(
       { id: 'power1', type: 'power', label: 'Güç', order: 4 },
       { id: 'trash', type: 'trash', order: 999 },
     ],
-    settings: {},
+    // whatever is in front on the machine running the test (a full-screen window) must not hide the dock under test
+    settings: { hideInFullscreen: false },
   }),
 )
 
@@ -57,7 +58,10 @@ async function connect(page) {
 }
 
 const results = []
+// E2E_ONLY=a|b runs just the checks whose name contains one of those texts (they still need the app to be up)
+const only = process.env.E2E_ONLY
 const check = async (name, fn) => {
+  if (only && !only.split('|').some((s) => name.includes(s))) return
   try { await fn(); results.push(['PASS', name]) } catch (e) { results.push(['FAIL', `${name}: ${e.message.split('\n')[0]}`]) }
 }
 

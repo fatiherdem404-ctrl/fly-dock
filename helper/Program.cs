@@ -56,6 +56,9 @@ internal static class Program
         switch (method)
         {
             case "ping": return "pong";
+            case "watchClicks":
+                Clicks.Watch(p["on"]?.GetValue<bool>() ?? false, (x, y) => Emit("click", new JsonObject { ["x"] = x, ["y"] = y }));
+                return true;
             case "setIgnorePid":
                 ignorePid = (uint)(p["pid"]?.GetValue<long>() ?? 0);
                 Windows.OwnPid = ignorePid;

@@ -151,6 +151,11 @@ class Helper extends EventEmitter {
   }
 
   /** Puts a window behind the desktop icons (physical-pixel rectangle on screen). False when the shell has no such layer. */
+  /** While on, the helper reports left clicks that land on the desktop as 'click' events (physical pixels). */
+  watchClicks(on: boolean) {
+    return this.call<boolean>('watchClicks', { on })
+  }
+
   desktopAttach(hwnd: number, x: number, y: number, width: number, height: number) {
     return this.call<boolean>('desktopAttach', { hwnd, x, y, width, height })
   }

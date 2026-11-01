@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { invoke, themeStyle } from '@/api'
-import { startLive, hueOf, makePointer, feedPointer } from '@/live'
+import { startLive, hueOf, makePointer, feedPointer, clickPointer } from '@/live'
 import { LIVE_WALLPAPERS } from '@/shared/types'
 import type {
   AnimationCurve, DeskStyle, DockLayer, FalloffCurve, HoverAnimation, IndicatorStyle, LabelMode, LaunchAnimation, SeparatorStyle,
@@ -189,14 +189,20 @@ export function LiveThumb({ id, hue = 215, className = '' }: { id: string; hue?:
       feedPointer(pointer, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height, true)
     }
     const leave = () => feedPointer(pointer, pointer.x, pointer.y, false)
+    const press = (e: MouseEvent) => {
+      const r = el.getBoundingClientRect()
+      clickPointer(pointer, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height)
+    }
     const host = el.closest('button') ?? el
     host.addEventListener('mousemove', move as EventListener)
     host.addEventListener('mouseleave', leave)
+    host.addEventListener('mousedown', press as EventListener)
     const stop = startLive(el, id, hue, { w: 192, h: 120 }, pointer)
     return () => {
       stop()
       host.removeEventListener('mousemove', move as EventListener)
       host.removeEventListener('mouseleave', leave)
+      host.removeEventListener('mousedown', press as EventListener)
     }
   }, [visible, id, hue])
   return <canvas ref={canvas} className={`pv-live ${className}`} width={192} height={120} />

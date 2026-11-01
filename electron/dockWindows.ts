@@ -89,19 +89,26 @@ const handleOf = (w: BrowserWindow) => Number(w.getNativeWindowHandle().readBigU
  * Where the dock sits among other windows: 'above' is always-on-top, 'normal' behaves like any window
  * (other windows can cover it) and 'below' keeps it under everything, like a desktop gadget.
  */
+/** The send-to-bottom of the last 'below' setting, still on its way to the helper: 'above' must be asserted after it lands. */
+let sendingToBottom: Promise<unknown> = Promise.resolve()
+
 export function applyLayer() {
   const { layer } = getSettings()
+  const pending: Promise<unknown>[] = []
   for (const { win } of docks.values()) {
     if (win.isDestroyed()) continue
     if (layer === 'above') {
       win.setAlwaysOnTop(true, 'screen-saver')
-      // a send-to-bottom still on its way from an earlier setting must not win: assert once more shortly after
-      setTimeout(() => {
+      // a send-to-bottom still on its way from an earlier setting must not win: assert again once it has landed
+      const assertAbove = () => {
         if (!win.isDestroyed() && getSettings().layer === 'above') win.setAlwaysOnTop(true, 'screen-saver')
-      }, 200)
+      }
+      void sendingToBottom.then(assertAbove)
+      setTimeout(assertAbove, 200)
     } else win.setAlwaysOnTop(false)
-    if (layer === 'below') helper.toBottom(handleOf(win)).catch(() => {})
+    if (layer === 'below') pending.push(helper.toBottom(handleOf(win)).catch(() => {}))
   }
+  if (pending.length > 0) sendingToBottom = Promise.all(pending)
 }
 
 export function dockIsOnTop(): boolean {

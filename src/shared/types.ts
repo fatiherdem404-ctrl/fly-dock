@@ -327,7 +327,7 @@ export const DESK_KEYS = [
 export type DeskKey = (typeof DESK_KEYS)[number]
 export type ThemeDesk = Partial<Pick<DockSettings, DeskKey>>
 
-export type LiveWallpaperId = 'aurora' | 'flow' | 'stars' | 'waves' | 'bubbles' | 'network' | 'ripples' | 'fireflies' | 'galaxy'
+export type LiveWallpaperId = 'aurora' | 'flow' | 'stars' | 'waves' | 'bubbles' | 'network' | 'ripples' | 'fireflies' | 'galaxy' | 'fluid'
 /** The scenes the app draws itself; no file needed. [id, name, one line about it] */
 export const LIVE_WALLPAPERS: [LiveWallpaperId, string, string][] = [
   ['aurora', 'Aurora', 'Yavaşça süzülen renkli ışık bulutları'],
@@ -339,6 +339,7 @@ export const LIVE_WALLPAPERS: [LiveWallpaperId, string, string][] = [
   ['ripples', 'Dalgacıklar', 'Sakin su; farenin geçtiği her yerde halkalar yayılır'],
   ['fireflies', 'Ateş böcekleri', 'Karanlıkta uçuşan ışıklar; fareye gelip etrafında dönerler'],
   ['galaxy', 'Galaksi', 'Dönen bir galaksi; merkezi fareyi izler, hızlı harekette parlar'],
+  ['fluid', 'Yağlı sıvı', 'Suya dökülmüş benzin gibi karışan renkler; fareyle akar, tıklayınca fışkırır'],
 ]
 
 export type WallpaperMode = 'off' | 'theme' | 'single' | 'folder'
@@ -649,6 +650,8 @@ export interface EventMap {
   'sound:play': SoundEvent
   /** Where the cursor is over this wallpaper window (0..1 across the display) and whether it is on that display at all. */
   'wallpaper:pointer': { x: number; y: number; on: boolean }
+  /** A click on the desktop, 0..1 across the display this wallpaper window covers. */
+  'wallpaper:click': { x: number; y: number }
 }
 
 export type InvokeChannel = keyof InvokeMap

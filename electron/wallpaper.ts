@@ -41,6 +41,7 @@ let onBattery = false
 let locked = false
 let handlerInstalled = false
 let pointerTimer: NodeJS.Timeout | null = null
+let clicksOn = false
 const lastPointer = new Map<number, string>()
 
 const kindOf = (file: string): 'image' | 'video' | null => {
@@ -188,6 +189,8 @@ async function createWindow(display: Electron.Display) {
  */
 function startPointerFeed() {
   if (pointerTimer) return
+  clicksOn = true
+  helper.watchClicks(true).catch(() => {})
   pointerTimer = setInterval(() => {
     if (windows.size === 0 || paused() || !getSettings().wallpaperReact) return
     const p = screen.getCursorScreenPoint()
@@ -207,6 +210,8 @@ function startPointerFeed() {
 }
 
 function stopPointerFeed() {
+  if (clicksOn) helper.watchClicks(false).catch(() => {})
+  clicksOn = false
   if (pointerTimer) clearInterval(pointerTimer)
   pointerTimer = null
   lastPointer.clear()
@@ -279,8 +284,25 @@ export function setFullscreenPaused(on: boolean) {
   push()
 }
 
+/** A click on the desktop came from the helper: tell the wallpaper window of the display it happened on. */
+function onDesktopClick(p: { x: number; y: number }) {
+  if (paused() || !getSettings().wallpaperReact) return
+  const dip = screen.screenToDipPoint({ x: p.x, y: p.y })
+  for (const display of screen.getAllDisplays()) {
+    const b = display.bounds
+    if (dip.x < b.x || dip.x >= b.x + b.width || dip.y < b.y || dip.y >= b.y + b.height) continue
+    const win = windows.get(display.id)
+    if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) win.webContents.send('wallpaper:click', { x: (dip.x - b.x) / b.width, y: (dip.y - b.y) / b.height })
+  }
+}
+
 export function initWallpaper() {
   installProtocol()
+  helper.on('click', onDesktopClick)
+  // a restarted helper has forgotten that it was watching
+  helper.on('ready', () => {
+    if (clicksOn) helper.watchClicks(true).catch(() => {})
+  })
   onBattery = powerMonitor.isOnBatteryPower()
   powerMonitor.on('on-battery', () => { onBattery = true; push() })
   powerMonitor.on('on-ac', () => { onBattery = false; push() })

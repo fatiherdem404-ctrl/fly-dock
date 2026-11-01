@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { invoke, useActiveTheme, useEvent } from '@/api'
-import { startLive, hueOf, makePointer, feedPointer, Pointer } from '@/live'
+import { startLive, hueOf, makePointer, feedPointer, clickPointer, Pointer } from '@/live'
 import type { DockSettings, WallpaperFit, WallpaperInfo, WallpaperSource } from '@/shared/types'
 
 const FIT_CSS: Record<WallpaperFit, { size: string; repeat: string; object: string }> = {
@@ -68,6 +68,7 @@ export default function WallpaperView() {
   const pointer = useRef(makePointer()).current
   ;(window as unknown as { __wpPointer: Pointer }).__wpPointer = pointer
   useEvent('wallpaper:pointer', (p) => feedPointer(pointer, p.x, p.y, p.on))
+  useEvent('wallpaper:click', (p) => clickPointer(pointer, p.x, p.y))
   useActiveTheme(settings?.theme)
 
   const [hue, setHue] = useState(215)
