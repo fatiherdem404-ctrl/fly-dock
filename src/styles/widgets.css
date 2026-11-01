@@ -154,3 +154,13 @@ html[data-view='widget'] .widget { position: absolute; left: 36px; top: 36px; }
 .wgt-stage { position: relative; display: grid; place-items: center; width: 100%; height: 230px; padding: 0; box-sizing: border-box; border-radius: 10px; background: linear-gradient(135deg, #3a5ea8, #7a4fb0 55%, #d1795a); overflow: hidden; }
 .wgt-stage__inner { position: relative; display: block; pointer-events: none; }
 .wgt-stage .widget { position: absolute; left: 0; top: 0; }
+
+/* the close button of a desktop widget: only there while the pointer is over it */
+.wv { position: relative; width: 100%; height: 100%; }
+.wv__close {
+  position: absolute; top: 6px; right: 6px; z-index: 5; width: 22px; height: 22px; display: grid; place-items: center; padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.28); border-radius: 50%; background: rgba(12, 16, 30, 0.72); color: #fff; cursor: pointer;
+  opacity: 0; transform: scale(0.85); transition: opacity 140ms, transform 140ms, background 140ms; -webkit-app-region: no-drag;
+}
+.wv:hover .wv__close, .wv__close:focus-visible { opacity: 1; transform: none; }
+.wv__close:hover { background: rgba(255, 70, 90, 0.9); }

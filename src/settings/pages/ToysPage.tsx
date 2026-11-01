@@ -5,6 +5,22 @@ import { DEFAULT_TOY_SCORES, DockLayer, DockSettings, ToyMode, ToyScores } from 
 import { Card, Cards, Pages, Row, Segmented, Switch, Update } from '../ui'
 import { LayerPreview } from '../previews'
 import { Frame } from '../previews'
+import basketballUrl from '@/assets/toys/basketball.png'
+import soccerUrl from '@/assets/toys/soccer.png'
+import racketUrl from '@/assets/toys/racket.png'
+
+/** Each game's own little picture: its ball or racket. */
+function GameGlyph({ game }: { game: 'basket' | 'football' | 'tennis' | 'bounce' }) {
+  if (game === 'basket') return <img src={basketballUrl} alt="" />
+  if (game === 'football') return <img src={soccerUrl} alt="" />
+  if (game === 'tennis') return <img src={racketUrl} alt="" />
+  return (
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <circle cx="16" cy="16" r="13" fill="#f4f1ea" stroke="#b9b3a6" strokeWidth="1" />
+      <path d="M8 6 Q 14 16 8 26 M24 6 Q 18 16 24 26" fill="none" stroke="#c8302f" strokeWidth="1.8" />
+    </svg>
+  )
+}
 
 /** A small picture of each game, drawn once: the pitch with its ball. */
 function GamePic({ game }: { game: 'basket' | 'football' | 'tennis' | 'bounce' }) {
@@ -67,7 +83,7 @@ function Scores(_props: { tab: string }) {
 
 export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
   const game = (key: 'toyBasket' | 'toyFootball' | 'toyTennis' | 'toyBounce', modeKey: 'toyBasketMode' | 'toyFootballMode' | 'toyTennisMode' | 'toyBounceMode', pic: 'basket' | 'football' | 'tennis' | 'bounce', title: string, hint: string, how: string) => (
-    <Card icon="toys" tab="Oyunlar" title={title} hint={hint}>
+    <Card glyph={<GameGlyph game={pic} />} icon="toys" tab="Oyunlar" title={title} hint={hint}>
       <div className="st-toygame">
         <Frame className="st-toygame__pic"><GamePic game={pic} /></Frame>
         <p className="st-prose">{how}</p>

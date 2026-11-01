@@ -7,17 +7,41 @@ export type Update = (partial: Partial<DockSettings>) => void
 
 // ---- building blocks ----
 
-export function Card({ title, hint, icon, children }: { title: string; hint?: string; icon?: IconName; tab?: string; children: ReactNode }) {
+const FOLD = 'settings.fold.'
+const folded = (title: string) => {
+  try {
+    return localStorage.getItem(FOLD + title) === '1'
+  } catch {
+    return false
+  }
+}
+
+/** A group of settings. Its header folds it away (remembered per group), so a long page can be kept short. */
+export function Card({ title, hint, icon, glyph, children }: { title: string; hint?: string; icon?: IconName; /** A picture of its own instead of a line icon (a game's ball, for instance). */ glyph?: ReactNode; tab?: string; children: ReactNode }) {
+  const [closed, setClosed] = useState(() => folded(title))
+  const toggle = () => {
+    setClosed((c) => {
+      try {
+        localStorage.setItem(FOLD + title, c ? '0' : '1')
+      } catch {
+        /* the choice just is not remembered */
+      }
+      return !c
+    })
+  }
   return (
-    <section className="st-card">
-      <header className={icon ? 'st-card__head st-card__head--icon' : 'st-card__head'}>
-        {icon && <span className="st-card__icon"><Icon name={icon} size={18} /></span>}
-        <div>
-          <h3>{title}</h3>
-          {hint && <p>{hint}</p>}
-        </div>
+    <section className={closed ? 'st-card is-folded' : 'st-card'}>
+      <header className={icon || glyph ? 'st-card__head st-card__head--icon' : 'st-card__head'}>
+        <button className="st-card__toggle" aria-expanded={!closed} onClick={toggle} title={closed ? 'Göster' : 'Gizle'}>
+          {glyph ? <span className="st-card__icon st-card__icon--glyph">{glyph}</span> : icon && <span className="st-card__icon"><Icon name={icon} size={18} /></span>}
+          <div>
+            <h3>{title}</h3>
+            {hint && !closed && <p>{hint}</p>}
+          </div>
+          <span className="st-card__chev"><Icon name="chevronDown" size={16} /></span>
+        </button>
       </header>
-      <div className="st-card__body">{children}</div>
+      {!closed && <div className="st-card__body">{children}</div>}
     </section>
   )
 }
@@ -28,6 +52,9 @@ export function Pages({ id, children }: { id: string; children: ReactNode }) {
   const pages = Children.toArray(children).filter(isValidElement) as PageEl[]
   const label = (p: PageEl) => p.props.tab ?? p.props.title ?? ''
   const labels = [...new Set(pages.map(label))]
+  // a sub-tab wears the icon of the first group inside it
+  const iconOf = (name: string) => (pages.find((p) => label(p) === name)?.props as { icon?: IconName } | undefined)?.icon
+  const glyphOf = (name: string) => (pages.find((p) => label(p) === name)?.props as { glyph?: ReactNode } | undefined)?.glyph
   const key = 'settings.sub.' + id
   const [chosen, setChosen] = useState(() => {
     try {
@@ -51,7 +78,7 @@ export function Pages({ id, children }: { id: string; children: ReactNode }) {
       {labels.length > 1 && (
         <div className="st-subtabs" role="tablist">
           {labels.map((name) => (
-            <button key={name} role="tab" aria-selected={name === current} onClick={() => pick(name)}>{name}</button>
+            <button key={name} role="tab" aria-selected={name === current} onClick={() => pick(name)}>{glyphOf(name) ? <span className="st-subtabs__glyph">{glyphOf(name)}</span> : iconOf(name) && <Icon name={iconOf(name)!} size={14} />}{name}</button>
           ))}
         </div>
       )}

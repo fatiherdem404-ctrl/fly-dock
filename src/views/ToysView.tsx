@@ -461,6 +461,7 @@ function Hud({ cards, result }: { cards: HudCard[]; result: HudResult | null }) 
               <span className="hud-card__icon"><GameIcon id={card.id} /></span>
               <b>{card.title}</b>
               <span className="hud-chip">{card.timed ? 'Süreye karşı' : 'Serbest'}</span>
+              <button className="hud-card__close" data-game={card.id} aria-label="Oyunu kapat" title="Oyunu kapat">✕</button>
             </div>
             <div className="hud-card__main">
               <strong>{card.score}</strong>
@@ -571,12 +572,21 @@ function Toys({ s }: { s: DockSettings }) {
       return null
     }
     /** Decides what the pointer is and whether the window takes the mouse. */
+    /** The game whose close button (✕ on its scoreboard card) is under the pointer. */
+    const closeAt = (x: number, y: number): GameId | null => {
+      for (const el of Array.from(document.querySelectorAll<HTMLElement>('.hud-card__close'))) {
+        const r = el.getBoundingClientRect()
+        if (x >= r.left - 4 && x <= r.right + 4 && y >= r.top - 4 && y <= r.bottom + 4) return el.dataset.game as GameId
+      }
+      return null
+    }
     const refresh = (x: number, y: number) => {
       const playing = st.bounce.playing
       st.armed = playing || st.drag ? null : armedFor(x, y)
       const over = playing || st.drag ? null : grabAt(x, y)
-      setCapture(!!over || !!st.armed || !!st.drag || playing)
-      setCursor(st.drag || st.armed || playing ? 'none' : over ? 'grab' : '')
+      const close = st.drag ? null : closeAt(x, y)
+      setCapture(!!over || !!st.armed || !!st.drag || playing || !!close)
+      setCursor(close ? 'pointer' : st.drag || st.armed || playing ? 'none' : over ? 'grab' : '')
     }
     /** A rally of the racket and the baseball has ended: the ball touched the floor. */
     const dropBounce = () => {
@@ -618,6 +628,12 @@ function Toys({ s }: { s: DockSettings }) {
     }
     const onDown = (e: MouseEvent) => {
       if (e.button !== 0) return
+      const closing = closeAt(e.clientX, e.clientY)
+      if (closing) {
+        const key = closing === 'basket' ? 'toyBasket' : closing === 'football' ? 'toyFootball' : closing === 'tennis' ? 'toyTennis' : 'toyBounce'
+        invoke('settings:update', { [key]: false })
+        return
+      }
       const over = st.bounce.playing ? null : grabAt(e.clientX, e.clientY)
       if (!over) return
       st.samples = [[e.clientX, e.clientY, performance.now()]]

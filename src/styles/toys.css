@@ -32,3 +32,7 @@ html[data-view='toys'], html[data-view='toys'] body, html[data-view='toys'] #roo
 .hud-result--record { border-color: rgba(255, 205, 80, 0.8); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(255, 190, 60, 0.45); }
 .hud-result--record h2 { color: #ffd34d; }
 @keyframes hud-pop { from { opacity: 0; transform: translateX(-50%) scale(0.8); } to { opacity: 1; transform: translateX(-50%) scale(1); } }
+
+/* the card's own close button: the page tells the window to take the click only while the pointer is over it */
+.hud-card__close { pointer-events: auto; flex: none; width: 22px; height: 22px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.12); color: #dfe6f8; font-size: 11px; line-height: 1; cursor: pointer; }
+.hud-card__close:hover { background: rgba(255, 70, 90, 0.85); color: #fff; }

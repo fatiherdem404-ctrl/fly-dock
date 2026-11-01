@@ -120,6 +120,19 @@ function openSettings() {
 
 // ---- tray, shortcuts, menus ----
 
+/** A small picture for a tray menu entry: a 16 px and a 32 px version, so it stays sharp on a scaled screen. */
+function menuIcon(name: string): Electron.NativeImage {
+  const dir = app.isPackaged ? path.join(process.resourcesPath, 'tray') : path.join(app.getAppPath(), 'resources', 'tray')
+  const image = nativeImage.createEmpty()
+  try {
+    image.addRepresentation({ scaleFactor: 1, width: 16, height: 16, buffer: fs.readFileSync(path.join(dir, name + '.png')) })
+    image.addRepresentation({ scaleFactor: 2, width: 32, height: 32, buffer: fs.readFileSync(path.join(dir, name + '@2x.png')) })
+  } catch {
+    /* no picture: the entry just has no icon */
+  }
+  return image
+}
+
 function createTray() {
   const image = nativeImage.createFromPath(path.join(app.getAppPath(), brand.logo.icon)).resize({ width: 16, height: 16 })
   if (image.isEmpty()) return
@@ -128,12 +141,12 @@ function createTray() {
   const rebuild = () =>
     tray?.setContextMenu(
       Menu.buildFromTemplate([
-        { label: 'Ayarlar', click: openSettings },
-        { label: 'Dock\'u göster / gizle', click: toggleDockVisibility },
-        { label: 'Otomatik gizle', type: 'checkbox', checked: getSettings().autoHide, click: (m) => applySettings({ autoHide: m.checked }) },
+        { label: 'Ayarlar', icon: menuIcon('settings'), click: openSettings },
+        { label: 'Dock’u göster / gizle', icon: menuIcon('toggle'), click: toggleDockVisibility },
+        { label: 'Otomatik gizle', icon: menuIcon('autohide'), type: 'checkbox', checked: getSettings().autoHide, click: (m) => applySettings({ autoHide: m.checked }) },
         { type: 'separator' },
-        { label: 'Destek ol (Ko-fi)', click: () => shell.openExternal(brand.kofiUrl) },
-        { label: `${brand.name} uygulamasından çık`, click: () => app.quit() },
+        { label: 'Destek ol (Ko-fi)', icon: menuIcon('support'), click: () => shell.openExternal(brand.kofiUrl) },
+        { label: `${brand.name} uygulamasından çık`, icon: menuIcon('quit'), click: () => app.quit() },
       ]),
     )
   rebuild()
@@ -206,6 +219,10 @@ function applySettings(request: Partial<DockSettings>): DockSettings {
     const desk = themeDeskSettings(request.theme)
     if (desk) partial = { ...request, ...desk }
   }
+  // only one game at a time: turning one on turns the others off
+  const games = ['toyBasket', 'toyFootball', 'toyTennis', 'toyBounce'] as const
+  const turnedOn = games.find((k) => partial[k] === true)
+  if (turnedOn) partial = { ...partial, ...Object.fromEntries(games.filter((k) => k !== turnedOn).map((k) => [k, false])) }
   const next = updateSettings(partial)
   if (partial.launchAtLogin !== undefined) launchAtLogin(next.launchAtLogin)
   if (partial.toggleHotkey !== undefined) registerHotkeys()
