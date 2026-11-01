@@ -1145,9 +1145,9 @@ function Toys({ s }: { s: DockSettings }) {
           if (pet.state !== 'held') {
             // a soft shadow keeps the pet on the ground, and it shrinks while the pet is in the air
             const lift = Math.max(0, floor - pet.y)
-            c.fillStyle = `rgba(0,0,0,${Math.max(0.06, 0.24 - lift / 600)})`
+            c.fillStyle = `rgba(0,0,0,${Math.max(0.05, 0.15 - lift / 700)})`
             c.beginPath()
-            c.ellipse(pet.x, floor - 1, size * 0.38 * Math.max(0.5, 1 - lift / 500), size * 0.07, 0, 0, Math.PI * 2)
+            c.ellipse(pet.x, floor - 1, size * 0.3 * Math.max(0.5, 1 - lift / 500), size * 0.05, 0, 0, Math.PI * 2)
             c.fill()
           }
           const frame = frameFor(cur.toyPetKind, pet.state, st.clock, st.gait)

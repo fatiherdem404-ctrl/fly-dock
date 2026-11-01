@@ -18,16 +18,16 @@
  },
  "cat": {
   "cell": 256,
-  "footY": 0.8071,
-  "centreX": 0.5,
+  "footY": 0.7312,
+  "centreX": 0.5401,
   "anims": {
-   "idle": 8,
+   "idle": 12,
    "walk": 12,
    "run": 10,
    "carry": 10,
-   "sit": 8,
-   "sleep": 8,
-   "play": 10,
+   "sit": 12,
+   "sleep": 12,
+   "play": 12,
    "happy": 8,
    "held": 8,
    "fall": 4
