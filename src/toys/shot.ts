@@ -19,12 +19,14 @@ export interface Shot {
 export const makeShot = (): Shot => ({ aim: null, state: 'ready', spotX: 0, t: 0, scored: false, end: 0 })
 
 /** The launch speed of a pull, how hard it is (0..1) and how steep (0 flat .. 1 straight up). */
-export function launchShot(pull: { x: number; y: number }): { vx: number; vy: number; power: number; height: number } {
+export function launchShot(pull: { x: number; y: number }, width = 1200): { vx: number; vy: number; power: number; height: number } {
   const len = Math.hypot(pull.x, pull.y)
   if (len < 4) return { vx: 0, vy: 0, power: 0, height: 0 }
   const k = Math.min(len, SHOT_MAX_PULL)
-  const vx = (-pull.x / len) * k * SPEED_PER_PX
-  const vy = (-pull.y / len) * k * SPEED_PER_PX
+  // a wider screen puts the hoop further away, so the same pull throws harder: a full pull always reaches the far end
+  const speed = SPEED_PER_PX * Math.max(1, Math.min(2.4, width / 1000))
+  const vx = (-pull.x / len) * k * speed
+  const vy = (-pull.y / len) * k * speed
   const angle = Math.atan2(-vy, Math.abs(vx))
   return { vx, vy, power: k / SHOT_MAX_PULL, height: Math.max(0, Math.min(1, angle / (Math.PI / 2))) }
 }

@@ -479,7 +479,7 @@ function drawShotAid(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, wid
   const shot = sim.shot
   if (!ball) return
   if (shot.aim) {
-    const l = launchShot(shot.aim)
+    const l = launchShot(shot.aim, width)
     const len = Math.min(Math.hypot(shot.aim.x, shot.aim.y), SHOT_MAX_PULL)
     const ang = Math.atan2(shot.aim.y, shot.aim.x)
     c.strokeStyle = 'rgba(255,255,255,0.6)'
@@ -870,7 +870,7 @@ function Toys({ s }: { s: DockSettings }) {
     const onUp = () => {
       if (st.shot.aim) {
         const bk = st.balls.basket
-        const l = launchShot(st.shot.aim)
+        const l = launchShot(st.shot.aim, window.innerWidth)
         st.shot.aim = null
         if (bk && l.power > 0.06) {
           startRound('basket')
