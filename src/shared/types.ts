@@ -362,7 +362,10 @@ export interface CursorPackInfo {
   id: string
   name: string
   author: string
-  roles: { role: string; label: string; image: string; animated: boolean }[]
+  /** Ships with the app: can be used and copied, not changed. */
+  builtin: boolean
+  /** All 17 Windows cursor roles; `has` tells whether the pack has a picture for it (the rest stay Windows' own). */
+  roles: { role: string; label: string; has: boolean; image: string; animated: boolean; hotspot: [number, number]; fps: number }[]
 }
 
 export interface CursorStatus {
@@ -661,6 +664,15 @@ export interface InvokeMap {
   'cursors:list': { args: []; result: CursorPackInfo[] }
   'cursors:status': { args: []; result: CursorStatus }
   'cursors:apply': { args: [id: string]; result: CursorStatus }
+  'cursors:create': { args: [name: string, copyOf?: string]; result: CursorPackInfo }
+  'cursors:import-file': { args: []; result: { ok: boolean; message: string; pack?: CursorPackInfo } }
+  'cursors:import-folder': { args: []; result: { ok: boolean; message: string; pack?: CursorPackInfo } }
+  'cursors:set-role': { args: [id: string, role: string, strip: boolean]; result: { ok: boolean; message: string } }
+  'cursors:clear-role': { args: [id: string, role: string]; result: void }
+  'cursors:role-options': { args: [id: string, role: string, options: { hotspot?: [number, number]; fps?: number }]; result: void }
+  'cursors:rename': { args: [id: string, name: string]; result: void }
+  'cursors:remove': { args: [id: string]; result: boolean }
+  'cursors:export': { args: [id: string]; result: { ok: boolean; message: string } }
   'wallpaper:library': { args: []; result: WallpaperItem[] }
   'wallpaper:add': { args: [draft: WallpaperDraft]; result: WallpaperItem }
   'wallpaper:edit': { args: [id: string, patch: Partial<Pick<WallpaperItem, 'name' | 'author' | 'note' | 'code'>>]; result: WallpaperItem | null }
@@ -709,6 +721,7 @@ export interface EventMap {
   'stack:changed': null
   'wallpaper:changed': WallpaperInfo
   'wallpaper:library-changed': null
+  'cursors:changed': null
   'window:maximized': boolean
   'sound:play': SoundEvent
   /** Where the cursor is over this wallpaper window (0..1 across the display) and whether it is on that display at all. */

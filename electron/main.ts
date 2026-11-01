@@ -14,7 +14,7 @@ import { iconForItem, setTrashState } from './icons'
 import { shellIcon, thumbnail } from './iconService'
 import { askConfirm, askInput, answerConfirm, confirmIsOpen } from './confirm'
 import { registerWallpaperScheme, initWallpaper, disposeWallpaper, sync as syncWallpaper, advance as nextWallpaper, restartSlideshow, setFullscreenPaused, wallpaperInfo, pickWallpaperFile, pickWallpaperFolder, pickNewWallpaper, wallpaperLibrary, addWallpaper, editWallpaper, removeWallpaper, libraryFile } from './wallpaper'
-import { initCursors, disposeCursors, cursorPacks, cursorStatus, applyCursorPack } from './cursors'
+import { initCursors, disposeCursors, cursorPacks, cursorStatus, applyCursorPack, createCursorPack, importCursorFile, importCursorFolder, setCursorRole, clearCursorRole, setCursorRoleOptions, renameCursorPack, removeCursorPack, exportCursorPack } from './cursors'
 import { showEntryMenu } from './entryMenu'
 import { menuIsOpen } from './contextMenu'
 import { listLibrary, libraryThumb, pickImage, addLibraryFolder, removeLibraryFolder } from './iconLibrary'
@@ -398,6 +398,22 @@ function registerIpc() {
     const r = await applyCursorPack(id)
     applySettings({ cursorPack: r.active || (id ? '' : '') })
     return r
+  })
+  handle('cursors:create', (_e, name, copyOf) => createCursorPack(name, copyOf))
+  handle('cursors:import-file', () => importCursorFile())
+  handle('cursors:import-folder', () => importCursorFolder())
+  handle('cursors:set-role', (_e, id, role, strip) => setCursorRole(id, role, strip))
+  handle('cursors:clear-role', (_e, id, role) => clearCursorRole(id, role))
+  handle('cursors:role-options', (_e, id, role, options) => setCursorRoleOptions(id, role, options))
+  handle('cursors:rename', (_e, id, name) => renameCursorPack(id, name))
+  handle('cursors:export', (_e, id) => exportCursorPack(id))
+  handle('cursors:remove', async (_e, id) => {
+    const pack = cursorPacks().find((p) => p.id === id)
+    if (!pack || pack.builtin) return false
+    if (!(await askConfirm({ title: `"${pack.name}" silinsin mi?`, message: 'İmleç paketi bu bilgisayardan kaldırılır. Dışa aktarmadıysan geri getiremezsin.', confirmLabel: 'Sil', danger: true }))) return false
+    await removeCursorPack(id)
+    if (getSettings().cursorPack === id) applySettings({ cursorPack: '' })
+    return true
   })
   handle('wallpaper:pick-new', (_e, existing) => pickNewWallpaper(existing))
   handle('wallpaper:library', () => wallpaperLibrary())

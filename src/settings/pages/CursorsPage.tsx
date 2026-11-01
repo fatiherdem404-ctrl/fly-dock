@@ -20,7 +20,7 @@ export function CursorsTab({ s }: { s: DockSettings }) {
     setBusy(false)
   }
   const shown = packs?.find((p) => p.id === active) ?? packs?.[0]
-  const peek = (id: string) => packs?.find((p) => p.id === id)?.roles.filter((r) => ['arrow', 'link', 'text', 'move'].includes(r.role)) ?? []
+  const peek = (id: string) => packs?.find((p) => p.id === id)?.roles.filter((r) => r.has && ['arrow', 'link', 'text', 'move'].includes(r.role)) ?? []
   return (
     <Pages id="cursors">
       <Card icon="cursor" tab="Paketler" title="İmleç paketi" hint="Seçtiğin paketin imleçleri fare okunun, elin, yazı imlecinin ve diğerlerinin yerine geçer. Yalnızca bu Windows oturumunda geçerlidir; uygulamayı kapatınca kendi imleçlerin geri gelir.">
@@ -29,7 +29,7 @@ export function CursorsTab({ s }: { s: DockSettings }) {
           ...(packs ?? []).map((p) => ({
             id: p.id,
             label: p.name,
-            hint: `${p.roles.length} imleç · ${p.author}`,
+            hint: `${p.roles.filter((r) => r.has).length} imleç · ${p.author}`,
             preview: <Frame><span className="cp-peek">{peek(p.id).map((r) => <img key={r.role} src={r.image} alt="" />)}</span></Frame>,
           })),
         ]} />
@@ -39,7 +39,7 @@ export function CursorsTab({ s }: { s: DockSettings }) {
       {shown && (
         <Card icon="image" tab="Paketler" title="Pakette neler var" hint="Pakette olmayan imleçlerde Windows’un kendi imleci kullanılır.">
           <div className="cp-grid">
-            {shown.roles.map((r) => (
+            {shown.roles.filter((r) => r.has).map((r) => (
               <figure key={r.role}>
                 <span><img src={r.image} alt="" /></span>
                 <figcaption>{r.label}{r.animated ? ' · hareketli' : ''}</figcaption>
