@@ -125,6 +125,9 @@ export interface DrawOptions {
   index?: number
   /** Small dot in the corner (a full recycle bin). */
   badge?: boolean
+  /** Ready-made glyph markup (24 x 24 box) that replaces the key's own Lucide glyph; `glyphFilled` for solid shapes instead of strokes. */
+  glyphArt?: string
+  glyphFilled?: boolean
   /** A real program icon (data URL) drawn instead of a glyph. */
   appIcon?: string
   /** Unique prefix for ids, so many cards can share one page. */
@@ -179,15 +182,15 @@ export function cardSvg(d: Design, glyph: string, o: DrawOptions = {}): string {
   if (d.glyphShadow > 0) filters.push(`<feDropShadow dx="0" dy="${1.5 + d.glyphShadow / 40}" stdDeviation="${1 + d.glyphShadow / 30}" flood-color="#000" flood-opacity="${Math.min(0.7, d.glyphShadow / 100)}"/>`)
   if (filters.length) defs.push(`<filter id="${u}t" x="-30%" y="-30%" width="160%" height="170%">${filters.join('')}</filter>`)
   if (glow > 0) defs.push(`<filter id="${u}w" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${2 + glow / 12}"/></filter>`)
-  const art = GLYPHS[glyph] ?? ''
+  const art = o.glyphArt ?? GLYPHS[glyph] ?? ''
   const transform = `translate(${gx} ${gy}) scale(${k})`
-  const stroke = `fill="none" stroke-width="${d.glyphStroke}" stroke-linecap="round" stroke-linejoin="round"`
+  const paint = o.glyphFilled ? `fill="url(#${u}k)" stroke="none"` : `fill="none" stroke="url(#${u}k)" stroke-width="${d.glyphStroke}" stroke-linecap="round" stroke-linejoin="round"`
   if (o.appIcon) {
     const ps = (256 * d.appIconSize) / 100
     body.push(`<image href="${o.appIcon}" x="${(256 - ps) / 2}" y="${(256 - ps) / 2}" width="${ps}" height="${ps}"${filters.length ? ` filter="url(#${u}t)"` : ''}/>`)
   } else {
-    if (glow > 0) body.push(`<g transform="${transform}" ${stroke} stroke="url(#${u}k)" filter="url(#${u}w)" opacity="${glow / 100}">${art}</g>`)
-    body.push(`<g transform="${transform}" ${stroke} stroke="url(#${u}k)"${filters.length ? ` filter="url(#${u}t)"` : ''}>${art}</g>`)
+    if (glow > 0) body.push(`<g transform="${transform}" ${paint} filter="url(#${u}w)" opacity="${glow / 100}">${art}</g>`)
+    body.push(`<g transform="${transform}" ${paint}${filters.length ? ` filter="url(#${u}t)"` : ''}>${art}</g>`)
   }
   if (o.badge) body.push(`<circle cx="${256 - d.inset - 22}" cy="${d.inset + 22}" r="15" fill="#ff4d5e" stroke="#fff" stroke-width="3"/>`)
 

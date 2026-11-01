@@ -3,6 +3,7 @@ import { invoke } from '@/api'
 import { STUDIO_KEYS } from '@/studio/keys'
 import { DEFAULT_DESIGN, PATTERNS, TEMPLATES, Design, cardSvg, designFrom } from '@/studio/render'
 import { rasterize } from '@/studio/raster'
+import { GlyphPicker, GlyphChoice } from '../GlyphPicker'
 import { Card, Message, Row, Segmented, Select, Slider, Switch, Update } from '../ui'
 
 // ---- Icon studio (development builds only): design the cards and glyphs of a whole icon pack ----
@@ -26,6 +27,14 @@ const write = (key: string, value: unknown) => {
 
 /** Stands in for a program the pack has no picture for (Claude, WhatsApp…), to show how the card would carry its own icon. */
 const SAMPLE_APP = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a5a"/><stop offset="1" stop-color="#d9482a"/></linearGradient></defs><circle cx="32" cy="32" r="28" fill="url(#a)"/><path d="M20 38c4 8 20 8 24 0M24 25v4M40 25v4" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg>')
+
+/** Marks for the studio to find a glyph again: the library name, or the pasted markup. */
+async function artOf(choice: GlyphChoice): Promise<{ glyphArt?: string; glyphFilled?: boolean }> {
+  if (!choice) return {}
+  if ('custom' in choice) return { glyphArt: choice.custom.art, glyphFilled: choice.custom.filled }
+  const { LUCIDE } = await import('@/studio/lucide.generated')
+  return LUCIDE[choice.lucide] ? { glyphArt: LUCIDE[choice.lucide] } : {}
+}
 
 const indexOfKey = (k: string) => STUDIO_KEYS.findIndex(([x]) => x === k)
 const GROUPS: [string, string, (k: string) => boolean][] = [
@@ -56,13 +65,24 @@ export function StudioTab({ set }: { set: Update }) {
   const [fallback, setFallback] = useState(() => read('fallback', true))
   useEffect(() => write('fallback', fallback), [fallback])
   const newName = useRef('')
+  const [picks, setPicks] = useState<Record<string, GlyphChoice>>(() => read('picks', {}))
+  const [arts, setArts] = useState<Record<string, { glyphArt?: string; glyphFilled?: boolean }>>({})
+  const [editing, setEditing] = useState<string | null>(null)
+  useEffect(() => write('picks', picks), [picks])
+  useEffect(() => {
+    let live = true
+    Promise.all(Object.entries(picks).map(async ([k, v]) => [k, await artOf(v)] as const)).then((rows) => live && setArts(Object.fromEntries(rows)))
+    return () => {
+      live = false
+    }
+  }, [picks])
   const d = (patch: Partial<Design>) => setDesign((cur) => ({ ...cur, ...patch }))
   useEffect(() => write('design', design), [design])
 
   const cards = useMemo(() => {
     const test = GROUPS.find(([id]) => id === group)![2]
-    return STUDIO_KEYS.filter(([k]) => test(k)).map(([key, label, glyph], i) => ({ key, label, svg: cardSvg(design, glyph, { index: indexOfKey(key), badge: key === 'trash-full', uid: `s${i}` }) }))
-  }, [design, group])
+    return STUDIO_KEYS.filter(([k]) => test(k)).map(([key, label, glyph], i) => ({ key, label, svg: cardSvg(design, glyph, { index: indexOfKey(key), badge: key === 'trash-full', uid: `s${i}`, ...arts[key] }) }))
+  }, [design, group, arts])
 
   const make = async () => {
     setBusy(true)
@@ -71,7 +91,7 @@ export function StudioTab({ set }: { set: Update }) {
       const images: Record<string, string> = {}
       for (let i = 0; i < STUDIO_KEYS.length; i++) {
         const [key, , glyph] = STUDIO_KEYS[i]
-        images[key] = await rasterize(cardSvg(design, glyph, { index: i, badge: key === 'trash-full', uid: 'x' }), 256)
+        images[key] = await rasterize(cardSvg(design, glyph, { index: i, badge: key === 'trash-full', uid: 'x', ...(await artOf(picks[key] ?? null)) }), 256)
       }
       const r = await invoke('studio:make-pack', name, 'İkon stüdyosu', images, fallback ? { ...design } : null)
       if (r.ok && r.pack) {
@@ -104,9 +124,9 @@ export function StudioTab({ set }: { set: Update }) {
         </div>
         <div className={`sd__grid sd__grid--${backdrop}`}>
           {cards.map((c) => (
-            <figure key={c.key}>
+            <figure key={c.key} className="sd__card" onClick={() => setEditing(c.key)} title="Simgeyi değiştirmek için tıkla">
               <span dangerouslySetInnerHTML={{ __html: c.svg }} />
-              <figcaption>{c.label}</figcaption>
+              <figcaption>{c.label}{picks[c.key] ? ' ✎' : ''}</figcaption>
             </figure>
           ))}
           {fallback && group === 'apps' && (
@@ -117,6 +137,22 @@ export function StudioTab({ set }: { set: Update }) {
           )}
         </div>
       </div>
+      {editing && (
+        <GlyphPicker
+          title={STUDIO_KEYS.find(([k]) => k === editing)?.[1] ?? editing}
+          current={picks[editing] ?? null}
+          onClose={() => setEditing(null)}
+          onPick={(g) => {
+            setPicks((cur) => {
+              const next = { ...cur }
+              if (g) next[editing] = g
+              else delete next[editing]
+              return next
+            })
+            setEditing(null)
+          }}
+        />
+      )}
       <div className="sd__side">
         <Card icon="edit" title="Şablon" hint="Bir şablonla başla, sonra istediğin gibi değiştir.">
           <div className="sd__chips">
