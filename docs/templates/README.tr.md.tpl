@@ -31,13 +31,13 @@ Planlananlar: ses paketleri, topluluk paketleri. Bkz. [ROADMAP.md](ROADMAP.md).
 ## Ekran görüntüleri
 
 <p>
-  <img src="docs/screenshots/dock.png" width="49%" alt="dock" />
-  <img src="docs/screenshots/themes.png" width="49%" alt="themes" />
-  <img src="docs/screenshots/desk.png" width="49%" alt="desk" />
-  <img src="docs/screenshots/icons.png" width="49%" alt="icons" />
-  <img src="docs/screenshots/studio.png" width="49%" alt="studio" />
-  <img src="docs/screenshots/cursors.png" width="49%" alt="cursors" />
-  <img src="docs/screenshots/toys.png" width="49%" alt="toys" />
+  <img src="docs/screenshots/tr/dock.png" width="49%" alt="dock" />
+  <img src="docs/screenshots/tr/themes.png" width="49%" alt="themes" />
+  <img src="docs/screenshots/tr/desk.png" width="49%" alt="desk" />
+  <img src="docs/screenshots/tr/icons.png" width="49%" alt="icons" />
+  <img src="docs/screenshots/tr/studio.png" width="49%" alt="studio" />
+  <img src="docs/screenshots/tr/cursors.png" width="49%" alt="cursors" />
+  <img src="docs/screenshots/tr/toys.png" width="49%" alt="toys" />
 </p>
 
 ## İndir

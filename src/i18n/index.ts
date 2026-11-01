@@ -21,7 +21,11 @@ let current: Lang = (() => {
   return resolveLang('auto', Intl.DateTimeFormat().resolvedOptions().locale)
 })()
 
-export function setLang(lang: Lang) { current = lang }
+// the page language drives CSS text-transform (Turkish dotted İ) and spell checking
+const mark = () => { const doc = (globalThis as { document?: { documentElement: { lang: string } } }).document; if (doc) doc.documentElement.lang = current }
+mark()
+
+export function setLang(lang: Lang) { current = lang; mark() }
 export function getLang(): Lang { return current }
 /** The locale for dates, numbers and sorting. */
 export function locale(): string { return current === 'tr' ? 'tr-TR' : 'en-US' }

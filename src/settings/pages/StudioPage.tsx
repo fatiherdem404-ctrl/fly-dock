@@ -42,7 +42,7 @@ async function artOf(choice: GlyphChoice): Promise<{ glyphArt?: string; glyphFil
 const GROUPS: [string, string, (k: string, i: number) => boolean][] = [
   ['main', tl('Ana öğeler'), (k, i) => !k.startsWith('wheel-') && !['belgeler', 'indirilenler', 'resimler', 'videolar'].includes(k) && i < 38],
   ['wheel', tl('Kontrol paneli'), (k) => k.startsWith('wheel-') || k === 'wheel'],
-  ['apps', 'Programlar', (k, i) => i >= 38 && !k.startsWith('wheel-')],
+  ['apps', tl('Programlar'), (k, i) => i >= 38 && !k.startsWith('wheel-')],
 ]
 const BACKDROPS: [string, string][] = [['dark', tl('Koyu')], ['light', tl('Açık||arka plan')], ['check', tl('Dama')]]
 
