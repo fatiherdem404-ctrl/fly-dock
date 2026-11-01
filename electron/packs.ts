@@ -51,7 +51,7 @@ const BUILTIN_THEMES: ThemeDef[] = [
     name: 'Frost Light',
     author: 'built-in',
     wallpaper: { live: 'flow' },
-    desk: { deskStyle: 'glass3d', deskDepth: 34, deskEdge: 8, deskOpacity: 0.95, deskRadTL: 14, deskRadTR: 14, deskRadBL: 5, deskRadBR: 5 },
+    desk: { deskStyle: 'glass', deskDepth: 0, deskEdge: 0, deskOpacity: 0.95, deskRadTL: 24, deskRadTR: 24, deskRadBL: 24, deskRadBR: 24 },
     vars: {
       ...GLASS_DARK,
       surface: 'rgba(255, 255, 255, 0.58)',
@@ -71,7 +71,7 @@ const BUILTIN_THEMES: ThemeDef[] = [
     name: 'Dark',
     author: 'built-in',
     wallpaper: { live: 'stars' },
-    desk: { deskStyle: 'matte', deskDepth: 18, deskEdge: 8, deskOpacity: 1, deskRadTL: 10, deskRadTR: 10, deskRadBL: 4, deskRadBR: 4 },
+    desk: { deskStyle: 'matte', deskDepth: 0, deskEdge: 0, deskOpacity: 1, deskRadTL: 20, deskRadTR: 20, deskRadBL: 20, deskRadBR: 20 },
     vars: {
       ...GLASS_DARK,
       surface: '#1f2023',
@@ -93,7 +93,7 @@ const BUILTIN_THEMES: ThemeDef[] = [
     name: 'Light',
     author: 'built-in',
     wallpaper: { live: 'waves' },
-    desk: { deskStyle: 'metal', deskDepth: 22, deskEdge: 8, deskOpacity: 1, deskRadTL: 10, deskRadTR: 10, deskRadBL: 4, deskRadBR: 4 },
+    desk: { deskStyle: 'metal', deskDepth: 0, deskEdge: 0, deskOpacity: 1, deskRadTL: 20, deskRadTR: 20, deskRadBL: 20, deskRadBR: 20 },
     vars: {
       ...GLASS_DARK,
       surface: '#ffffff',
