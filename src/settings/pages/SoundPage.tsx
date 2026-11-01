@@ -11,7 +11,7 @@ export const SOUND_GROUPS: [SoundGroup, string, string][] = [
   ['hover', 'Üzerine gelince', 'Fare bir simgenin üstünden geçerken küçük bir tık'],
   ['click', 'Tıklama', 'Simgeye tıklayınca'],
   ['launch', 'Uygulama açılışı', 'Kapalı bir program başlatılınca'],
-  ['dock', 'Dock', 'Simge bırakma, silme ve otomatik gizlenen dockun gelip gitmesi'],
+  ['dock', 'Dock', 'Simge bırakma, silme ve otomatik gizlenen dock’un gelip gitmesi'],
   ['windows', 'Dock pencereleri', 'Klasör, grup ve kontrol paneli penceresinin cin efektiyle açılıp kapanması'],
   ['menus', 'Menüler', 'Sağ tık menüsünün açılması ve seçim'],
   ['trash', 'Çöp kutusu', 'Dosya atma ve çöp kutusunu boşaltma'],
@@ -30,7 +30,7 @@ export function SoundTab({ s, set }: { s: DockSettings; set: Update }) {
   const toggleGroup = (g: SoundGroup, on: boolean) => set({ soundGroups: on ? [...s.soundGroups, g] : s.soundGroups.filter((x) => x !== g) })
   return (
     <Pages id="sound">
-      <Card icon="sound" tab="Sesler" title="Genel" hint="Sesler uygulamanın kendi içinde üretilir; ses dosyası gerekmez. Windows'un genel sesine ve ses karıştırıcısına bağlıdır.">
+      <Card icon="sound" tab="Sesler" title="Genel" hint="Sesler uygulamanın kendi içinde üretilir; ses dosyası gerekmez. Windows’un genel sesine ve ses karıştırıcısına bağlıdır.">
         <Row icon="power" label="Sesleri aç"><Switch label="Sesleri aç" value={s.soundEnabled} onChange={(soundEnabled) => set({ soundEnabled })} /></Row>
         <Row icon="sound" label="Ses düzeyi"><Slider value={s.soundVolume} min={0} max={100} unit="%" onChange={(soundVolume) => set({ soundVolume })} /></Row>
         <Row icon="motion" label="Ses stili" hint="Aynı olaylar, farklı bir karakterle çalar. Karta tıklayınca duyarsın." />

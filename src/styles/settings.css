@@ -97,11 +97,16 @@ html[data-view='settings'] body {
 .st-card header p { margin: 4px 0 0; color: var(--panel-muted); font-size: 13px; }
 .st-card__body { padding: var(--s-2) var(--s-5) var(--s-4); }
 
-.st-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 320px); gap: var(--s-5); align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+/* label on the left, control on the right; when the page is too narrow for both the control drops under the text instead of squeezing it */
+.st-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-5); padding: 12px 0; border-bottom: 1px solid var(--line); }
 .st-row:last-child { border-bottom: 0; }
+.st-row__text { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
 .st-row__text small { display: block; margin-top: 2px; color: var(--panel-muted); font-size: 12px; }
-.st-row__control { display: flex; justify-content: flex-end; min-width: 0; }
+.st-row__control { display: flex; justify-content: flex-end; flex: 0 1 auto; min-width: 0; max-width: 100%; }
 .st-row__control > * { max-width: 100%; }
+/* wide controls keep a sensible width; a switch or a button stays as small as it is */
+.st-row__control > .st-slider, .st-row__control > .st-select, .st-row__control > .st-input, .st-row__control > .st-color { width: clamp(200px, 32vw, 320px); }
+.st-row__control > .st-seg { flex-wrap: wrap; }
 .st-row-inline { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: var(--s-3) 0 var(--s-1); }
 .st-prose { margin: var(--s-2) 0; color: var(--panel-muted); line-height: 1.6; }
 .st-prose b { color: var(--panel-text); }
@@ -329,8 +334,9 @@ html[data-view='settings'] ::-webkit-scrollbar-thumb:hover { background: color-m
   .st-page { padding: var(--s-4) var(--s-4) 48px; }
 }
 @media (max-width: 700px) {
-  .st-row { grid-template-columns: 1fr; gap: var(--s-2); }
-  .st-row__control { justify-content: flex-start; }
+  /* a switch or a button stays on the right of its label; wide controls take their own line */
+  .st-row__control:has(> .st-slider, > .st-select, > .st-input, > .st-seg, > .st-color) { flex-basis: 100%; justify-content: flex-start; }
+  .st-row__control > .st-slider, .st-row__control > .st-select, .st-row__control > .st-input { width: 100%; }
   .st-page__head p { display: none; }
 }
 
@@ -435,7 +441,7 @@ html[data-view='settings'] ::-webkit-scrollbar-thumb:hover { background: color-m
 .sd__side .st-card { animation: none; }
 @media (max-width: 1000px) { .sd { grid-template-columns: 1fr; } .sd__view { position: static; } }
 .st-page:has(.sd) { max-width: none; }
-.sd__side .st-row { grid-template-columns: minmax(0, 1fr) minmax(150px, 210px); gap: var(--s-3); }
+.sd__side .st-row__control > .st-slider, .sd__side .st-row__control > .st-select, .sd__side .st-row__control > .st-input { width: clamp(150px, 14vw, 210px); }
 .sd__card { cursor: pointer; border-radius: 10px; transition: transform 160ms var(--ease), background 160ms; padding: 4px 2px; }
 .sd__card:hover { transform: translateY(-2px); background: rgba(255, 255, 255, 0.07); }
 .gp { width: min(900px, 100%); }
@@ -460,3 +466,4 @@ html[data-view='settings'] ::-webkit-scrollbar-thumb:hover { background: color-m
 .sd__grid--light .sd__add { color: #222; }
 .sd__x { margin-left: 4px; border: 0; background: transparent; color: inherit; cursor: pointer; opacity: 0.6; font-size: 10px; }
 .sd__x:hover { opacity: 1; color: #ff6b6b; }
+@media (max-width: 640px) { .st-title__crumb { display: none; } }

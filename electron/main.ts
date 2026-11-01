@@ -369,7 +369,7 @@ function registerIpc() {
   handle('tweaks:set', (_e, id, enabled) => tweakEngine.set(id, enabled))
   handle('tweaks:restore-point', () => tweakEngine.restorePoint())
   handle('tweaks:revert-all', async () => {
-    const yes = await askConfirm({ title: 'Tüm tweakler geri alınsın mı?', message: 'Fly Dock tarafından değiştirdiği her Windows ayarı eski değerine döner. Yönetici gerektirenler için Windows onay isteyebilir.', confirmLabel: 'Geri al', danger: true })
+    const yes = await askConfirm({ title: 'Tüm tweakler geri alınsın mı?', message: 'Fly Dock’un değiştirdiği her Windows ayarı eski değerine döner. Yönetici gerektirenler için Windows onay isteyebilir.', confirmLabel: 'Geri al', danger: true })
     return yes ? tweakEngine.revertAll() : 0
   })
   handle('tweaks:log', () => tweakEngine.log())
@@ -529,7 +529,7 @@ async function importBackup() {
   if (result.canceled || !result.filePaths[0]) return { ok: false, message: 'cancelled' }
   try {
     const data = JSON.parse(fs.readFileSync(result.filePaths[0], 'utf8'))
-    if (!(await askConfirm({ title: 'Yedek geri yüklensin mi?', message: 'Şu anki ayarların, dock öğelerin ve widgetların yedektekilerle değişir. Uygulama yeniden başlar.', confirmLabel: 'Geri yükle', danger: true }))) return { ok: false, message: 'cancelled' }
+    if (!(await askConfirm({ title: 'Yedek geri yüklensin mi?', message: 'Şu anki ayarların, dock öğelerin ve widget’ların yedektekilerle değiştirilir. Uygulama yeniden başlar.', confirmLabel: 'Geri yükle', danger: true }))) return { ok: false, message: 'cancelled' }
     if (data?.app !== brand.slug || !Array.isArray(data.items) || typeof data.settings !== 'object') throw new Error('this is not a backup of this app')
     const defaults = getSettings() as unknown as Record<string, unknown>
     const settings: Record<string, unknown> = {}

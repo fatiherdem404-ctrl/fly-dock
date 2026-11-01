@@ -33,7 +33,7 @@ export function DockTab({ s, set }: { s: DockSettings; set: Update }) {
   const horizontal = s.position === 'bottom' || s.position === 'top'
   return (
     <Pages id="dock">
-      <Card icon="location" tab="Konum" title="Konum" hint="Dock'u ekranın hangi kenarına koyacağını, kenara uzaklığını ve kenar boyunca yerini seç. Değişiklikler anında dock'a uygulanır.">
+      <Card icon="location" tab="Konum" title="Konum" hint="Dock’u ekranın hangi kenarına koyacağını, kenara uzaklığını ve kenar boyunca yerini seç. Değişiklikler anında dock’a uygulanır.">
         <PositionPicker value={s.position} onChange={(position) => set({ position })} />
         <Row icon="arrowDown" label="Kenardan uzaklık" hint="Dock ile ekran kenarı arasındaki boşluk">
           <Slider value={s.edgeOffset} min={0} max={160} unit=" px" onChange={(edgeOffset) => set({ edgeOffset })} />
@@ -61,7 +61,7 @@ export function DockTab({ s, set }: { s: DockSettings; set: Update }) {
         )}
       </Card>
 
-      <Card icon="minus" tab="Ayraç" title="Ayraç" hint="Dock'taki gruplar arasındaki çizgi. Otomatik seçeneği rafa ve temaya göre okunaklı olanı seçer: ahşap ve metalde oyuk, neonda ışıklı çubuk, camda net çizgi.">
+      <Card icon="minus" tab="Ayraç" title="Ayraç" hint="Dock’taki gruplar arasındaki çizgi. Otomatik seçeneği rafa ve temaya göre okunaklı olanı seçer: ahşap ve metalde oyuk, neonda ışıklı çubuk, camda net çizgi.">
         <Cards<SeparatorStyle> size="s" value={s.separatorStyle} onChange={(separatorStyle) => set({ separatorStyle })} options={([['auto', 'Otomatik'], ['line', 'Çizgi'], ['groove', 'Oyuk'], ['dots', 'Noktalı'], ['glow', 'Işıklı'], ['none', 'Yok']] as [SeparatorStyle, string][]).map(([id, label]) => ({ id, label, preview: <SepPreview kind={id === 'auto' ? separatorKind({ ...s, separatorStyle: 'auto' }) : id} /> }))} />
       </Card>
 

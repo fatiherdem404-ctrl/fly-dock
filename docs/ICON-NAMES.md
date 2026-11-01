@@ -96,4 +96,4 @@ Kendi eklediğin dosya ve klasörlerin simgesini pakette değil, kontrol paneli 
 
 - Öncelik sırası: öğeye elle seçilen simge > aktif paket > Windows simgesi.
 - Çöp kutusu için iki ayrı resim çiz (`trash` ve `trash-full`); dock doluluk durumuna göre değiştirir.
-- Hazır paketleri (Fly Windows 11, Fly 3B) "Dışa aktar" ile kaydedip içindeki `icons.json` ve resimlere bakabilirsin.
+- Stüdyodan ya da paket oluşturucudan çıkan bir paketi "Dışa aktar" ile kaydedip içindeki `icons.json` ve resimlere bakabilirsin.

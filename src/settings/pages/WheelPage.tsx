@@ -18,7 +18,7 @@ export function WheelTab() {
   }
   const add = (kind: 'file' | 'folder') => invoke('wheel:add', kind).then((d) => d && setData(d))
   return (
-    <Card icon="controlpanel" title="Kontrol paneli" hint="Dock'a sağ tıklayıp 'Kontrol paneli ekle' dersen bu liste açılır. Windows'un kendi araçlarını açıp kapatabilir, kendi program, dosya ve klasörlerini ekleyebilir, her birine istediğin simgeyi verebilirsin.">
+    <Card icon="controlpanel" title="Kontrol paneli" hint="Dock’a sağ tıklayıp 'Kontrol paneli ekle' dersen bu liste açılır. Windows’un kendi araçlarını açıp kapatabilir, kendi programlarını, dosyalarını ve klasörlerini ekleyebilir, her birine istediğin simgeyi verebilirsin.">
       <div className="st-row-inline">
         <button className="st-btn st-btn--accent" onClick={() => add('file')}><Icon name="plus" size={15} />Program ya da dosya ekle…</button>
         <button className="st-btn" onClick={() => add('folder')}><Icon name="folder" size={15} />Klasör ekle…</button>

@@ -53,7 +53,7 @@ export function PackBuilder({ onMade }: { tab?: string; onMade: (id: string) => 
     return current[k.key] ? <img src={current[k.key]} alt="" /> : <Icon name="image" size={16} />
   }
   return (
-    <Card title="Paket oluştur" hint="Soldan bir öğe seç, sağdaki kütüphaneden simgesine tıkla; sıradaki öğeye kendiliğinden geçer. Kütüphaneye simge klasörü ekleyebilir ya da tek tek resim seçebilirsin. Simgeler dock'tan da değiştirilebilir: bir öğeye sağ tıkla, 'Simge değiştir'.">
+    <Card title="Paket oluştur" hint="Soldan bir öğe seç, sağdaki kütüphaneden simgesine tıkla; sıradaki öğeye kendiliğinden geçer. Kütüphaneye simge klasörü ekleyebilir ya da tek tek resim seçebilirsin. Simgeler dock’tan da değiştirilebilir: bir öğeye sağ tıkla, 'Simge değiştir'.">
       <div className="st-builder">
         <div className="st-builder__items">
           {(keys ?? []).map((k) => (

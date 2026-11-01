@@ -82,7 +82,7 @@ export function ThemeBuilder({ packs, onMade }: { tab?: string; packs: PackInfo[
     '--panel-bg': vars.panelBg, '--panel-text': vars.panelText, '--panel-muted': vars.panelMuted, '--font': vars.fontFamily,
   } as React.CSSProperties
   return (
-    <Card title="Tema oluştur" hint="Bir temayı başlangıç al, renkleri ve camı değiştir; solda canlı görürsün. Bitince adını yazıp oluştur: tema listene eklenir, oradan .flypack olarak dışa aktarabilirsin.">
+    <Card title="Tema oluştur" hint="Bir temayı başlangıç noktası al, renkleri ve camı değiştir; solda canlı görürsün. Bitince adını yazıp oluştur: tema listene eklenir, oradan .flypack olarak dışa aktarabilirsin.">
       <Row label="Başlangıç teması"><Select<string> value={base} onChange={setBase} options={themes.map((t): [string, string] => [t.id, t.name])} /></Row>
       <div className="st-tb">
         <div className="st-tb__preview" style={css}>
@@ -118,7 +118,7 @@ export function ThemeBuilder({ packs, onMade }: { tab?: string; packs: PackInfo[
         </div>
       </div>
       <Row label="Şu anki rafı da ekle" hint="Rafın stili, derinliği, köşeleri ve özel dokusu temayla birlikte kaydedilir; tema seçilince raf da değişir"><Switch label="Rafı da ekle" value={withDesk} onChange={setWithDesk} /></Row>
-      <Row label="Duvar kâğıdını da ekle" hint="Seçili canlı arka plan, resim ya da video (8 MB a kadar) temayla birlikte kaydedilir"><Switch label="Duvar kâğıdını da ekle" value={withWallpaper} onChange={setWithWallpaper} /></Row>
+      <Row label="Duvar kâğıdını da ekle" hint="Seçili canlı arka plan, resim ya da video (en çok 8 MB) temayla birlikte kaydedilir"><Switch label="Duvar kâğıdını da ekle" value={withWallpaper} onChange={setWithWallpaper} /></Row>
       <Row label="Tema adı"><input className="st-input" type="text" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Benim temam" /></Row>
       <Row label="Yapımcı" hint="İstersen boş bırak"><input className="st-input" type="text" value={author} maxLength={60} onChange={(e) => setAuthor(e.target.value)} /></Row>
       <div className="st-row-inline"><button className="st-btn st-btn--accent" disabled={!name.trim()} onClick={create}><Icon name="download" size={15} />Temayı oluştur ve kullan</button></div>

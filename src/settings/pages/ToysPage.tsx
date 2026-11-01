@@ -95,7 +95,7 @@ export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
         <Row label="Pota" hint="Basketbol potasının durduğu kenar"><Segmented value={s.toyHoopSide} onChange={(toyHoopSide) => set({ toyHoopSide })} options={[['right', 'Sağda'], ['left', 'Solda']]} /></Row>
       </Card>
       <Card icon="sound" tab="Oyunlar" title="Ses">
-        <Row label="Oyuncak sesleri" hint="Top sekmesi, sepet, gol ve evcil hayvanın sesi"><Switch label="Ses" value={s.toySound} onChange={(toySound) => set({ toySound })} /></Row>
+        <Row label="Oyuncak sesleri" hint="Top sekmesi, sepet ve gol sesleri"><Switch label="Ses" value={s.toySound} onChange={(toySound) => set({ toySound })} /></Row>
       </Card>
     </Pages>
   )

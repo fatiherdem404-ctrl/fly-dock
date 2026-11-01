@@ -51,7 +51,7 @@ export async function pickerInfo(target: string): Promise<{ name: string; curren
   return { name: item.label || (item.targetPath ? path.basename(item.targetPath, path.extname(item.targetPath)) : item.type), current: await iconForItem(item), custom: !!item.customIconPath }
 }
 
-const UNREADABLE = 'Bu resim okunamadı ya da 2 MB üstünde.'
+const UNREADABLE = 'Bu resim okunamadı ya da 2 MB’tan büyük.'
 
 /** Gives the target the picture, or the default again when `file` is null. */
 export function applyPickedIcon(target: string, file: string | null): { ok: boolean; message: string } {

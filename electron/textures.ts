@@ -20,7 +20,7 @@ export function sniff(buf: Buffer): keyof typeof MIME | null {
 }
 
 export function storeTexture(buf: Buffer): { ok: boolean; file?: string; message: string } {
-  if (buf.length > MAX_TEXTURE_BYTES) return { ok: false, message: 'Resim 4 MB den büyük; daha küçük bir resim seç.' }
+  if (buf.length > MAX_TEXTURE_BYTES) return { ok: false, message: 'Resim 4 MB’tan büyük; daha küçük bir resim seç.' }
   const kind = sniff(buf)
   if (!kind) return { ok: false, message: 'Yalnızca PNG, JPEG ve WebP resimler kullanılabilir.' }
   const file = `${crypto.createHash('sha1').update(buf).digest('hex').slice(0, 16)}.${kind}`

@@ -209,7 +209,7 @@ function problemWith(buf: Buffer, strip: boolean): string | null {
   const { width, height } = img.getSize()
   if (strip) {
     const frames = width / height
-    if (height < 16 || height > 512 || !Number.isInteger(frames) || frames < 2 || frames > 64) return 'Şerit, yan yana dizilmiş kare kareler olmalı: her kare kare, 2 ile 64 kare.'
+    if (height < 16 || height > 512 || !Number.isInteger(frames) || frames < 2 || frames > 64) return 'Şerit, yan yana dizilmiş kare resimlerden oluşmalı (2 ile 64 kare, her biri kare biçiminde).'
   } else if (width < 16 || width > 1024 || Math.abs(width - height) > Math.max(2, width * 0.02)) {
     return 'Resim kare olmalı (16 ile 1024 piksel arası).'
   }

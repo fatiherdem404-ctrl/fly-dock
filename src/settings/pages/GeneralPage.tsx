@@ -19,11 +19,11 @@ export function GeneralTab({ s, set }: { s: DockSettings; set: Update }) {
         <Row label="Windows ile başlat" hint={info && !info.loginSupported ? 'Yalnızca kurulu sürümde çalışır (geliştirme çalıştırmasında kapalı)' : 'Bilgisayar açılınca dock kendiliğinden başlar'}>
           <Switch label="Windows ile başlat" value={s.launchAtLogin} disabled={info ? !info.loginSupported : true} onChange={(launchAtLogin) => set({ launchAtLogin })} />
         </Row>
-        <Row label="Dock'u göster / gizle kısayolu" hint="Electron biçimi: Control+Alt+D">
+        <Row label="Dock’u göster / gizle kısayolu" hint="Electron biçimi: Control+Alt+D">
           <input className="st-input" type="text" defaultValue={s.toggleHotkey} onBlur={(e) => e.target.value !== s.toggleHotkey && set({ toggleHotkey: e.target.value.trim() })} />
         </Row>
       </Card>
-      <Card icon="download" tab="Genel" title="Yedekle ve geri yükle" hint="Ayarlar, öğeler ve widget'lar tek bir JSON dosyasında. Geri yükleyince uygulama yeniden başlar.">
+      <Card icon="download" tab="Genel" title="Yedekle ve geri yükle" hint="Ayarlar, öğeler ve widget’lar tek bir JSON dosyasında. Geri yükleyince uygulama yeniden başlar.">
         <div className="st-row-inline">
           <button className="st-btn" onClick={() => backup(() => invoke('backup:export'))}><Icon name="upload" size={15} />Yedekle</button>
           <button className="st-btn" onClick={() => backup(() => invoke('backup:import'))}><Icon name="download" size={15} />Geri yükle</button>

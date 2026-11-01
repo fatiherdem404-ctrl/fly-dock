@@ -211,7 +211,7 @@ export function StudioTab({ set }: { set: Update }) {
             {design.borderWidth > 0 && <Row label="Çerçeve rengi"><Color value={design.borderColor} onChange={(borderColor) => d({ borderColor })} /></Row>}
             {design.borderWidth > 0 && <Row label="Çerçeve görünürlüğü">{num('borderOpacity', 0.05, 1, 0.05)}</Row>}
             <Row label="Gölge bulanıklığı">{num('shadowBlur', 0, 40, 1, ' px')}</Row>
-            <Row label="Gölge aşağıda">{num('shadowY', 0, 30, 1, ' px')}</Row>
+            <Row label="Gölgenin aşağı kayması">{num('shadowY', 0, 30, 1, ' px')}</Row>
             <Row label="Gölge koyuluğu">{num('shadowOpacity', 0, 1, 0.05)}</Row>
             <Row label="Gölge rengi"><Color value={design.shadowColor} onChange={(shadowColor) => d({ shadowColor })} /></Row>
           </Card>
