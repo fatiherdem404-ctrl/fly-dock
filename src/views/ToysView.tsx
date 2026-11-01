@@ -12,24 +12,23 @@ import racketUrl from '@/assets/toys/racket.png'
 import basketballUrl from '@/assets/toys/basketball.png'
 import soccerUrl from '@/assets/toys/soccer.png'
 
-type GameId = 'basket' | 'football' | 'tennis' | 'bounce'
+type GameId = 'basket' | 'football' | 'bounce'
 type BallKind = GameId
 type Round = { active: boolean; left: number; score: number }
 
-const ALL: BallKind[] = ['basket', 'football', 'tennis', 'bounce']
-const GAME_IDS: GameId[] = ['basket', 'football', 'tennis', 'bounce']
+const ALL: BallKind[] = ['basket', 'football', 'bounce']
+const GAME_IDS: GameId[] = ['basket', 'football', 'bounce']
 const ROUND_SECONDS = 60
 
 const GAME_INFO: Record<GameId, { title: string; unit: string }> = {
-  basket: { title: 'Basketbol', unit: 'sepet' },
+  basket: { title: 'Basketbol', unit: 'sayı' },
   football: { title: 'Futbol', unit: 'gol' },
-  tennis: { title: 'Tenis', unit: 'vuruş' },
-  bounce: { title: 'Sektirme', unit: 'vuruş' },
+  bounce: { title: 'Top sektirme', unit: 'vuruş' },
 }
-const BEST_KEY: Record<GameId, keyof ToyScores> = { basket: 'basketBest', football: 'footballBest', tennis: 'tennisTimedBest', bounce: 'bounceBest' }
+const BEST_KEY: Record<GameId, keyof ToyScores> = { basket: 'basketBest', football: 'footballBest', bounce: 'bounceBest' }
 
-const modeOf = (s: DockSettings, id: GameId): ToyMode => (id === 'basket' ? s.toyBasketMode : id === 'football' ? s.toyFootballMode : id === 'tennis' ? s.toyTennisMode : s.toyBounceMode)
-const enabledOf = (s: DockSettings, id: GameId): boolean => (id === 'basket' ? s.toyBasket : id === 'football' ? s.toyFootball : id === 'tennis' ? s.toyTennis : s.toyBounce)
+const modeOf = (s: DockSettings, id: GameId): ToyMode => (id === 'basket' ? s.toyBasketMode : id === 'football' ? s.toyFootballMode : s.toyBounceMode)
+const enabledOf = (s: DockSettings, id: GameId): boolean => (id === 'basket' ? s.toyBasket : id === 'football' ? s.toyFootball : s.toyBounce)
 
 // ---- pictures ----
 const picture = (url: string) => {
@@ -69,12 +68,10 @@ interface Sim {
   drag: { kind: 'ball'; ball: BallKind; dx: number; dy: number } | null
   capture: boolean
   scores: ToyScores
-  /** Tennis rally in free play. */
-  rally: number
   games: Record<GameId, { round: Round; session: number }>
   /** The result card shown for a few seconds after a timed round. */
   result: (HudResult & { left: number }) | null
-  /** Text flashed in the middle of the screen: SEPET!, GOL! … */
+  /** Text flashed in the middle of the screen: BASKET!, GOL! … */
   flash: { text: string; left: number } | null
   /** A scored football is put back when this runs out. */
   respawn: number
@@ -82,7 +79,7 @@ interface Sim {
   /** Size of the window the toys were last placed for. */
   size: string
   /** The hand, boot or racket the pointer has turned into near a ball. */
-  armed: 'basket' | 'football' | 'tennis' | null
+  armed: 'basket' | 'football' | null
   /** Which side of the pointer the ball is on: the boot and the racket always face it, so they never spin around. */
   toolDir: 1 | -1
   /** Smoothed up/down swing of the tool, from how fast the pointer moves vertically. */
@@ -93,7 +90,9 @@ interface Sim {
   toolVy: number
   /** Last time each ball was struck, to count one stroke once. */
   struck: Record<string, number>
-  /** Racket and baseball: a rally is on, the pointer is the racket, and hits in a row are counted. */
+  /** Where the basketball was let go from (x), for the three-point line. */
+  shotFrom: number
+  /** Racket and tennis ball: a rally is on, the pointer is the racket, and hits in a row are counted. */
   bounce: { playing: boolean; combo: number; respawn: number }
   cursor: string
 }
@@ -101,20 +100,15 @@ interface Sim {
 const SPEC: Record<BallKind, { r: number; gravity: number; restitution: number; rolling: number }> = {
   basket: { r: 24, gravity: 2000, restitution: 0.72, rolling: 1.2 },
   football: { r: 28, gravity: 1900, restitution: 0.62, rolling: 0.9 },
-  tennis: { r: 13, gravity: 1500, restitution: 0.86, rolling: 0.7 },
-  bounce: { r: 17, gravity: 1900, restitution: 0.8, rolling: 1 },
+  bounce: { r: 15, gravity: 1900, restitution: 0.8, rolling: 1 },
 }
 const GOAL_DEPTH = 64
 const GOAL_HEIGHT = 150
-const NET_HEIGHT = 96
 const TAU = Math.PI * 2
 /** How close the pointer has to come before it turns into a hand, a boot or a racket. */
-const AURA: Record<'basket' | 'football' | 'tennis', number> = { basket: 70, football: 90, tennis: 120 }
-/** Distance from the racket's grip to the middle of its head, and the head's hitting radius. */
+const AURA: Record<'basket' | 'football', number> = { basket: 70, football: 90 }
+/** Distance from the racket's grip to the middle of its head. */
 const RACKET_REACH = 96
-const HEAD_R = 34
-/** The racket's resting lift above the horizontal, in radians. */
-const RACKET_REST = 0.3
 
 /** The line the toys stand on: the top of the dock when it sits at the bottom, else the bottom of the work area. */
 function floorOf(s: DockSettings, height: number): number {
@@ -147,13 +141,6 @@ function segmentsFor(kind: BallKind, width: number, floor: number, side: 'left' 
       { ax: width - GOAL_DEPTH, ay: top, bx: width, by: top, restitution: 0.5 },
     ]
   }
-  if (kind === 'tennis') {
-    const x = width / 2
-    return [
-      { ax: x, ay: floor - NET_HEIGHT, bx: x, by: floor, restitution: 0.3 },
-      { ax: x, ay: floor - NET_HEIGHT, bx: x, by: floor - NET_HEIGHT, restitution: 0.6 },
-    ]
-  }
   return []
 }
 
@@ -162,7 +149,6 @@ function startPosition(kind: BallKind, width: number, floor: number, side: 'left
   switch (kind) {
     case 'basket': return [side === 'right' ? width - 280 : 280, floor - r]
     case 'football': return [width * 0.62, floor - r]
-    case 'tennis': return [width * 0.3, floor - r]
     default: return [width * 0.46, floor - r]
   }
 }
@@ -195,12 +181,12 @@ function tone(on: boolean, from: number, to: number, seconds: number, type: Osci
 type Circle = { x: number; y: number; r: number }
 
 /** The solid parts of the tool at the pointer: where a ball can hit it. */
-function toolCircles(kind: 'tennis' | 'football' | 'bounce', x: number, y: number, dir: number, tilt: number): Circle[] {
-  if (kind === 'tennis') {
-    const a = RACKET_REST - tilt
-    return [{ x: x + dir * Math.cos(a) * RACKET_REACH, y: y - Math.sin(a) * RACKET_REACH, r: HEAD_R }]
+function toolCircles(kind: 'football' | 'bounce', x: number, y: number, dir: number, tilt: number): Circle[] {
+  if (kind === 'bounce') {
+    // a flat racket head: three overlapping discs along its face, tilted a little with the swing
+    const c = Math.cos(tilt), s = Math.sin(tilt)
+    return [-30, 0, 30].map((o) => ({ x: x + o * c, y: y + o * s, r: 15 }))
   }
-  if (kind === 'bounce') return [{ x, y, r: 28 }]
   // a boot: toe, instep and heel, lifting a little as the leg swings up
   const lift = -tilt * 26
   return [
@@ -231,33 +217,16 @@ function drawBall(c: CanvasRenderingContext2D, b: Ball, kind: BallKind, floor: n
   const g = c.createRadialGradient(-b.r * 0.35, -b.r * 0.4, b.r * 0.1, 0, 0, b.r)
   if (kind === 'basket') { g.addColorStop(0, '#ffb066'); g.addColorStop(1, '#c9591b') }
   else if (kind === 'football') { g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#cfd3da') }
-  else if (kind === 'bounce') { g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#d9d6cf') }
-  else { g.addColorStop(0, '#e9ff6a'); g.addColorStop(1, '#a9c91d') }
+  else { g.addColorStop(0, '#f2ff7a'); g.addColorStop(1, '#a9c91d') }
   c.fillStyle = g
   c.beginPath()
   c.arc(0, 0, b.r, 0, TAU)
   c.fill()
   c.lineCap = 'round'
   if (kind === 'bounce') {
-    // a baseball: two curved seams with red stitches
-    c.strokeStyle = '#c8302f'
-    c.lineWidth = 1.8
-    for (const s of [-1, 1]) {
-      c.beginPath()
-      c.arc(s * b.r * 1.15, 0, b.r * 0.95, s > 0 ? Math.PI - 0.95 : -0.95, s > 0 ? Math.PI + 0.95 : 0.95)
-      c.stroke()
-      c.lineWidth = 1.2
-      for (let i = -4; i <= 4; i++) {
-        const a = (i / 4) * 0.85
-        const x = s * b.r * 1.15 - s * Math.cos(a) * b.r * 0.95
-        const y = Math.sin(a) * b.r * 0.95
-        c.beginPath(); c.moveTo(x, y); c.lineTo(x - s * 3.4, y + (a >= 0 ? 2.6 : -2.6)); c.stroke()
-      }
-      c.lineWidth = 1.8
-    }
-  } else if (kind === 'tennis') {
-    c.strokeStyle = 'rgba(255,255,255,0.9)'
-    c.lineWidth = Math.max(1.4, b.r * 0.12)
+    // a tennis ball: the two white seams
+    c.strokeStyle = 'rgba(255,255,255,0.92)'
+    c.lineWidth = Math.max(1.4, b.r * 0.13)
     c.beginPath()
     c.arc(-b.r * 1.15, 0, b.r * 0.95, -0.9, 0.9)
     c.moveTo(b.r * 0.3, 0)
@@ -398,21 +367,6 @@ function drawScene(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, width
     goal(0, GOAL_DEPTH)
     goal(width - GOAL_DEPTH, GOAL_DEPTH)
   }
-  if (s.toyTennis) {
-    const x = width / 2
-    const top = floor - NET_HEIGHT
-    c.fillStyle = 'rgba(255,255,255,0.14)'
-    c.fillRect(x - 3, top, 6, NET_HEIGHT)
-    c.strokeStyle = 'rgba(255,255,255,0.55)'
-    c.lineWidth = 1
-    c.beginPath()
-    for (let y = top + 8; y < floor; y += 9) { c.moveTo(x - 3, y); c.lineTo(x + 3, y) }
-    c.stroke()
-    c.fillStyle = '#ffffff'
-    c.fillRect(x - 4, top - 1, 8, 5)
-    c.fillStyle = '#d9d9e0'
-    c.fillRect(x - 1.5, top, 3, NET_HEIGHT)
-  }
   if (sim.flash) {
     const t = Math.min(1, sim.flash.left / 0.4)
     c.globalAlpha = t
@@ -441,17 +395,16 @@ const clock = (seconds: number) => {
 function GameIcon({ id }: { id: GameId }) {
   if (id === 'basket') return <img src={basketballUrl} alt="" />
   if (id === 'football') return <img src={soccerUrl} alt="" />
-  if (id === 'tennis') return <img src={racketUrl} alt="" />
   return (
     <svg viewBox="0 0 32 32" aria-hidden="true">
-      <circle cx="16" cy="16" r="13" fill="#f4f1ea" stroke="#b9b3a6" strokeWidth="1" />
-      <path d="M8 6 Q 14 16 8 26 M24 6 Q 18 16 24 26" fill="none" stroke="#c8302f" strokeWidth="1.8" />
+      <circle cx="16" cy="16" r="13" fill="#cfe84a" stroke="#8fa61a" strokeWidth="1" />
+      <path d="M5 10 Q 14 16 5 22 M27 10 Q 18 16 27 22" fill="none" stroke="#ffffff" strokeWidth="1.8" />
     </svg>
   )
 }
 
 /** The scoreboard: one card per game that is on, and the result card after a timed round. */
-function Hud({ cards, result }: { cards: HudCard[]; result: HudResult | null }) {
+function Hud({ cards, result, showCursor }: { cards: HudCard[]; result: HudResult | null; showCursor: boolean }) {
   return (
     <>
       <div className="hud">
@@ -461,6 +414,7 @@ function Hud({ cards, result }: { cards: HudCard[]; result: HudResult | null }) 
               <span className="hud-card__icon"><GameIcon id={card.id} /></span>
               <b>{card.title}</b>
               <span className="hud-chip">{card.timed ? 'Süreye karşı' : 'Serbest'}</span>
+              <button className="hud-card__cursor" data-game={card.id} aria-label="İmleci göster ya da gizle" title="İmleci göster / gizle">{showCursor ? '🖱' : '◌'}</button>
               <button className="hud-card__close" data-game={card.id} aria-label="Oyunu kapat" title="Oyunu kapat">✕</button>
             </div>
             <div className="hud-card__main">
@@ -503,8 +457,8 @@ function Toys({ s }: { s: DockSettings }) {
   const [hud, setHud] = useState<{ cards: HudCard[]; result: HudResult | null }>({ cards: [], result: null })
   const newGame = () => ({ round: { active: false, left: 0, score: 0 }, session: 0 })
   const sim = useRef<Sim>({
-    balls: {}, pointer: null, samples: [], drag: null, capture: false, scores: { ...DEFAULT_TOY_SCORES }, rally: 0,
-    games: { basket: newGame(), football: newGame(), tennis: newGame(), bounce: newGame() },
+    balls: {}, pointer: null, samples: [], drag: null, capture: false, scores: { ...DEFAULT_TOY_SCORES }, shotFrom: 0,
+    games: { basket: newGame(), football: newGame(), bounce: newGame() },
     result: null, flash: null, respawn: 0, hover: false, size: '', armed: null, toolDir: 1, toolTilt: 0, toolPos: null, toolVx: 0, toolVy: 0, struck: {},
     bounce: { playing: false, combo: 0, respawn: 0 }, cursor: '',
   })
@@ -564,8 +518,8 @@ function Toys({ s }: { s: DockSettings }) {
       return null
     }
     /** Is the pointer close enough to a ball to turn into a hand, a boot or a racket? */
-    const armedFor = (x: number, y: number): 'basket' | 'football' | 'tennis' | null => {
-      for (const kind of ['football', 'tennis', 'basket'] as const) {
+    const armedFor = (x: number, y: number): 'basket' | 'football' | null => {
+      for (const kind of ['football', 'basket'] as const) {
         const b = st.balls[kind]
         if (b && !b.grabbed && Math.hypot(b.x - x, b.y - y) <= b.r + AURA[kind]) return kind
       }
@@ -573,10 +527,10 @@ function Toys({ s }: { s: DockSettings }) {
     }
     /** Decides what the pointer is and whether the window takes the mouse. */
     /** The game whose close button (✕ on its scoreboard card) is under the pointer. */
-    const closeAt = (x: number, y: number): GameId | null => {
-      for (const el of Array.from(document.querySelectorAll<HTMLElement>('.hud-card__close'))) {
+    const closeAt = (x: number, y: number): { act: 'close' | 'cursor'; game: GameId } | null => {
+      for (const el of Array.from(document.querySelectorAll<HTMLElement>('.hud-card__close, .hud-card__cursor'))) {
         const r = el.getBoundingClientRect()
-        if (x >= r.left - 4 && x <= r.right + 4 && y >= r.top - 4 && y <= r.bottom + 4) return el.dataset.game as GameId
+        if (x >= r.left - 4 && x <= r.right + 4 && y >= r.top - 4 && y <= r.bottom + 4) return { act: el.classList.contains('hud-card__cursor') ? 'cursor' : 'close', game: el.dataset.game as GameId }
       }
       return null
     }
@@ -586,7 +540,7 @@ function Toys({ s }: { s: DockSettings }) {
       const over = playing || st.drag ? null : grabAt(x, y)
       const close = st.drag ? null : closeAt(x, y)
       setCapture(!!over || !!st.armed || !!st.drag || playing || !!close)
-      setCursor(close ? 'pointer' : st.drag || st.armed || playing ? 'none' : over ? 'grab' : '')
+      setCursor(close ? 'pointer' : st.drag || st.armed || playing ? (settingsRef.current.toyShowCursor ? '' : 'none') : over ? 'grab' : '')
     }
     /** A rally of the racket and the baseball has ended: the ball touched the floor. */
     const dropBounce = () => {
@@ -630,8 +584,8 @@ function Toys({ s }: { s: DockSettings }) {
       if (e.button !== 0) return
       const closing = closeAt(e.clientX, e.clientY)
       if (closing) {
-        const key = closing === 'basket' ? 'toyBasket' : closing === 'football' ? 'toyFootball' : closing === 'tennis' ? 'toyTennis' : 'toyBounce'
-        invoke('settings:update', { [key]: false })
+        if (closing.act === 'cursor') invoke('settings:update', { toyShowCursor: !settingsRef.current.toyShowCursor })
+        else invoke('settings:update', { [closing.game === 'basket' ? 'toyBasket' : closing.game === 'football' ? 'toyFootball' : 'toyBounce']: false })
         return
       }
       const over = st.bounce.playing ? null : grabAt(e.clientX, e.clientY)
@@ -650,7 +604,7 @@ function Toys({ s }: { s: DockSettings }) {
         refresh(e.clientX, e.clientY)
         return
       }
-      setCursor('none')
+      setCursor(settingsRef.current.toyShowCursor ? '' : 'none')
       if (over.kind === 'ball') {
         const ball = st.balls[over.ball]!
         ball.grabbed = true
@@ -707,9 +661,8 @@ function Toys({ s }: { s: DockSettings }) {
         const sc = st.scores
         let best = ''
         if (timed) best = `Rekor ${sc[BEST_KEY[id]]}`
-        else if (id === 'basket') best = `Toplam ${sc.basket}`
+        else if (id === 'basket') best = `Toplam ${sc.basket} sayı`
         else if (id === 'football') best = `Toplam ${sc.football}`
-        else if (id === 'tennis') best = `Seri ${st.rally}  ·  Rekor ${sc.tennisBest}`
         else best = `Seri ${st.bounce.combo}  ·  Rekor ${sc.bounceCombo}`
         const hint = id === 'basket' ? 'Hazır: topu tutunca başlar' : id === 'bounce' ? 'Hazır: topa tıkla ve başla' : 'Hazır: topa vurunca başlar'
         cards.push({ id, title: GAME_INFO[id].title, unit: GAME_INFO[id].unit, timed, active: g.round.active, score: timed ? g.round.score : g.session, left: Math.round(g.round.left * 10) / 10, best, hint })
@@ -738,7 +691,6 @@ function Toys({ s }: { s: DockSettings }) {
       const enabled: Record<BallKind, boolean> = {
         basket: cur.toyBasket,
         football: cur.toyFootball,
-        tennis: cur.toyTennis,
         bounce: cur.toyBounce,
       }
 
@@ -776,9 +728,9 @@ function Toys({ s }: { s: DockSettings }) {
       // ---- the pointer's tool: which ball it faces, how it swings, and every spot it passed through this frame ----
       const p = st.pointer
       let toolPath: { x: number; y: number }[] = []
-      let toolKind: 'tennis' | 'football' | 'bounce' | null = null
+      let toolKind: 'football' | 'bounce' | null = null
       if (p) {
-        toolKind = st.bounce.playing ? 'bounce' : st.armed === 'tennis' || st.armed === 'football' ? st.armed : null
+        toolKind = st.bounce.playing ? 'bounce' : st.armed === 'football' ? st.armed : null
         const from = st.toolPos ?? { x: p.x, y: p.y }
         const mdx = p.x - from.x
         const mdy = p.y - from.y
@@ -792,7 +744,7 @@ function Toys({ s }: { s: DockSettings }) {
         st.toolPos = { x: p.x, y: p.y }
         const target = Math.max(-0.5, Math.min(0.5, st.toolVy / 3200))
         st.toolTilt += (target - st.toolTilt) * Math.min(1, 12 * dt)
-        if (toolKind === 'tennis' || toolKind === 'football') {
+        if (toolKind === 'football') {
           const ball = st.balls[toolKind]
           if (ball && Math.abs(ball.x - p.x) > 14) st.toolDir = ball.x > p.x ? 1 : -1
         }
@@ -831,11 +783,11 @@ function Toys({ s }: { s: DockSettings }) {
         if (ball.y > floor - ball.r) ball.y = floor - ball.r
 
         // the boot, the racket: solid, swept along the way the pointer travelled
-        if (toolKind && p && ((toolKind === 'tennis' && kind === 'tennis') || (toolKind === 'football' && kind === 'football') || (toolKind === 'bounce' && kind === 'bounce'))) {
+        if (toolKind && p && ((toolKind === 'football' && kind === 'football') || (toolKind === 'bounce' && kind === 'bounce'))) {
           let touched = false
           for (const spot of toolPath) {
             for (const circle of toolCircles(toolKind, spot.x, spot.y, st.toolDir, st.toolTilt)) {
-              const e = toolKind === 'football' ? 0.7 : toolKind === 'bounce' ? 0.95 : 0.9
+              const e = toolKind === 'football' ? 0.7 : 0.95
               if (bounceOffMover(ball, circle.x, circle.y, circle.r, tv.vx, tv.vy, e)) {
                 touched = true
                 if (toolKind === 'bounce') {
@@ -850,12 +802,6 @@ function Toys({ s }: { s: DockSettings }) {
             if (kind === 'football') {
               startRound('football')
               tone(cur.toySound, 220, 90, 0.11, 'triangle', 0.18)
-            } else if (kind === 'tennis') {
-              startRound('tennis')
-              point('tennis')
-              tone(cur.toySound, 520, 260, 0.07, 'square', 0.08)
-              st.rally += 1
-              if (st.rally > st.scores.tennisBest) saveScores({ tennisBest: st.rally })
             } else {
               point('bounce')
               st.bounce.combo += 1
@@ -866,12 +812,23 @@ function Toys({ s }: { s: DockSettings }) {
 
         if (kind === 'basket') {
           const hp = hoop(w, floor, side)
+          if (ball.grabbed) {
+            // while the ball is in the hand: where the shot starts from, and a clean slate for the rim
+            ball.touches = 0
+            ball.floorHits = 0
+            st.shotFrom = ball.x
+          }
           if (scoredThroughRim(prevY, ball, hp.rimY, hp.lo, hp.hi)) {
-            saveScores({ basket: st.scores.basket + 1 })
-            point('basket')
-            st.flash = { text: 'SEPET!', left: 1.1 }
+            // a shot from far away is worth three, one that touches nothing is a clean swish
+            const far = Math.abs(hp.near - st.shotFrom) > w * 0.45
+            const swish = ball.touches === 0 && ball.floorHits === 0
+            const points = far ? 3 : 2
+            saveScores({ basket: st.scores.basket + points })
+            for (let i = 0; i < points; i++) point('basket')
+            st.flash = { text: swish ? (far ? 'DELİKSİZ ÜÇLÜK!' : 'DELİKSİZ!') : far ? 'ÜÇLÜK!' : 'BASKET!', left: 1.4 }
             tone(cur.toySound, 660, 660, 0.12, 'sine', 0.12)
             tone(cur.toySound, 990, 990, 0.2, 'sine', 0.12, 0.1)
+            if (swish) tone(cur.toySound, 1320, 1320, 0.25, 'sine', 0.1, 0.22)
           }
         } else if (kind === 'football' && st.respawn <= 0 && !ball.grabbed) {
           if (inGoal(ball, 'left', w, GOAL_DEPTH, floor, GOAL_HEIGHT) || inGoal(ball, 'right', w, GOAL_DEPTH, floor, GOAL_HEIGHT)) {
@@ -883,9 +840,7 @@ function Toys({ s }: { s: DockSettings }) {
             tone(cur.toySound, 659, 659, 0.14, 'square', 0.07, 0.12)
             tone(cur.toySound, 784, 784, 0.3, 'square', 0.07, 0.24)
           }
-        } else if (kind === 'tennis' && ball.floorHits >= 3 && st.rally > 0) {
-          st.rally = 0
-        } else if (kind === 'bounce' && st.bounce.playing && ball.floorHits > 0 && ball.y >= floor - ball.r - 1 && st.bounce.respawn <= 0) {
+        } else if (kind === 'bounce' && st.bounce.playing && st.bounce.respawn <= 0 && ball.y >= floor - ball.r - 1 && (ball.floorHits > 0 || (st.bounce.combo > 0 && ball.vy > -40))) {
           dropBounce()
         }
       }
@@ -941,13 +896,13 @@ function Toys({ s }: { s: DockSettings }) {
             else drawFist(c, p.x, p.y)
           } else if (st.armed === 'basket') drawReach(c, p.x, p.y)
           else if (toolKind === 'football') drawBoot(c, p.x, p.y, st.toolDir, st.toolTilt)
-          else if (toolKind === 'tennis') drawRacket(c, p.x, p.y, st.toolDir, -(RACKET_REST - st.toolTilt))
           else if (toolKind === 'bounce') {
-            // the racket is held upright with its face up; it leans a little into the sideways swing
-            const lean = Math.max(-0.35, Math.min(0.35, st.toolVx / 3500))
-            const gx = p.x - Math.sin(lean) * RACKET_REACH
-            const gy = p.y + Math.cos(lean) * RACKET_REACH
-            drawRacket(c, gx, gy, 1, -Math.PI / 2 + lean)
+            // the racket lies flat, face up, its head centred on the pointer and its handle trailing to the left;
+            // it leans a little into the sideways swing
+            const lean = Math.max(-0.3, Math.min(0.3, st.toolVx / 4200))
+            const gx = p.x - Math.cos(lean) * RACKET_REACH
+            const gy = p.y - Math.sin(lean) * RACKET_REACH
+            drawRacket(c, gx, gy, 1, lean)
           }
         }
       }
@@ -966,7 +921,7 @@ function Toys({ s }: { s: DockSettings }) {
   return (
     <div className="toys" ref={root}>
       <canvas ref={canvas} className="toys__canvas" />
-      <Hud cards={hud.cards} result={hud.result} />
+      <Hud cards={hud.cards} result={hud.result} showCursor={s.toyShowCursor} />
     </div>
   )
 }

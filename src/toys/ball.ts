@@ -11,8 +11,10 @@ export interface Ball {
   angle: number
   /** True while the user holds it: physics leaves it alone. */
   grabbed: boolean
-  /** Floor hits since the pointer last touched the ball (tennis counts rallies with it). */
+  /** Floor hits since the pointer last touched the ball (the rally counts them). */
   floorHits: number
+  /** Contacts with the rim, backboard or goal edges since it was let go: none means a clean shot. */
+  touches: number
 }
 
 export interface World {
@@ -38,7 +40,7 @@ export interface Segment {
 export const MAX_SPEED = 3200
 
 export function makeBall(x: number, y: number, r: number): Ball {
-  return { x, y, vx: 0, vy: 0, r, angle: 0, grabbed: false, floorHits: 0 }
+  return { x, y, vx: 0, vy: 0, r, angle: 0, grabbed: false, floorHits: 0, touches: 0 }
 }
 
 /** Pushes the ball out of a segment and reflects its speed along the contact normal. Returns true on contact. */
@@ -86,7 +88,7 @@ function substep(ball: Ball, dt: number, world: World, segments: Segment[]) {
     ball.y = ball.r
     ball.vy = Math.abs(ball.vy) * e
   }
-  for (const s of segments) collideSegment(ball, s)
+  for (const s of segments) if (collideSegment(ball, s)) ball.touches += 1
   if (ball.y > world.floor - ball.r) {
     ball.y = world.floor - ball.r
     if (ball.vy > 90) {

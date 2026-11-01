@@ -253,15 +253,15 @@ export interface DockSettings {
   // desktop toys
   toyBasket: boolean
   toyFootball: boolean
-  toyTennis: boolean
   /** Keep a baseball in the air on a racket. */
   toyBounce: boolean
   /** 'free': just play and keep count; 'timed': a 60-second round with a record. */
   toyBasketMode: ToyMode
   toyFootballMode: ToyMode
-  toyTennisMode: ToyMode
   toyBounceMode: ToyMode
   toySound: boolean
+  /** Keep the system pointer visible while a game turns it into a hand, boot or racket. */
+  toyShowCursor: boolean
   /** Where the toys sit among other windows: always on top, like a window, or under everything. */
   toyLayer: DockLayer
   /** What the toys stand on: the top of the dock or the bottom edge of the screen. */
@@ -269,7 +269,7 @@ export interface DockSettings {
   toyHoopSide: 'left' | 'right'
 }
 
-export const DEFAULT_TOY_SCORES: ToyScores = { basket: 0, basketBest: 0, football: 0, footballBest: 0, tennisBest: 0, tennisTimedBest: 0, bounceBest: 0, bounceCombo: 0 }
+export const DEFAULT_TOY_SCORES: ToyScores = { basket: 0, basketBest: 0, football: 0, footballBest: 0, bounceBest: 0, bounceCombo: 0 }
 
 export type ToyMode = 'free' | 'timed'
 
@@ -283,10 +283,6 @@ export interface ToyScores {
   football: number
   /** Most goals in one 60-second round. */
   footballBest: number
-  /** Longest tennis rally (free play). */
-  tennisBest: number
-  /** Most tennis hits in one 60-second round. */
-  tennisTimedBest: number
   /** Most racket hits keeping the baseball up in one 60-second round. */
   bounceBest: number
   /** Longest run of hits without letting the baseball fall (free play). */
@@ -584,13 +580,12 @@ export const DEFAULT_SETTINGS: DockSettings = {
   iconFolders: [],
   toyBasket: false,
   toyFootball: false,
-  toyTennis: false,
   toyBounce: false,
   toyBasketMode: 'timed',
   toyFootballMode: 'timed',
-  toyTennisMode: 'free',
   toyBounceMode: 'timed',
   toySound: true,
+  toyShowCursor: false,
   toyLayer: 'above',
   toyFloor: 'dock',
   toyHoopSide: 'right',

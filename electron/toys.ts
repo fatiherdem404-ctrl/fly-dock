@@ -1,4 +1,4 @@
-// Desktop toys (a pet, basketball, football, tennis): one transparent window over the work area of the main display.
+// Desktop toys (basketball, football, rally): one transparent window over the work area of the main display.
 // It lets every click through except where a toy is (the page tells us with toys:capture), never takes focus, and goes
 // away while a program runs full screen.
 import { BrowserWindow, screen } from 'electron'
@@ -14,7 +14,7 @@ let boundsKey = ''
 
 const wanted = () => {
   const s = getSettings()
-  return s.toyBasket || s.toyFootball || s.toyTennis || s.toyBounce
+  return s.toyBasket || s.toyFootball || s.toyBounce
 }
 
 function close() {

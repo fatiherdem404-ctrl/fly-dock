@@ -5,7 +5,7 @@ html[data-view='toys'], html[data-view='toys'] body, html[data-view='toys'] #roo
 
 /* ---- the scoreboard ---- */
 .hud { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; pointer-events: none; }
-.hud-card { width: 244px; padding: 10px 14px 11px; border-radius: 18px; color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; background: linear-gradient(160deg, rgba(26, 32, 54, 0.92), rgba(12, 16, 32, 0.92)); border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.12); }
+.hud-card { width: 272px; padding: 10px 14px 11px; border-radius: 18px; color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; background: linear-gradient(160deg, rgba(26, 32, 54, 0.92), rgba(12, 16, 32, 0.92)); border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.12); }
 .hud-card[data-active='true'] { border-color: rgba(90, 162, 255, 0.7); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(90, 162, 255, 0.35), 0 0 22px rgba(70, 140, 255, 0.35); }
 .hud-card__head { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .hud-card__head b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -36,3 +36,6 @@ html[data-view='toys'], html[data-view='toys'] body, html[data-view='toys'] #roo
 /* the card's own close button: the page tells the window to take the click only while the pointer is over it */
 .hud-card__close { pointer-events: auto; flex: none; width: 22px; height: 22px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.12); color: #dfe6f8; font-size: 11px; line-height: 1; cursor: pointer; }
 .hud-card__close:hover { background: rgba(255, 70, 90, 0.85); color: #fff; }
+
+.hud-card__cursor { pointer-events: auto; flex: none; width: 22px; height: 22px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.12); color: #dfe6f8; font-size: 11px; line-height: 1; cursor: pointer; }
+.hud-card__cursor:hover { background: rgba(90, 162, 255, 0.85); color: #fff; }

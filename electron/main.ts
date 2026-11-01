@@ -220,7 +220,7 @@ function applySettings(request: Partial<DockSettings>): DockSettings {
     if (desk) partial = { ...request, ...desk }
   }
   // only one game at a time: turning one on turns the others off
-  const games = ['toyBasket', 'toyFootball', 'toyTennis', 'toyBounce'] as const
+  const games = ['toyBasket', 'toyFootball', 'toyBounce'] as const
   const turnedOn = games.find((k) => partial[k] === true)
   if (turnedOn) partial = { ...partial, ...Object.fromEntries(games.filter((k) => k !== turnedOn).map((k) => [k, false])) }
   const next = updateSettings(partial)

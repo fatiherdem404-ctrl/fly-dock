@@ -200,41 +200,13 @@ try {
   })
 
   await check('toys: the balls live in a click-through window, can be hit with the racket and thrown', async () => {
-    await invoke('settings:update', { toyTennis: true })
+    await invoke('settings:update', { toyBounce: true })
+    await invoke('settings:update', { toyBasket: true })
+    assert.equal((await invoke('settings:get')).toyBounce, false, 'turning one game on turns the others off')
     const page = await until(async () => (await pages()).find((p) => p.url.includes('#/toys')), 'toy window')
     let conn = await connect(page)
-    await until(async () => conn.call("!!window.__toys && !!window.__toys.balls.tennis"), 'toys are created')
-    await sleep(1500)
-    // a fast pointer sweeping through the tennis ball hits it
-    const kicked = await conn.call(`(() => {
-      const b = window.__toys.balls.tennis
-      const fire = (x, y) => window.dispatchEvent(new MouseEvent('mousemove', { clientX: x, clientY: y }))
-      const y = b.y
-      for (let i = 0; i <= 30; i++) fire(b.x - 120 + i * 4, y)
-      return true
-    })()`)
-    assert.equal(kicked, true)
-    // events fired in the same tick have no time between them, so check through a slower sweep
-    const hit = await conn.call(`new Promise((resolve) => {
-      const b = window.__toys.balls.tennis
-      const fire = (x, y) => window.dispatchEvent(new MouseEvent('mousemove', { clientX: x, clientY: y }))
-      const x0 = b.x - 90
-      const y = b.y
-      let i = 0
-      const timer = setInterval(() => {
-        fire(x0 + i * 9, y)
-        if (++i > 14) { clearInterval(timer); setTimeout(() => resolve(Math.abs(window.__toys.balls.tennis.vx) > 200 || window.__toys.rally > 0), 100) }
-      }, 8)
-    })`)
-    assert.equal(hit, true, 'the ball flew off after being hit')
-    // only one game runs at a time: switching to the basketball turns the tennis off
-    await invoke('settings:update', { toyBasket: true })
-    assert.equal((await invoke('settings:get')).toyTennis, false, 'turning one game on turns the others off')
-    // the toy window may be rebuilt for the new game: look it up again
-    await sleep(1200)
-    conn = await connect(await until(async () => (await pages()).find((p) => p.url.includes('#/toys')), 'toy window again'))
     await until(async () => conn.call("!!window.__toys && !!window.__toys.balls.basket"), 'the basketball is created')
-    await sleep(800)
+    await sleep(1500)
     // grab and throw the basketball
     const thrown = await conn.call(`new Promise((resolve) => { 
       const b = window.__toys.balls.basket
@@ -304,7 +276,7 @@ try {
     assert.equal(scores.basket, 3, 'scores are stored')
     await invoke('toys:scores', { basket: 0 })
     conn.ws.close()
-    await invoke('settings:update', { toyTennis: false, toyBasket: false })
+    await invoke('settings:update', { toyBasket: false })
     await until(async () => !(await pages()).some((p) => p.url.includes('#/toys')), 'toy window closes when all toys are off')
   })
 

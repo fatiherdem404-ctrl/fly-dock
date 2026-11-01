@@ -7,23 +7,21 @@ import { LayerPreview } from '../previews'
 import { Frame } from '../previews'
 import basketballUrl from '@/assets/toys/basketball.png'
 import soccerUrl from '@/assets/toys/soccer.png'
-import racketUrl from '@/assets/toys/racket.png'
 
 /** Each game's own little picture: its ball or racket. */
-function GameGlyph({ game }: { game: 'basket' | 'football' | 'tennis' | 'bounce' }) {
+function GameGlyph({ game }: { game: 'basket' | 'football' | 'bounce' }) {
   if (game === 'basket') return <img src={basketballUrl} alt="" />
   if (game === 'football') return <img src={soccerUrl} alt="" />
-  if (game === 'tennis') return <img src={racketUrl} alt="" />
   return (
     <svg viewBox="0 0 32 32" aria-hidden="true">
-      <circle cx="16" cy="16" r="13" fill="#f4f1ea" stroke="#b9b3a6" strokeWidth="1" />
-      <path d="M8 6 Q 14 16 8 26 M24 6 Q 18 16 24 26" fill="none" stroke="#c8302f" strokeWidth="1.8" />
+      <circle cx="16" cy="16" r="13" fill="#cfe84a" stroke="#8fa61a" strokeWidth="1" />
+      <path d="M5 10 Q 14 16 5 22 M27 10 Q 18 16 27 22" fill="none" stroke="#ffffff" strokeWidth="1.8" />
     </svg>
   )
 }
 
 /** A small picture of each game, drawn once: the pitch with its ball. */
-function GamePic({ game }: { game: 'basket' | 'football' | 'tennis' | 'bounce' }) {
+function GamePic({ game }: { game: 'basket' | 'football' | 'bounce' }) {
   return (
     <svg viewBox="0 0 160 70" className="st-toypic" aria-hidden="true">
       <rect x="0" y="60" width="160" height="10" fill="rgba(255,255,255,0.12)" />
@@ -52,13 +50,6 @@ function GamePic({ game }: { game: 'basket' | 'football' | 'tennis' | 'bounce' }
           <path d="M92 30 Q 100 10 112 30 M118 34 Q 126 14 138 34" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.4" strokeDasharray="3 4" />
         </>
       )}
-      {game === 'tennis' && (
-        <>
-          <rect x="77" y="26" width="6" height="34" fill="rgba(255,255,255,0.18)" stroke="#fff" strokeWidth="1" />
-          <circle cx="45" cy="44" r="7" fill="#c8e63a" /><path d="M39 42q6 4 12 0" stroke="#fff" strokeWidth="1.2" fill="none" />
-          <path d="M45 44 C 55 10 75 8 110 40" stroke="rgba(255,255,255,0.45)" strokeWidth="1.5" strokeDasharray="3 4" fill="none" />
-        </>
-      )}
     </svg>
   )
 }
@@ -69,20 +60,19 @@ function Scores(_props: { tab: string }) {
     invoke('toys:scores').then(setScores)
   }, [])
   return (
-    <Card icon="check" tab="Oyunlar" title="Skorların" hint="Süreye karşı modda tur 60 saniyedir: topa ilk dokunuşunla başlar, süre dolunca rekorun kaydedilir. Serbest modda rekor yalnızca tenis serisi ve sektirme serisi için tutulur. Kapatıp açsan da kaybolmaz.">
+    <Card icon="check" tab="Oyunlar" title="Skorların" hint="Süreye karşı modda tur 60 saniyedir: topa ilk dokunuşunla başlar, süre dolunca rekorun kaydedilir. Serbest modda rekor yalnızca top sektirme serisi için tutulur. Kapatıp açsan da kaybolmaz.">
       <div className="st-scores">
         <div><b>{scores.basketBest}</b><small>Basketbol rekoru (60 sn)</small><em>toplam {scores.basket}</em></div>
         <div><b>{scores.footballBest}</b><small>Futbol rekoru (60 sn)</small><em>toplam {scores.football}</em></div>
-        <div><b>{scores.tennisTimedBest}</b><small>Tenis rekoru (60 sn)</small><em>en uzun seri {scores.tennisBest}</em></div>
-        <div><b>{scores.bounceBest}</b><small>Sektirme rekoru (60 sn)</small><em>en uzun seri {scores.bounceCombo}</em></div>
+        <div><b>{scores.bounceBest}</b><small>Top sektirme rekoru (60 sn)</small><em>en uzun seri {scores.bounceCombo}</em></div>
       </div>
-      <Row label="Skorları sıfırla"><button className="st-btn" onClick={() => invoke('toys:scores', { basket: 0, basketBest: 0, football: 0, footballBest: 0, tennisBest: 0, tennisTimedBest: 0, bounceBest: 0, bounceCombo: 0 }).then(setScores)}><Icon name="refresh" size={15} />Sıfırla</button></Row>
+      <Row label="Skorları sıfırla"><button className="st-btn" onClick={() => invoke('toys:scores', { basket: 0, basketBest: 0, football: 0, footballBest: 0, bounceBest: 0, bounceCombo: 0 }).then(setScores)}><Icon name="refresh" size={15} />Sıfırla</button></Row>
     </Card>
   )
 }
 
 export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
-  const game = (key: 'toyBasket' | 'toyFootball' | 'toyTennis' | 'toyBounce', modeKey: 'toyBasketMode' | 'toyFootballMode' | 'toyTennisMode' | 'toyBounceMode', pic: 'basket' | 'football' | 'tennis' | 'bounce', title: string, hint: string, how: string) => (
+  const game = (key: 'toyBasket' | 'toyFootball' | 'toyBounce', modeKey: 'toyBasketMode' | 'toyFootballMode' | 'toyBounceMode', pic: 'basket' | 'football' | 'bounce', title: string, hint: string, how: string) => (
     <Card glyph={<GameGlyph game={pic} />} icon="toys" tab="Oyunlar" title={title} hint={hint}>
       <div className="st-toygame">
         <Frame className="st-toygame__pic"><GamePic game={pic} /></Frame>
@@ -94,10 +84,9 @@ export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
   )
   return (
     <Pages id="toys">
-      {game('toyBasket', 'toyBasketMode', 'basket', 'Basketbol', 'Sağ kenarda bir pota, yerde bir top.', 'İmleç topun yanına gelince ele dönüşür: topu tutup fırlat, potadan geçerse sepet sayılır.')}
+      {game('toyBasket', 'toyBasketMode', 'basket', 'Basketbol', 'Sağ kenarda bir pota, yerde bir top.', 'İmleç topun yanına gelince ele dönüşür: topu tutup fırlat, potadan geçerse basket sayılır. Uzaktan atış üç sayı, hiçbir yere değmeden giren atış deliksiz.')}
       {game('toyFootball', 'toyFootballMode', 'football', 'Futbol', 'İki yanda kale, ortada bir top.', 'İmleç topun yanına gelince krampon\'a dönüşür: topa hızlıca vur, iki kenardaki kalelerden birine girerse gol olur.')}
-      {game('toyTennis', 'toyTennisMode', 'tennis', 'Tenis', 'Ortada bir file, hafif bir top.', 'İmleç topun yanına gelince rakete dönüşür. Serbestte en uzun seri, süreye karşıda 60 saniyedeki vuruş sayısı kaydedilir.')}
-      {game('toyBounce', 'toyBounceMode', 'bounce', 'Sektirme', 'Raketle beyzbol topunu havada tut.', 'Topa tıkla, havaya fırlasın; imleç raketin olur. Topu yere düşürmeden sektir, her vuruş bir puan. Düşerse seri biter; sağ tık oyunu bırakır.')}
+      {game('toyBounce', 'toyBounceMode', 'bounce', 'Top sektirme', 'Raketle tenis topunu havada tut.', 'Topa tıkla, havaya fırlasın; imleç yatay bir raket olur. Topu yere düşürmeden sektir, her vuruş bir puan. Top düşünce seri biter; sağ tık oyunu bırakır.')}
       <Scores tab="Oyunlar" />
       <Card icon="window" tab="Yerleşim" title="Pencere katmanı" hint="Oyunlar diğer pencerelerin üstünde mi dursun, onlar gibi davransın mı, yoksa masaüstü gibi altta mı kalsın.">
         <Cards<DockLayer> size="s" value={s.toyLayer} onChange={(toyLayer) => set({ toyLayer })} options={[
@@ -111,7 +100,8 @@ export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
         <Row label="Pota" hint="Basketbol potasının durduğu kenar"><Segmented value={s.toyHoopSide} onChange={(toyHoopSide) => set({ toyHoopSide })} options={[['right', 'Sağda'], ['left', 'Solda']]} /></Row>
       </Card>
       <Card icon="sound" tab="Oyunlar" title="Ses">
-        <Row label="Oyun sesleri" hint="Top sekmesi, sepet ve gol sesleri"><Switch label="Ses" value={s.toySound} onChange={(toySound) => set({ toySound })} /></Row>
+        <Row label="İmleci göster" hint="Oyun sırasında Windows imleci raketin, elin ya da kramponun yanında da görünsün. Skor kartındaki düğmeyle de değişir"><Switch label="İmleci göster" value={s.toyShowCursor} onChange={(toyShowCursor) => set({ toyShowCursor })} /></Row>
+        <Row label="Oyun sesleri" hint="Top sekmesi, basket ve gol sesleri"><Switch label="Ses" value={s.toySound} onChange={(toySound) => set({ toySound })} /></Row>
       </Card>
     </Pages>
   )
