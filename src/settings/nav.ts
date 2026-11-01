@@ -12,8 +12,8 @@ export interface TabInfo {
   blurb: string
 }
 
-/** The icon studio is a tool for building the default icon pack; it only exists in development builds. */
-export const STUDIO = !!(import.meta.env.DEV || import.meta.env.VITE_STUDIO)
+/** The icon studio is part of every build: it makes single icons and whole icon packs. */
+export const STUDIO = true
 
 export const TAB_INFO: Record<Tab, TabInfo> = {
   dock: { id: 'dock', label: 'Dock', icon: 'dock', blurb: 'Yeri, simgeleri, etiketleri ve davranışı' },
