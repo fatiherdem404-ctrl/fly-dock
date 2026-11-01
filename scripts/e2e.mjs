@@ -243,11 +243,45 @@ try {
     })`)
     assert.equal(thrown.grabbed, true, 'a click on the ball picks it up')
     assert.equal(thrown.released && thrown.moving, true, 'letting go throws it')
+    // the boot and the racket: coming near the football turns the pointer into a boot
+    await invoke('settings:update', { toyFootball: true })
+    await until(async () => conn.call("!!window.__toys.balls.football"), 'football exists')
+    await sleep(1800)
+    const armed = await conn.call(`(() => {
+      const b = window.__toys.balls.football
+      window.dispatchEvent(new MouseEvent('mousemove', { clientX: b.x - 50, clientY: b.y - 10 }))
+      return window.__toys.armed
+    })()`)
+    assert.equal(armed, 'football', 'the pointer turns into a boot near the football')
+    await invoke('settings:update', { toyFootball: false })
+    // the dog fetches a thrown stick and brings it back; the cat has a ball of yarn
+    assert.equal(await conn.call('!!window.__toys.balls.yarn'), true, 'the cat has a ball of yarn')
+    await invoke('settings:update', { toyPetKind: 'dog' })
+    await until(async () => conn.call("!!window.__toys.balls.stick && !window.__toys.balls.yarn"), 'the dog has a stick, the yarn is gone')
+    const thrownStick = await conn.call(`new Promise((resolve) => {
+      const st = window.__toys
+      const b = st.balls.stick
+      const fire = (type, x, y) => window.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, button: 0 }))
+      fire('mousemove', b.x, b.y)
+      fire('mousedown', b.x, b.y)
+      let i = 0
+      const timer = setInterval(() => {
+        fire('mousemove', b.x + 30, b.y - 30)
+        if (++i > 6) {
+          clearInterval(timer)
+          fire('mouseup', 0, 0)
+          setTimeout(() => resolve(st.stickThrown), 50)
+        }
+      }, 10)
+    })`)
+    assert.equal(thrownStick, true, 'a thrown stick lies free for the dog')
+    await until(async () => conn.call('window.__toys.carried || window.__toys.pet.cool > 0'), 'the dog fetched the stick', 70)
+    await until(async () => conn.call('!window.__toys.carried && !window.__toys.stickThrown'), 'the dog brings it back and lets go', 80)
     const scores = await invoke('toys:scores', { basket: 3 })
     assert.equal(scores.basket, 3, 'scores are stored')
     await invoke('toys:scores', { basket: 0 })
     conn.ws.close()
-    await invoke('settings:update', { toyPet: false, toyTennis: false, toyBasket: false })
+    await invoke('settings:update', { toyPet: false, toyTennis: false, toyBasket: false, toyPetKind: 'cat' })
     await until(async () => !(await pages()).some((p) => p.url.includes('#/toys')), 'toy window closes when all toys are off')
   })
 

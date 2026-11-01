@@ -3,6 +3,7 @@
 // away while a program runs full screen.
 import { BrowserWindow, screen } from 'electron'
 import { getSettings, store } from './store'
+import { helper } from './helper'
 import { baseWebPreferences, loadRoute, OFFSCREEN } from './windows'
 import { DEFAULT_TOY_SCORES } from '../src/shared/types'
 import type { ToyScores } from '../src/shared/types'
@@ -36,7 +37,7 @@ function open() {
     skipTaskbar: true, focusable: false, alwaysOnTop: true, show: false, webPreferences: baseWebPreferences(),
   })
   win = w
-  w.setAlwaysOnTop(true, 'screen-saver')
+  applyToyLayer()
   w.setMenuBarVisibility(false)
   w.setIgnoreMouseEvents(true, { forward: true })
   loadRoute(w, '/toys')
@@ -44,6 +45,15 @@ function open() {
   w.on('closed', () => {
     if (win === w) win = null
   })
+}
+
+/** Always on top, like any window, or under everything (a gadget on the desktop), as chosen in the settings. */
+export function applyToyLayer() {
+  if (!win || win.isDestroyed()) return
+  const { toyLayer } = getSettings()
+  if (toyLayer === 'above') win.setAlwaysOnTop(true, 'screen-saver')
+  else win.setAlwaysOnTop(false)
+  if (toyLayer === 'below') helper.toBottom(Number(win.getNativeWindowHandle().readBigUInt64LE())).catch(() => {})
 }
 
 /** Creates, resizes or removes the toy window to match the settings. */

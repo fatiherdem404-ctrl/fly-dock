@@ -87,7 +87,7 @@ const world = { width: 1000, floor: 800, gravity: 1800, restitution: 0.7, rollin
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296
   }
-  const ctx = { width: 1000, floor: 800, pointer: null, chase: false, size: 64, rand }
+  const ctx = { width: 1000, floor: 800, pointer: null, chase: false, size: 64, rand, kind: 'rabbit', home: 0 }
   const p = pet.makePet(500, 800)
   const seen = new Set()
   for (let i = 0; i < 60 * 120; i++) {
@@ -116,5 +116,57 @@ const world = { width: 1000, floor: 800, gravity: 1800, restitution: 0.7, rollin
   s.timer = 10
   pet.stepPet(s, 1 / 60, { ...ctx, pointer: { x: 520, y: 790 } })
   assert.notEqual(s.state, 'sleep', 'a close pointer wakes the pet')
+}
+// the dog fetches a thrown stick: runs to it, picks it up, brings it home and puts it down
+{
+  const ctx = { width: 1000, floor: 800, pointer: null, chase: false, size: 64, rand: () => 0.5, kind: 'dog', home: 300 }
+  const d = pet.makePet(100, 800)
+  d.state = 'sit'
+  d.timer = 99
+  const events = []
+  for (let i = 0; i < 60 * 40; i++) {
+    const free = !events.includes('pickup') || events.includes('drop')
+    const stickX = events.includes('pickup') ? d.x : 800
+    const e = pet.stepPet(d, 1 / 60, { ...ctx, stick: { x: stickX, free: !events.includes('pickup') } })
+    if (e) events.push(e)
+    if (events.includes('drop')) break
+  }
+  assert.deepEqual(events, ['pickup', 'drop'], `pickup then drop (${events})`)
+  assert.ok(Math.abs(d.x - 300) < 90, `brought it back home (${d.x})`)
+  assert.equal(d.fetch, 'none')
+  // right after, it does not run off again for the same stick
+  for (let i = 0; i < 60 * 2; i++) assert.equal(pet.stepPet(d, 1 / 60, { ...ctx, stick: { x: d.x + 200, free: true } }), null)
+  assert.notEqual(d.fetch, 'go', 'it rests before the next throw')
+  // a stick the user holds is not chased
+  const e = pet.makePet(100, 800)
+  e.state = 'sit'
+  e.timer = 99
+  for (let i = 0; i < 60 * 5; i++) pet.stepPet(e, 1 / 60, { ...ctx, stick: { x: 800, free: false } })
+  assert.equal(e.fetch, 'none')
+}
+
+// the cat runs to a ball of yarn and bats it, then loses interest for a while
+{
+  const ctx = { width: 1000, floor: 800, pointer: null, chase: false, size: 64, rand: () => 0.5, kind: 'cat', home: 0 }
+  const c = pet.makePet(100, 800)
+  c.state = 'sit'
+  c.timer = 99
+  let swats = 0
+  let played = false
+  for (let i = 0; i < 60 * 14; i++) {
+    if (pet.stepPet(c, 1 / 60, { ...ctx, yarn: { x: 600, rolling: false } }) === 'swat') swats++
+    if (c.state === 'play') played = true
+  }
+  assert.ok(played && swats >= 3, `the cat played (swats: ${swats})`)
+  assert.ok(Math.abs(c.x - 600) < 80, `it stayed at the yarn (${c.x})`)
+  assert.ok(c.cool > 0 || c.state === 'sit', 'then it rests')
+  // a sleeping cat ignores a yarn that lies still, but wakes for one that rolls
+  const s = pet.makePet(100, 800)
+  s.state = 'sleep'
+  s.timer = 99
+  for (let i = 0; i < 60; i++) pet.stepPet(s, 1 / 60, { ...ctx, yarn: { x: 600, rolling: false } })
+  assert.equal(s.state, 'sleep')
+  for (let i = 0; i < 30; i++) pet.stepPet(s, 1 / 60, { ...ctx, yarn: { x: 600, rolling: true } })
+  assert.equal(s.state, 'run', 'a rolling yarn wakes it')
 }
 console.log('toys: all checks passed')

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { invoke } from '@/api'
 import Icon from '@/icons'
-import { DEFAULT_TOY_SCORES, DockSettings, ToyScores } from '@/shared/types'
-import { Card, Cards, Pages, Row, Slider, Switch, Update } from '../ui'
+import { DEFAULT_TOY_SCORES, DockLayer, DockSettings, ToyScores } from '@/shared/types'
+import { Card, Cards, Pages, Row, Segmented, Slider, Switch, Update } from '../ui'
+import { LayerPreview } from '../previews'
 import { Frame } from '../previews'
 import PetSprite, { PET_NAMES } from '@/toys/PetSprite'
 import type { PetKind } from '@/toys/pet'
@@ -45,13 +46,13 @@ function Scores(_props: { tab: string }) {
     invoke('toys:scores').then(setScores)
   }, [])
   return (
-    <Card icon="check" tab="Oyunlar" title="Skorların" hint="Oyunlar sonuçlarını kendisi tutar; kapatıp açsan da kaybolmaz.">
+    <Card icon="check" tab="Oyunlar" title="Skorların" hint="Basketbol ve futbolda süre 60 saniyedir: topa ilk dokunuşunla başlar, süre dolunca rekorun kaydedilir. Kapatıp açsan da kaybolmaz.">
       <div className="st-scores">
-        <div><b>{scores.basket}</b><small>Atılan sepet</small></div>
-        <div><b>{scores.football}</b><small>Atılan gol</small></div>
+        <div><b>{scores.basketBest}</b><small>Basketbol rekoru (60 sn)</small><em>toplam {scores.basket}</em></div>
+        <div><b>{scores.footballBest}</b><small>Futbol rekoru (60 sn)</small><em>toplam {scores.football}</em></div>
         <div><b>{scores.tennisBest}</b><small>En uzun tenis serisi</small></div>
       </div>
-      <Row label="Skorları sıfırla"><button className="st-btn" onClick={() => invoke('toys:scores', { basket: 0, football: 0, tennisBest: 0 }).then(setScores)}><Icon name="refresh" size={15} />Sıfırla</button></Row>
+      <Row label="Skorları sıfırla"><button className="st-btn" onClick={() => invoke('toys:scores', { basket: 0, basketBest: 0, football: 0, footballBest: 0, tennisBest: 0 }).then(setScores)}><Icon name="refresh" size={15} />Sıfırla</button></Row>
     </Card>
   )
 }
@@ -80,12 +81,24 @@ export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
       <Card icon="edit" tab="Evcil hayvan" title="Huyu ve boyu">
         <Row label="Adı" hint="Üzerine gelince ya da severken görünür"><input className="st-input" type="text" maxLength={20} value={s.toyPetName} onChange={(e) => set({ toyPetName: e.target.value })} /></Row>
         <Row label="Peşimden gelsin" hint="İmleci yere yakın tutunca yanına koşar"><Switch label="Takip" value={s.toyPetChase} onChange={(toyPetChase) => set({ toyPetChase })} /></Row>
+        <Row label="Oyuncağı olsun" hint="Kedinin ip yumağı, köpeğin fırlatılıp getirilen odunu"><Switch label="Oyuncak" value={s.toyPetPlay} onChange={(toyPetPlay) => set({ toyPetPlay })} /></Row>
         <Row label="Boyut"><Slider value={s.toyPetSize} min={48} max={140} step={2} unit=" px" onChange={(toyPetSize) => set({ toyPetSize })} /></Row>
       </Card>
       {game('toyBasket', 'basket', 'Basketbol', 'Sağ kenarda bir pota, yerde bir top.', 'Topu tutup fırlat; potadan geçirirsen sepet sayılır. İmleci hızlıca topun üstünden geçirirsen de vurmuş olursun.')}
       {game('toyFootball', 'football', 'Futbol', 'İki yanda kale, ortada bir top.', 'İmleçle topa hızlıca vur ya da tutup fırlat. Toplar iki kenardaki kalelerden birine girerse gol olur, top ortaya döner.')}
       {game('toyTennis', 'tennis', 'Tenis', 'Ortada bir file, hafif bir top.', 'İmleç raketin; topa her vuruşun seriyi bir artırır. Top üç kez yere değerse seri biter. En uzun serin kaydedilir.')}
       <Scores tab="Oyunlar" />
+      <Card icon="window" tab="Yerleşim" title="Pencere katmanı" hint="Oyuncaklar diğer pencerelerin üstünde mi dursun, onlar gibi davransın mı, yoksa masaüstü gibi altta mı kalsın.">
+        <Cards<DockLayer> size="s" value={s.toyLayer} onChange={(toyLayer) => set({ toyLayer })} options={[
+          { id: 'above', label: 'Üstte', hint: 'Hep önde', preview: <LayerPreview layer="above" /> },
+          { id: 'normal', label: 'Normal', hint: 'Pencereler kapatabilir', preview: <LayerPreview layer="normal" /> },
+          { id: 'below', label: 'Altta', hint: 'Masaüstü gibi', preview: <LayerPreview layer="below" /> },
+        ]} />
+      </Card>
+      <Card icon="location" tab="Yerleşim" title="Konum" hint="Oyuncakların bastığı zemin ve potanın yeri.">
+        <Row label="Zemin" hint="Dock altta ve açıksa 'Dock’un üstü' onun rafını zemin yapar"><Segmented value={s.toyFloor} onChange={(toyFloor) => set({ toyFloor })} options={[['dock', 'Dock’un üstü'], ['screen', 'Ekranın altı']]} /></Row>
+        <Row label="Pota" hint="Basketbol potasının durduğu kenar"><Segmented value={s.toyHoopSide} onChange={(toyHoopSide) => set({ toyHoopSide })} options={[['right', 'Sağda'], ['left', 'Solda']]} /></Row>
+      </Card>
       <Card icon="sound" tab="Oyunlar" title="Ses">
         <Row label="Oyuncak sesleri" hint="Top sekmesi, sepet, gol ve evcil hayvanın sesi"><Switch label="Ses" value={s.toySound} onChange={(toySound) => set({ toySound })} /></Row>
       </Card>

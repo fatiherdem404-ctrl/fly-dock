@@ -255,16 +255,27 @@ export interface DockSettings {
   toyFootball: boolean
   toyTennis: boolean
   toySound: boolean
+  /** Where the toys sit among other windows: always on top, like a window, or under everything. */
+  toyLayer: DockLayer
+  /** What the toys stand on: the top of the dock or the bottom edge of the screen. */
+  toyFloor: 'dock' | 'screen'
+  toyHoopSide: 'left' | 'right'
+  /** The cat gets a ball of yarn, the dog a stick to fetch. */
+  toyPetPlay: boolean
 }
 
-export const DEFAULT_TOY_SCORES: ToyScores = { basket: 0, football: 0, tennisBest: 0 }
+export const DEFAULT_TOY_SCORES: ToyScores = { basket: 0, basketBest: 0, football: 0, footballBest: 0, tennisBest: 0 }
 
 /** Best results of the toy games, kept between runs. */
 export interface ToyScores {
-  /** Baskets made. */
+  /** Baskets made, all time. */
   basket: number
-  /** Goals scored. */
+  /** Most baskets in one 60-second round. */
+  basketBest: number
+  /** Goals scored, all time. */
   football: number
+  /** Most goals in one 60-second round. */
+  footballBest: number
   /** Longest tennis rally. */
   tennisBest: number
 }
@@ -506,6 +517,10 @@ export const DEFAULT_SETTINGS: DockSettings = {
   toyFootball: false,
   toyTennis: false,
   toySound: true,
+  toyLayer: 'above',
+  toyFloor: 'dock',
+  toyHoopSide: 'right',
+  toyPetPlay: true,
 }
 
 // ---- IPC contract: one table drives the preload bridge, the main-process handlers and the renderer calls ----

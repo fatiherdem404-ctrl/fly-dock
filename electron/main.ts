@@ -32,7 +32,7 @@ import { runElevated } from './elevated'
 import { pickTexture, readTexture, removeTexture, textureBytes, storeTexture } from './textures'
 import { store } from './store'
 import { listPlaces, addPlace, placeIcon } from './places'
-import { initToys, disposeToys, syncToys, setToysCapture, setToysFullscreen, toyScores } from './toys'
+import { initToys, disposeToys, syncToys, applyToyLayer, setToysCapture, setToysFullscreen, toyScores } from './toys'
 import { popupMenu, menuItemsForRenderer, pickMenuItem, closeMenu, MenuSpec } from './contextMenu'
 import { initWidgets, addWidget, removeWidget, updateWidget, moveWidget, systemStats, weatherFor, nowPlaying, disposeWidgets } from './widgets'
 import type { DockItem, DockSettings, StackEntry } from '../src/shared/types'
@@ -209,6 +209,7 @@ function applySettings(request: Partial<DockSettings>): DockSettings {
   const layoutChanged = (['position', 'monitor', 'autoHide', 'edgeOffset', 'alignment'] as const).some((k) => k in partial && before[k] !== next[k])
   if (layoutChanged) syncDocks()
   if (Object.keys(partial).some((k) => k.startsWith('toy'))) syncToys()
+  if (partial.toyLayer !== undefined) applyToyLayer()
   if (partial.layer !== undefined) applyLayer()
   if (partial.showRunningApps !== undefined) broadcastItems()
   broadcast('settings:changed', next)
