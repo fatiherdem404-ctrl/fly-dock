@@ -347,9 +347,45 @@ export type WallpaperFit = 'fill' | 'fit' | 'stretch' | 'center' | 'tile'
 
 /** What the wallpaper windows show. Pictures and videos come through the private flymedia: protocol. */
 export interface WallpaperSource {
-  kind: 'image' | 'video' | 'live'
+  kind: 'image' | 'video' | 'live' | 'scene'
   url?: string
   live?: string
+  /** A user-written scene: JavaScript with init / draw / click functions. */
+  code?: string
+}
+
+/** One entry of the wallpaper library: a picture or video copied into the app's own folder, or a scene written by the user. */
+export interface WallpaperItem {
+  id: string
+  name: string
+  author: string
+  note: string
+  kind: 'image' | 'video' | 'scene'
+  /** flymedia: address of the stored picture/video (not set for scenes). */
+  url?: string
+  code?: string
+  /** Bytes on disk for pictures and videos. */
+  size: number
+  added: number
+}
+
+/** What the "add wallpaper" dialog sends: a chosen file, or scene code. */
+export interface WallpaperDraft {
+  name: string
+  author: string
+  note: string
+  kind: 'image' | 'video' | 'scene'
+  file?: string
+  code?: string
+}
+
+/** A file picked in the add dialog, before it joins the library; `url` lets the dialog preview it. */
+export interface WallpaperPicked {
+  file: string
+  fileName: string
+  kind: 'image' | 'video'
+  url: string
+  size: number
 }
 
 export interface WallpaperInfo {
@@ -603,6 +639,11 @@ export interface InvokeMap {
   'wallpaper:info': { args: []; result: WallpaperInfo }
   'wallpaper:next': { args: []; result: void }
   'wallpaper:pick-file': { args: []; result: string | null }
+  'wallpaper:pick-new': { args: [existing?: string]; result: WallpaperPicked | null }
+  'wallpaper:library': { args: []; result: WallpaperItem[] }
+  'wallpaper:add': { args: [draft: WallpaperDraft]; result: WallpaperItem }
+  'wallpaper:edit': { args: [id: string, patch: Partial<Pick<WallpaperItem, 'name' | 'author' | 'note' | 'code'>>]; result: WallpaperItem | null }
+  'wallpaper:remove': { args: [id: string]; result: void }
   'wallpaper:pick-folder': { args: []; result: string | null }
   'window:control': { args: [action: 'minimize' | 'maximize' | 'close']; result: void }
   'window:is-maximized': { args: []; result: boolean }
@@ -646,6 +687,7 @@ export interface EventMap {
   'icons:changed': null
   'stack:changed': null
   'wallpaper:changed': WallpaperInfo
+  'wallpaper:library-changed': null
   'window:maximized': boolean
   'sound:play': SoundEvent
   /** Where the cursor is over this wallpaper window (0..1 across the display) and whether it is on that display at all. */

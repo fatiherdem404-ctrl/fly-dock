@@ -114,17 +114,18 @@ function grainer(c: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
   const t = tile.getContext('2d')!
   const img = t.createImageData(128, 128)
   for (let i = 0; i < img.data.length; i += 4) {
-    const v = 90 + Math.random() * 76
+    const v = 112 + Math.random() * 32
     img.data[i] = img.data[i + 1] = img.data[i + 2] = v
     img.data[i + 3] = 255
   }
   t.putImageData(img, 0, 0)
   const pattern = c.createPattern(tile, 'repeat')!
   return () => {
+    // just enough to dither 8-bit banding; anything stronger reads as dirty noise
     c.save()
     c.setTransform(1, 0, 0, 1, 0, 0)
     c.globalCompositeOperation = 'soft-light'
-    c.globalAlpha = 0.5
+    c.globalAlpha = 0.1
     c.fillStyle = pattern
     c.fillRect(0, 0, canvas.width, canvas.height)
     c.restore()

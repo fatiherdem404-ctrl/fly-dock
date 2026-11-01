@@ -7,13 +7,13 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import crypto from 'node:crypto'
-import { getSettings } from './store'
+import { getSettings, updateSettings } from './store'
 import { baseWebPreferences, loadRoute, HEADLESS, OFFSCREEN } from './windows'
 import { helper } from './helper'
 import { broadcast } from './ipc'
 import { getTheme, themeWallpaperFile } from './packs'
 import { LIVE_WALLPAPERS } from '../src/shared/types'
-import type { WallpaperSource, WallpaperInfo } from '../src/shared/types'
+import type { WallpaperSource, WallpaperInfo, WallpaperItem, WallpaperDraft, WallpaperPicked } from '../src/shared/types'
 
 export const IMAGE_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif'])
 export const VIDEO_EXT = new Set(['.mp4', '.webm', '.m4v'])
@@ -100,6 +100,12 @@ function resolve(): WallpaperSource | null {
     if (s.wallpaperSingle.startsWith('live:')) {
       const id = s.wallpaperSingle.slice(5)
       return LIVE_WALLPAPERS.some(([k]) => k === id) ? { kind: 'live', live: id } : null
+    }
+    if (s.wallpaperSingle.startsWith('lib:')) {
+      const item = readLibrary().find((i) => i.id === s.wallpaperSingle.slice(4))
+      if (!item) return null
+      if (item.kind === 'scene') return item.code ? { kind: 'scene', code: item.code } : null
+      return sourceFromFile(storedPath(item))
     }
     return s.wallpaperSingle ? sourceFromFile(s.wallpaperSingle) : null
   }
@@ -267,7 +273,7 @@ export function sync() {
     }
   }
   for (const d of displays) if (!windows.has(d.id)) void createWindow(d)
-  if (current.kind === 'live') startPointerFeed()
+  if (current.kind === 'live' || current.kind === 'scene') startPointerFeed()
   else stopPointerFeed()
   push()
 }
@@ -330,6 +336,139 @@ export async function pickWallpaperFile(): Promise<string | null> {
     filters: [{ name: 'Resim ve video', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'gif', 'mp4', 'webm', 'm4v'] }],
   })
   return r.canceled || !r.filePaths[0] ? null : r.filePaths[0]
+}
+
+// ---- Library: pictures and videos are copied into the app's own folder (so the original can move or go), scenes are code ----
+
+interface StoredItem {
+  id: string
+  name: string
+  author: string
+  note: string
+  kind: 'image' | 'video' | 'scene'
+  stored?: string // file name inside the library folder
+  code?: string
+  size: number
+  added: number
+}
+
+const libDir = () => path.join(app.getPath('userData'), 'wallpapers')
+const libIndex = () => path.join(libDir(), 'library.json')
+const MAX_CODE = 64 * 1024
+const clip = (s: unknown, n: number) => (typeof s === 'string' ? s.trim().slice(0, n) : '')
+
+function readLibrary(): StoredItem[] {
+  try {
+    const raw = JSON.parse(fs.readFileSync(libIndex(), 'utf8'))
+    return Array.isArray(raw) ? raw.filter((i) => i && typeof i.id === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+function writeLibrary(list: StoredItem[]) {
+  fs.mkdirSync(libDir(), { recursive: true })
+  const tmp = libIndex() + '.tmp'
+  fs.writeFileSync(tmp, JSON.stringify(list, null, 2))
+  fs.renameSync(tmp, libIndex())
+  broadcast('wallpaper:library-changed', null)
+}
+
+const storedPath = (i: StoredItem) => (i.stored ? path.join(libDir(), 'files', i.stored) : '')
+
+function toItem(i: StoredItem): WallpaperItem {
+  const file = storedPath(i)
+  return {
+    id: i.id,
+    name: i.name,
+    author: i.author,
+    note: i.note,
+    kind: i.kind,
+    url: file && fs.existsSync(file) ? `flymedia://${register(file)}/` : undefined,
+    code: i.kind === 'scene' ? i.code : undefined,
+    size: i.size,
+    added: i.added,
+  }
+}
+
+export const wallpaperLibrary = (): WallpaperItem[] => readLibrary().map(toItem).sort((a, b) => b.added - a.added)
+
+/** The stored file behind a library entry (for a theme that wants to carry it). */
+export function libraryFile(id: string): string | null {
+  const item = readLibrary().find((i) => i.id === id)
+  const file = item ? storedPath(item) : ''
+  return file && fs.existsSync(file) ? file : null
+}
+
+/** A file chosen in the add dialog: listed for preview only, nothing is copied until it is added. */
+export async function pickNewWallpaper(existing?: string): Promise<WallpaperPicked | null> {
+  // `existing` is only honoured for the file the settings already point at (an old, unnamed choice moving into the library)
+  const file = existing && existing === getSettings().wallpaperSingle && fs.existsSync(existing) ? existing : await pickWallpaperFile()
+  if (!file) return null
+  const kind = kindOf(file)
+  if (!kind) return null
+  return { file, fileName: path.basename(file), kind, url: `flymedia://${register(file)}/`, size: fs.statSync(file).size }
+}
+
+export function addWallpaper(draft: WallpaperDraft): WallpaperItem {
+  const list = readLibrary()
+  const id = crypto.randomBytes(6).toString('hex')
+  const base: StoredItem = {
+    id,
+    name: clip(draft.name, 80) || 'Adsız duvar kâğıdı',
+    author: clip(draft.author, 80),
+    note: clip(draft.note, 400),
+    kind: draft.kind,
+    size: 0,
+    added: Date.now(),
+  }
+  if (draft.kind === 'scene') {
+    const code = typeof draft.code === 'string' ? draft.code.slice(0, MAX_CODE) : ''
+    if (!code.trim()) throw new Error('Sahne kodu boş')
+    base.code = code
+  } else {
+    const src = draft.file ?? ''
+    const kind = kindOf(src)
+    if (!kind || !fs.existsSync(src)) throw new Error('Dosya bulunamadı')
+    base.kind = kind
+    base.stored = `${id}${path.extname(src).toLowerCase()}`
+    fs.mkdirSync(path.join(libDir(), 'files'), { recursive: true })
+    fs.copyFileSync(src, storedPath(base))
+    base.size = fs.statSync(storedPath(base)).size
+  }
+  writeLibrary([...list, base])
+  return toItem(base)
+}
+
+export function editWallpaper(id: string, patch: Partial<Pick<WallpaperItem, 'name' | 'author' | 'note' | 'code'>>): WallpaperItem | null {
+  const list = readLibrary()
+  const item = list.find((i) => i.id === id)
+  if (!item) return null
+  if (patch.name !== undefined) item.name = clip(patch.name, 80) || item.name
+  if (patch.author !== undefined) item.author = clip(patch.author, 80)
+  if (patch.note !== undefined) item.note = clip(patch.note, 400)
+  if (patch.code !== undefined && item.kind === 'scene' && patch.code.trim()) item.code = patch.code.slice(0, MAX_CODE)
+  writeLibrary(list)
+  if (getSettings().wallpaperSingle === `lib:${id}`) push()
+  return toItem(item)
+}
+
+export function removeWallpaper(id: string) {
+  const list = readLibrary()
+  const item = list.find((i) => i.id === id)
+  if (!item) return
+  // only the app's own copy goes; the original the user picked is never touched
+  const file = storedPath(item)
+  if (file) {
+    for (const [mid, p] of media) if (p === file) media.delete(mid)
+    try { fs.unlinkSync(file) } catch { /* already gone */ }
+  }
+  writeLibrary(list.filter((i) => i.id !== id))
+  if (getSettings().wallpaperSingle === `lib:${id}`) {
+    updateSettings({ wallpaperSingle: 'live:aurora' })
+    broadcast('settings:changed', getSettings())
+    sync()
+  }
 }
 
 export async function pickWallpaperFolder(): Promise<string | null> {

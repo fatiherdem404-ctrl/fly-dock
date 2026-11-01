@@ -13,7 +13,7 @@ import {
 import { iconForItem, setTrashState } from './icons'
 import { shellIcon, thumbnail } from './iconService'
 import { askConfirm, askInput, answerConfirm, confirmIsOpen } from './confirm'
-import { registerWallpaperScheme, initWallpaper, disposeWallpaper, sync as syncWallpaper, advance as nextWallpaper, restartSlideshow, setFullscreenPaused, wallpaperInfo, pickWallpaperFile, pickWallpaperFolder } from './wallpaper'
+import { registerWallpaperScheme, initWallpaper, disposeWallpaper, sync as syncWallpaper, advance as nextWallpaper, restartSlideshow, setFullscreenPaused, wallpaperInfo, pickWallpaperFile, pickWallpaperFolder, pickNewWallpaper, wallpaperLibrary, addWallpaper, editWallpaper, removeWallpaper, libraryFile } from './wallpaper'
 import { showEntryMenu } from './entryMenu'
 import { menuIsOpen } from './contextMenu'
 import { listLibrary, libraryThumb, pickImage, addLibraryFolder, removeLibraryFolder } from './iconLibrary'
@@ -180,7 +180,14 @@ function restartExplorer() {
 /** What a new theme should carry as its wallpaper: the live scene or the picture/video currently chosen. */
 function currentWallpaperForTheme(): { live?: string; file?: string } | null {
   const s = getSettings()
-  if (s.wallpaperMode === 'single') return s.wallpaperSingle.startsWith('live:') ? { live: s.wallpaperSingle.slice(5) } : s.wallpaperSingle ? { file: s.wallpaperSingle } : null
+  if (s.wallpaperMode === 'single') {
+    if (s.wallpaperSingle.startsWith('live:')) return { live: s.wallpaperSingle.slice(5) }
+    if (s.wallpaperSingle.startsWith('lib:')) {
+      const file = libraryFile(s.wallpaperSingle.slice(4))
+      return file ? { file } : null
+    }
+    return s.wallpaperSingle ? { file: s.wallpaperSingle } : null
+  }
   if (s.wallpaperMode === 'theme') {
     const theme = getTheme(s.theme)
     if (theme?.wallpaper?.live) return { live: theme.wallpaper.live }
@@ -384,6 +391,11 @@ function registerIpc() {
   handle('wallpaper:info', () => wallpaperInfo())
   handle('wallpaper:next', () => nextWallpaper())
   handle('wallpaper:pick-file', () => pickWallpaperFile())
+  handle('wallpaper:pick-new', (_e, existing) => pickNewWallpaper(existing))
+  handle('wallpaper:library', () => wallpaperLibrary())
+  handle('wallpaper:add', (_e, draft) => addWallpaper(draft))
+  handle('wallpaper:edit', (_e, id, patch) => editWallpaper(id, patch))
+  handle('wallpaper:remove', (_e, id) => removeWallpaper(id))
   handle('wallpaper:pick-folder', () => pickWallpaperFolder())
   handle('confirm:answer', (_e, id, answer, text) => answerConfirm(id, answer, text))
   handle('entry:menu', (_e, request) => showEntryMenu(request))

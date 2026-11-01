@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { invoke, useActiveTheme, useEvent } from '@/api'
 import { startLive, hueOf, makePointer, feedPointer, clickPointer, Pointer } from '@/live'
+import SceneFrame from '@/SceneFrame'
 import type { DockSettings, WallpaperFit, WallpaperInfo, WallpaperSource } from '@/shared/types'
 
 const FIT_CSS: Record<WallpaperFit, { size: string; repeat: string; object: string }> = {
@@ -36,6 +37,7 @@ function Layer({ source, fit, hue, paused, visible, pointer }: { source: Wallpap
   return (
     <div className="wp__layer" style={{ opacity: visible ? 1 : 0 }}>
       {source.kind === 'live' && <LiveLayer id={source.live ?? 'aurora'} hue={hue} paused={paused} pointer={pointer} />}
+      {source.kind === 'scene' && source.code && <SceneFrame code={source.code} paused={paused} pointer={pointer} />}
       {source.kind === 'video' && source.url && <VideoLayer url={source.url} fit={fit} paused={paused} />}
       {source.kind === 'image' && source.url && <div className="wp__media" style={{ backgroundImage: `url("${source.url}")`, backgroundSize: f.size, backgroundRepeat: f.repeat, backgroundPosition: 'center' }} />}
     </div>
@@ -80,7 +82,7 @@ export default function WallpaperView() {
 
   // the effect is keyed by the content, not by the info object (a new object arrives with every status push)
   const source = info?.source ?? null
-  const key = source ? `${source.kind}|${source.url ?? ''}|${source.live ?? ''}` : ''
+  const key = source ? `${source.kind}|${source.url ?? ''}|${source.live ?? ''}|${source.code ?? ''}` : ''
   useEffect(() => {
     if (key === shown.current) return
     shown.current = key
