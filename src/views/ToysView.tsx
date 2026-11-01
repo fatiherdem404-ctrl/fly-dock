@@ -688,9 +688,11 @@ function Toys({ s }: { s: DockSettings }) {
       invoke('toys:capture', on)
     }
     const setCursor = (value: string) => {
-      if (st.cursor === value || !root.current) return
+      if (st.cursor === value) return
       st.cursor = value
-      root.current.style.cursor = value
+      // the toy layer ignores the mouse (pointer-events: none), so the cursor has to be set on the page itself
+      document.documentElement.style.cursor = value
+      document.body.style.cursor = value
     }
     const saveScores = (patch: Partial<ToyScores>) => {
       st.scores = { ...st.scores, ...patch }
