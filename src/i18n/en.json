@@ -1196,5 +1196,8 @@
  "Hareketli şerit (yan yana kareler)": "Animated strip (frames side by side)",
  "Tıklama noktası": "Click point",
  "Kare hızı": "Frame rate",
- "{length} imleç": "{length} cursors"
+ "{length} imleç": "{length} cursors",
+ "{name} zaten çalışıyor.": "{name} is already running.",
+ "Dock ekranın kenarında. Ayarlar için tepsi simgesine sağ tıklayabilir ya da aşağıdaki düğmeyi kullanabilirsin.": "The dock is at the edge of your screen. For the settings, right-click the tray icon or use the button below.",
+ "Ayarları aç": "Open settings"
 }

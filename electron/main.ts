@@ -583,7 +583,24 @@ async function importBackup() {
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
-  app.on('second-instance', openSettings)
+  // a second launch quits by itself; this running copy tells the user so instead of staying silent
+  let warning = false
+  app.on('second-instance', async () => {
+    if (warning) return
+    warning = true
+    const r = await dialog.showMessageBox({
+      type: 'info',
+      title: brand.name,
+      message: tl('{name} zaten çalışıyor.', { name: brand.name }),
+      detail: tl('Dock ekranın kenarında. Ayarlar için tepsi simgesine sağ tıklayabilir ya da aşağıdaki düğmeyi kullanabilirsin.'),
+      buttons: [tl('Ayarları aç'), tl('Tamam')],
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true,
+    })
+    warning = false
+    if (r.response === 0) openSettings()
+  })
   app.setAppUserModelId(brand.appId)
 
   registerWallpaperScheme() // has to happen before the app is ready
