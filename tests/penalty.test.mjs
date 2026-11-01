@@ -43,4 +43,16 @@ for (let n = 0; n < 12; n++) {
   assert.equal(p.phase, 'ready', `shot ${n} comes to an end`)
   assert.equal(events.length, 1, `shot ${n} is decided exactly once (${events})`)
 }
+// the far-hoop basketball: the pull sets power and (through its direction) the height of the arc
+await build({ entryPoints: ['src/toys/shot.ts'], bundle: true, platform: 'node', format: 'esm', outfile: join(dir, 'shot.mjs'), logLevel: 'silent' })
+const shot = await import(pathToFileURL(join(dir, 'shot.mjs')).href)
+const flat = shot.launchShot({ x: -150, y: 20 })
+const steep = shot.launchShot({ x: -40, y: 150 })
+assert.ok(flat.vx > 0 && flat.vy < 0, 'pulling back and down sends the ball forward and up')
+assert.ok(steep.height > flat.height, 'a steeper pull is a higher arc')
+assert.ok(shot.launchShot({ x: 1, y: 1 }).power === 0, 'a tiny pull is no shot')
+const dots = shot.shotPath(300, 580, flat.vx, flat.vy, 2000, 600, 24)
+assert.ok(dots.length > 3 && dots.every(([, y]) => y < 600), 'the dotted line stops at the floor')
+const spot = shot.pickSpot(1200, 'right')
+assert.ok(spot > 100 && spot < 800, 'the waiting spot is on the far side from a right-hand hoop')
 console.log('penalty: all checks passed')

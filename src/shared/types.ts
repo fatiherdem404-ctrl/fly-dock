@@ -257,6 +257,10 @@ export interface DockSettings {
   toyBounce: boolean
   /** 'free': just play and keep count; 'timed': a 60-second round with a record. */
   toyBasketMode: ToyMode
+  /** Basketball: grab and throw the ball, or aim at the hoop across the screen with a pull (power and height). */
+  toyBasketStyle: 'free' | 'far'
+  /** Far-hoop basketball: show the dotted line of where the shot will go. */
+  toyShotLine: boolean
   toyFootballMode: ToyMode
   /** What football is: free kicking at two goals, a penalty against a keeper, or keeping the ball up. */
   toyFootballStyle: 'free' | 'penalty' | 'juggle'
@@ -589,6 +593,8 @@ export const DEFAULT_SETTINGS: DockSettings = {
   toyFootball: false,
   toyBounce: false,
   toyBasketMode: 'timed',
+  toyBasketStyle: 'free',
+  toyShotLine: true,
   toyFootballMode: 'timed',
   toyFootballStyle: 'free',
   toyKeeperShoots: false,

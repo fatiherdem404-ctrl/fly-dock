@@ -86,7 +86,12 @@ export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
   )
   return (
     <Pages id="toys">
-      {game('toyBasket', 'toyBasketMode', 'basket', 'Basketbol', 'Sağ kenarda bir pota, yerde bir top.', 'İmleç topun yanına gelince ele dönüşür: topu tutup fırlat, potadan geçerse basket sayılır. Uzaktan atış üç sayı, hiçbir yere değmeden giren atış deliksiz.')}
+      {game('toyBasket', 'toyBasketMode', 'basket', 'Basketbol', 'Serbest atış ya da karşıda pota.', 'Serbest atışta imleç topun yanına gelince ele dönüşür: topu tutup fırlat. Karşıda pota modunda topu sapan gibi geri çekersin: çekişin uzunluğu gücü, yönü yüksekliği belirler. Potadan geçerse basket sayılır; üç sayı çizgisinin ötesinden atış üç sayı, hiçbir yere değmeden giren atış deliksiz.', (
+        <>
+          <Row label="Basketbol türü" hint="Serbest atış: topu tutup fırlatırsın. Karşıda pota: güç ve yükseklik çubuklarıyla nişan alırsın"><Segmented<'free' | 'far'> value={s.toyBasketStyle} onChange={(toyBasketStyle) => set({ toyBasketStyle })} options={[['free', 'Serbest atış'], ['far', 'Karşıda pota']]} /></Row>
+          {s.toyBasketStyle === 'far' && <Row label="Yol çizgisi" hint="Nişan alırken topun gideceği yolu noktalarla gösterir"><Switch label="Yol çizgisi" value={s.toyShotLine} onChange={(toyShotLine) => set({ toyShotLine })} /></Row>}
+        </>
+      ))}
       {game('toyFootball', 'toyFootballMode', 'football', 'Futbol', 'Serbest vuruş, penaltı ya da top sektirme.', 'Serbest vuruşta imleç topun yanına gelince krampona dönüşür: topa hızlıca vur, kenardaki kalelere sok. Penaltıda topu sapan gibi geri çek, yön ve gücü çekişin belirler; fare tekerleği falsoyu ayarlar, kaleci seni durdurmaya çalışır. Top sektirmede topa tıkla, krampon sana geçer; topu yere düşürmeden havada tut, her vuruş bir puan.', (
         <>
           <Row label="Futbol türü" hint="Serbest vuruş: iki kale. Penaltı: tek kale ve kaleci. Top sektirme: topu kramponla havada tut"><Segmented<'free' | 'penalty' | 'juggle'> value={s.toyFootballStyle} onChange={(toyFootballStyle) => set({ toyFootballStyle })} options={[['free', 'Serbest vuruş'], ['penalty', 'Penaltı'], ['juggle', 'Top sektirme']]} /></Row>

@@ -3,6 +3,7 @@ import { invoke, useEvent } from '@/api'
 import type { DockSettings, ToyMode, ToyScores } from '@/shared/types'
 import { DEFAULT_TOY_SCORES } from '@/shared/types'
 import { PEN_GOAL_D, PEN_GOAL_H, PEN_MAX_PULL, Pen, goalX, keeperShot, launch, makePen, path as penPath, shoot as penShoot, spotOf, step as penStep } from '@/toys/penalty'
+import { SHOT_MAX_PULL, Shot, launchShot, makeShot, pickSpot, shotPath } from '@/toys/shot'
 import { Ball, Segment, World, bounceOffMover, inGoal, makeBall, scoredThroughRim, stepBall, throwVelocity } from '@/toys/ball'
 import handUrl from '@/assets/toys/hand.png'
 import fistUrl from '@/assets/toys/fist.png'
@@ -102,6 +103,9 @@ interface Sim {
   /** The penalty game of the football toy, and whether its ball has been put on the spot. */
   pen: Pen
   penOn: boolean
+  /** The basketball's far-hoop mode: the aim in progress, and whether the mode was already set up. */
+  shot: Shot
+  farOn: boolean
   /** Racket and tennis ball: a rally is on, the pointer is the racket, and hits in a row are counted. */
   bounce: { playing: boolean; combo: number; respawn: number }
   cursor: string
@@ -455,7 +459,70 @@ function drawPenalty(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, wid
   }
 }
 
+/** The three-point line, the pull and the two bars (power, height) of the far-hoop mode. */
+function drawShotAid(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, width: number, floor: number) {
+  const h = hoop(width, floor, s.toyHoopSide)
+  const lineX = h.near + (s.toyHoopSide === 'right' ? -1 : 1) * width * 0.45
+  c.strokeStyle = 'rgba(255,255,255,0.55)'
+  c.lineWidth = 2
+  c.setLineDash([6, 8])
+  c.beginPath()
+  c.moveTo(lineX, floor - 90)
+  c.lineTo(lineX, floor)
+  c.stroke()
+  c.setLineDash([])
+  c.fillStyle = 'rgba(255,255,255,0.8)'
+  c.font = "700 12px 'Segoe UI', system-ui, sans-serif"
+  c.textAlign = 'center'
+  c.fillText('3 SAYI ÇİZGİSİ', lineX, floor - 96)
+  const ball = sim.balls.basket
+  const shot = sim.shot
+  if (!ball) return
+  if (shot.aim) {
+    const l = launchShot(shot.aim)
+    const len = Math.min(Math.hypot(shot.aim.x, shot.aim.y), SHOT_MAX_PULL)
+    const ang = Math.atan2(shot.aim.y, shot.aim.x)
+    c.strokeStyle = 'rgba(255,255,255,0.6)'
+    c.lineWidth = 3
+    c.setLineDash([2, 7])
+    c.beginPath()
+    c.moveTo(ball.x, ball.y)
+    c.lineTo(ball.x + Math.cos(ang) * len, ball.y + Math.sin(ang) * len)
+    c.stroke()
+    c.setLineDash([])
+    if (s.toyShotLine && l.power > 0.04) {
+      c.fillStyle = 'rgba(255,255,255,0.8)'
+      for (const [px, py] of shotPath(ball.x, ball.y, l.vx, l.vy, SPEC.basket.gravity, floor, ball.r)) {
+        c.beginPath()
+        c.arc(px, py, 2.6, 0, TAU)
+        c.fill()
+      }
+    }
+    const bar = (label: string, y: number, v: number, a: string, b: string) => {
+      const bx = ball.x - 46
+      c.fillStyle = 'rgba(10,14,28,0.75)'
+      c.beginPath(); c.roundRect(bx, y, 92, 12, 6); c.fill()
+      const g = c.createLinearGradient(bx, 0, bx + 92, 0)
+      g.addColorStop(0, a); g.addColorStop(1, b)
+      c.fillStyle = g
+      c.beginPath(); c.roundRect(bx + 2, y + 2, Math.max(4, 88 * v), 8, 4); c.fill()
+      c.fillStyle = '#fff'
+      c.font = "700 11px 'Segoe UI', system-ui, sans-serif"
+      c.textAlign = 'center'
+      c.fillText(label, ball.x, y - 5)
+    }
+    bar('GÜÇ', ball.y - 100, l.power, '#46d36b', '#ff4d4d')
+    bar('YÜKSEKLİK', ball.y - 60, l.height, '#6aa6ff', '#b36bff')
+  } else if (shot.state === 'ready') {
+    c.fillStyle = 'rgba(255,255,255,0.9)'
+    c.font = "600 12px 'Segoe UI', system-ui, sans-serif"
+    c.textAlign = 'center'
+    c.fillText('Topu geri çek ve bırak', ball.x, ball.y - ball.r - 14)
+  }
+}
+
 function drawScene(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, width: number, floor: number) {
+  if (s.toyBasket && s.toyBasketStyle === 'far') drawShotAid(c, s, sim, width, floor)
   if (s.toyBasket) {
     const h = hoop(width, floor, s.toyHoopSide)
     c.fillStyle = 'rgba(255,255,255,0.92)'
@@ -608,7 +675,7 @@ function Toys({ s }: { s: DockSettings }) {
   const [hud, setHud] = useState<{ cards: HudCard[]; result: HudResult | null }>({ cards: [], result: null })
   const newGame = () => ({ round: { active: false, left: 0, score: 0 }, session: 0 })
   const sim = useRef<Sim>({
-    balls: {}, pointer: null, samples: [], drag: null, capture: false, scores: { ...DEFAULT_TOY_SCORES }, shotFrom: 0, pen: makePen(), penOn: false,
+    balls: {}, pointer: null, samples: [], drag: null, capture: false, scores: { ...DEFAULT_TOY_SCORES }, shotFrom: 0, pen: makePen(), penOn: false, shot: makeShot(), farOn: false,
     games: { basket: newGame(), football: newGame(), bounce: newGame() },
     result: null, flash: null, respawn: 0, hover: false, size: '', armed: null, toolDir: 1, toolTilt: 0, toolPos: null, toolVx: 0, toolVy: 0, struck: {},
     bounce: { playing: false, combo: 0, respawn: 0 }, cursor: '',
@@ -668,6 +735,7 @@ function Toys({ s }: { s: DockSettings }) {
     const grabAt = (x: number, y: number): { kind: 'ball'; ball: BallKind } | null => {
       for (const kind of ['bounce', 'football', 'basket'] as BallKind[]) {
         if (kind === 'football' && !juggling()) continue
+        if (kind === 'basket' && farOn()) continue
         const b = st.balls[kind]
         if (b && Math.hypot(b.x - x, b.y - y) <= b.r + 8) return { kind: 'ball', ball: kind }
       }
@@ -675,8 +743,9 @@ function Toys({ s }: { s: DockSettings }) {
     }
     /** Is the pointer close enough to a ball to turn into a hand, a boot or a racket? */
     const penaltyOn = () => settingsRef.current.toyFootball && settingsRef.current.toyFootballStyle === 'penalty'
+    const farOn = () => settingsRef.current.toyBasket && settingsRef.current.toyBasketStyle === 'far'
     const armedFor = (x: number, y: number): 'basket' | 'football' | null => {
-      for (const kind of penaltyOn() || juggling() ? (['basket'] as const) : (['football', 'basket'] as const)) {
+      for (const kind of penaltyOn() || juggling() ? (farOn() ? ([] as const) : (['basket'] as const)) : farOn() ? (['football'] as const) : (['football', 'basket'] as const)) {
         const b = st.balls[kind]
         if (b && !b.grabbed && Math.hypot(b.x - x, b.y - y) <= b.r + AURA[kind]) return kind
       }
@@ -699,8 +768,11 @@ function Toys({ s }: { s: DockSettings }) {
       const pb = st.balls.football
       const penHover = penaltyOn() && st.pen.phase === 'ready' && !!pb && Math.hypot(pb.x - x, pb.y - y) <= pb.r + 18
       const penBusy = penaltyOn() && (!!st.pen.aim || st.pen.phase === 'return')
-      setCapture(!!over || !!st.armed || !!st.drag || playing || !!close || penHover || penBusy)
-      setCursor(close ? 'pointer' : penBusy ? (settingsRef.current.toyShowCursor ? '' : 'none') : penHover ? 'grab' : st.drag || st.armed || playing ? (settingsRef.current.toyShowCursor ? '' : 'none') : over ? 'grab' : '')
+      const sb = st.balls.basket
+      const farHover = farOn() && st.shot.state === 'ready' && !!sb && Math.hypot(sb.x - x, sb.y - y) <= sb.r + 18
+      const farBusy = farOn() && !!st.shot.aim
+      setCapture(!!over || !!st.armed || !!st.drag || playing || !!close || penHover || penBusy || farHover || farBusy)
+      setCursor(close ? 'pointer' : penBusy || farBusy ? (settingsRef.current.toyShowCursor ? '' : 'none') : penHover || farHover ? 'grab' : st.drag || st.armed || playing ? (settingsRef.current.toyShowCursor ? '' : 'none') : over ? 'grab' : '')
     }
     /** A rally of the racket and the baseball has ended: the ball touched the floor. */
     const dropBounce = () => {
@@ -724,6 +796,10 @@ function Toys({ s }: { s: DockSettings }) {
         vy = prev.vy * 0.4 + ((e.clientY - prev.y) / dt) * 0.6
       }
       st.pointer = { x: e.clientX, y: e.clientY, vx, vy, t: now }
+      if (st.shot.aim && st.balls.basket) {
+        st.shot.aim = { x: e.clientX - st.balls.basket.x, y: e.clientY - st.balls.basket.y }
+        return
+      }
       if (st.pen.aim && st.balls.football) {
         st.pen.aim = { x: e.clientX - st.balls.football.x, y: e.clientY - st.balls.football.y }
         return
@@ -750,6 +826,12 @@ function Toys({ s }: { s: DockSettings }) {
       if (closing) {
         if (closing.act === 'cursor') invoke('settings:update', { toyShowCursor: !settingsRef.current.toyShowCursor })
         else invoke('settings:update', { [closing.game === 'basket' ? 'toyBasket' : closing.game === 'football' ? 'toyFootball' : 'toyBounce']: false })
+        return
+      }
+      const bk = st.balls.basket
+      if (farOn() && st.shot.state === 'ready' && bk && Math.hypot(bk.x - e.clientX, bk.y - e.clientY) <= bk.r + 18) {
+        st.shot.aim = { x: e.clientX - bk.x, y: e.clientY - bk.y }
+        setCapture(true)
         return
       }
       const fb = st.balls.football
@@ -786,6 +868,24 @@ function Toys({ s }: { s: DockSettings }) {
       }
     }
     const onUp = () => {
+      if (st.shot.aim) {
+        const bk = st.balls.basket
+        const l = launchShot(st.shot.aim)
+        st.shot.aim = null
+        if (bk && l.power > 0.06) {
+          startRound('basket')
+          bk.vx = l.vx
+          bk.vy = l.vy
+          bk.floorHits = 0
+          bk.touches = 0
+          st.shotFrom = bk.x
+          st.shot = { ...st.shot, state: 'flight', t: 0, scored: false, end: 0 }
+          tone(settingsRef.current.toySound, 260, 520, 0.12, 'triangle', 0.1)
+        }
+        const q = st.pointer
+        if (q) refresh(q.x, q.y)
+        return
+      }
       if (st.pen.aim) {
         const fb = st.balls.football
         const l = launch(st.pen.aim)
@@ -853,7 +953,7 @@ function Toys({ s }: { s: DockSettings }) {
         else if (id === 'football' && jugglingOf(cur)) best = `Seri ${st.bounce.combo}  ·  Rekor ${sc.juggleCombo}`
         else if (id === 'football') best = cur.toyFootballStyle === 'penalty' ? `Gol ${st.pen.goals}  ·  Kurtarılan ${st.pen.saves}${cur.toyKeeperShoots ? `  ·  Yenilen ${st.pen.conceded}` : ''}` : `Toplam ${sc.football}`
         else best = `Seri ${st.bounce.combo}  ·  Rekor ${sc.bounceCombo}`
-        const hint = id === 'basket' ? 'Hazır: topu tutunca başlar' : id === 'bounce' || jugglingOf(cur) ? 'Hazır: topa tıkla ve başla' : cur.toyFootballStyle === 'penalty' ? 'Hazır: topu geri çek, bırak' : 'Hazır: topa vurunca başlar'
+        const hint = id === 'basket' ? (cur.toyBasketStyle === 'far' ? 'Hazır: topu geri çek, bırak' : 'Hazır: topu tutunca başlar') : id === 'bounce' || jugglingOf(cur) ? 'Hazır: topa tıkla ve başla' : cur.toyFootballStyle === 'penalty' ? 'Hazır: topu geri çek, bırak' : 'Hazır: topa vurunca başlar'
         cards.push({ id, title: GAME_INFO[id].title, unit: unitOf(cur, id), timed, active: g.round.active, score: timed ? g.round.score : g.session, left: Math.round(g.round.left * 10) / 10, best, hint })
       }
       const result = st.result ? { game: st.result.game, title: st.result.title, score: st.result.score, unit: st.result.unit, best: st.result.best, record: st.result.record } : null
@@ -947,6 +1047,17 @@ function Toys({ s }: { s: DockSettings }) {
         return true
       }
 
+      // far-hoop basketball: the ball waits on a spot, then flies, then goes back to a new spot
+      const far = cur.toyBasket && cur.toyBasketStyle === 'far'
+      if (far !== st.farOn) {
+        st.farOn = far
+        st.shot = makeShot()
+        const bb = st.balls.basket
+        if (bb) {
+          const [sx, sy] = startPosition('basket', w, floor, side)
+          Object.assign(bb, { x: sx, y: sy, vx: 0, vy: 0, floorHits: 0, touches: 0 })
+        }
+      }
       // the penalty game takes over the football while it is the chosen kind of football
       const penalty = cur.toyFootball && cur.toyFootballStyle === 'penalty'
       if (penalty !== st.penOn) {
@@ -983,6 +1094,11 @@ function Toys({ s }: { s: DockSettings }) {
             const [sx, sy] = spotOf(w, floor, ball.r)
             Object.assign(ball, { x: sx, y: sy, vx: 0, vy: 0 })
           }
+          continue
+        }
+        if (kind === 'basket' && far && st.shot.state === 'ready') {
+          if (!st.shot.spotX) st.shot.spotX = pickSpot(w, side)
+          Object.assign(ball, { x: st.shot.spotX, y: floor - ball.r, vx: 0, vy: 0, floorHits: 0, touches: 0 })
           continue
         }
         const spec = SPEC[kind]
@@ -1050,6 +1166,7 @@ function Toys({ s }: { s: DockSettings }) {
             saveScores({ basket: st.scores.basket + points })
             for (let i = 0; i < points; i++) point('basket')
             st.flash = { text: swish ? (far ? 'DELİKSİZ ÜÇLÜK!' : 'DELİKSİZ!') : far ? 'ÜÇLÜK!' : 'BASKET!', left: 1.4 }
+            st.shot.scored = true
             tone(cur.toySound, 660, 660, 0.12, 'sine', 0.12)
             tone(cur.toySound, 990, 990, 0.2, 'sine', 0.12, 0.1)
             if (swish) tone(cur.toySound, 1320, 1320, 0.25, 'sine', 0.1, 0.22)
@@ -1063,6 +1180,17 @@ function Toys({ s }: { s: DockSettings }) {
             tone(cur.toySound, 523, 523, 0.14, 'square', 0.07)
             tone(cur.toySound, 659, 659, 0.14, 'square', 0.07, 0.12)
             tone(cur.toySound, 784, 784, 0.3, 'square', 0.07, 0.24)
+          }
+        }
+        if (kind === 'basket' && far && st.shot.state === 'flight') {
+          st.shot.t += dt
+          if (st.shot.end <= 0) {
+            const gone = ball.x < -40 || ball.x > w + 40 || ball.floorHits >= 2 || st.shot.t > 7
+            if (st.shot.scored) st.shot.end = 1
+            else if (gone) st.shot.end = 0.4
+          } else {
+            st.shot.end -= dt
+            if (st.shot.end <= 0) st.shot = { ...makeShot(), spotX: pickSpot(w, side) }
           }
         }
         if (isRally(kind) && st.bounce.playing && st.bounce.respawn <= 0 && ball.y >= floor - ball.r - 1 && (ball.floorHits > 0 || (st.bounce.combo > 0 && ball.vy > -40))) {
