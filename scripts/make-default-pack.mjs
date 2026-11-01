@@ -1,5 +1,5 @@
-// Draws the built-in icon pack (resources/icon-packs/fly-default) with the icon studio's "Mac tarzı" card: coloured
-// rounded squares with a white glyph, every icon a different hue, like the dock preview in the settings.
+// Draws the built-in icon pack (resources/icon-packs/fly-default) with the icon studio's "Dock önizlemesi" card: coloured
+// rounded squares with a soft gradient and a white glyph, the colours of the dock preview in the settings.
 // Needs no network: the glyphs are already in src/studio. Run after changing the studio's look or key list.
 import { build } from 'esbuild'
 import { spawnSync } from 'node:child_process'
@@ -23,13 +23,14 @@ app.whenReady().then(async () => {
   const r = await win.webContents.executeJavaScript(${JSON.stringify(`(async () => {
     const fs = require('fs'), path = require('path')
     const m = require(${JSON.stringify(bundle)})
-    const mac = m.TEMPLATES.find((t) => t.id === 'mac')
-    const design = { ...m.designFrom(mac), hueSpread: 47 }
+    const design = m.designFrom(m.TEMPLATES.find((t) => t.id === 'dock'))
     const out = ${JSON.stringify(out)}
+    // the places everybody has get fixed colours (0 orange, 1 blue, 2 green, 3 yellow, 4 purple, 5 pink); the rest take their turn
+    const PICK = { start: 1, mycomputerfolder: 2, profile: 0, documents: 3, belgeler: 3, downloads: 2, indirilenler: 2, pictures: 5, resimler: 5, videos: 4, videolar: 4, music: 0, desktop: 1, networkplacesfolder: 4, wheel: 4, power: 0, group: 3, trash: 5, 'trash-full': 5, folder: 3, file: 1, explorer: 3, notepad: 3, calc: 2, cmd: 4, powershell: 1, wt: 4, taskmgr: 2, control: 4 }
     const map = {}
     for (let i = 0; i < m.STUDIO_KEYS.length; i++) {
       const [key, , glyph] = m.STUDIO_KEYS[i]
-      const svg = m.cardSvg(design, glyph, { index: i, badge: key === 'trash-full', uid: 'p' })
+      const svg = m.cardSvg(design, glyph, { index: PICK[key] ?? i, badge: key === 'trash-full', uid: 'p' })
       const img = new Image()
       img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
       await img.decode()

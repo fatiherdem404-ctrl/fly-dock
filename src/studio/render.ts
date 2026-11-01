@@ -33,6 +33,8 @@ export interface Design {
   glyphGlow: number
   /** How big a real program icon sits on the card when the pack has no picture for it (% of the picture). */
   appIconSize: number
+  /** When set, icon number i takes colour i of this list (and a darker shade of it for the gradient) instead of c1/c2. */
+  palette: string[]
   /** Each icon's colours turn a little further around the colour wheel (degrees per icon, 0 = all alike). */
   hueSpread: number
 }
@@ -44,7 +46,7 @@ export const DEFAULT_DESIGN: Design = {
   bevel: 40, lightAngle: 300, gloss: 30,
   shadowBlur: 14, shadowY: 8, shadowOpacity: 0.4, shadowColor: '#000000',
   glyphMode: 'solid', g1: '#ffffff', g2: '#d9e4ff', glyphSize: 52, glyphStroke: 2, glyphShadow: 30, glyphGlow: 0, appIconSize: 62,
-  hueSpread: 0,
+  hueSpread: 0, palette: [],
 }
 
 export const PATTERNS: [Design['pattern'], string][] = [
@@ -59,6 +61,7 @@ export interface Template {
 }
 
 export const TEMPLATES: Template[] = [
+  { id: 'dock', name: 'Dock önizlemesi', design: { inset: 12, radius: 44, fill: 'gradient', angle: 145, bevel: 12, lightAngle: 0, gloss: 0, shadowBlur: 8, shadowY: 3, shadowOpacity: 0.35, glyphMode: 'solid', g1: '#ffffff', glyphSize: 54, glyphStroke: 2.4, glyphShadow: 0, hueSpread: 0, palette: ['#ff7a59', '#4da3ff', '#8be28b', '#f5c542', '#b57bff', '#ff6fa8'] } },
   { id: 'mac', name: 'Mac tarzı', design: { radius: 46, fill: 'gradient', c1: '#6bb8ff', c2: '#3a5bff', angle: 160, bevel: 35, gloss: 28, shadowBlur: 14, shadowY: 8, shadowOpacity: 0.38, glyphSize: 52, glyphStroke: 2, glyphShadow: 30, hueSpread: 38 } },
   { id: 'win', name: 'Windows 11', design: { radius: 30, fill: 'solid', c1: '#f3f5fa', c2: '#f3f5fa', angle: 90, bevel: 0, gloss: 0, borderWidth: 2, borderColor: '#9aa6bd', borderOpacity: 0.4, shadowBlur: 10, shadowY: 5, shadowOpacity: 0.22, glyphMode: 'gradient', g1: '#1d78ff', g2: '#0a4ec4', glyphSize: 54, glyphStroke: 2, glyphShadow: 0, hueSpread: 28 } },
   { id: 'glass', name: 'Cam', design: { radius: 44, fill: 'gradient', c1: '#ffffff33', c2: '#9ec5ff55', angle: 120, pattern: 'sheen', patternOpacity: 0.28, bevel: 55, gloss: 45, borderWidth: 2, borderColor: '#ffffff', borderOpacity: 0.55, shadowBlur: 18, shadowY: 10, shadowOpacity: 0.35, glyphMode: 'solid', g1: '#ffffff', glyphSize: 50, glyphStroke: 2, glyphShadow: 40, hueSpread: 0 } },
@@ -93,6 +96,12 @@ export function turn(hex: string, deg: number): string {
   if (!deg) return `rgba(${r},${g},${b},${a})`
   const [h, s, l] = toHsl([r, g, b])
   return `hsla(${Math.round((h + deg + 360) % 360)},${Math.round(s * 100)}%,${Math.round(l * 100)}%,${a})`
+}
+
+/** The colour mixed with black: 1 is the colour itself, 0 is black. */
+function darken(hex: string, k: number): string {
+  const [r, g, b, a] = parse(hex)
+  return `rgba(${Math.round(r * k)},${Math.round(g * k)},${Math.round(b * k)},${a})`
 }
 
 const rgba = (hex: string, mul = 1) => {
@@ -140,7 +149,9 @@ export interface DrawOptions {
 export function cardSvg(d: Design, glyph: string, o: DrawOptions = {}): string {
   const u = o.uid ?? 'u'
   const turnBy = (o.index ?? 0) * d.hueSpread
-  const c1 = turn(d.c1, turnBy), c2 = turn(d.c2, turnBy)
+  const base = d.palette.length ? d.palette[(o.index ?? 0) % d.palette.length] : null
+  const c1 = base ? turn(base, 0) : turn(d.c1, turnBy)
+  const c2 = base ? darken(base, 0.55) : turn(d.c2, turnBy)
   const g1 = turn(d.g1, turnBy), g2 = turn(d.g2, turnBy)
   const s = 256 - d.inset * 2
   const r = (s / 2) * (d.radius / 100)

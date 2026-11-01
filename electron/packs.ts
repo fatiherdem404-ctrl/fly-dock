@@ -404,10 +404,11 @@ const ENUMS: Record<string, string[]> = {
 /** A card design from a pack, kept only if every field has the right kind of value. */
 export function sanitizeCard(raw: unknown): Design | null {
   if (typeof raw !== 'object' || raw === null) return null
-  const out: Record<string, string | number> = {}
+  const out: Record<string, string | number | string[]> = {}
   for (const [key, def] of Object.entries(DEFAULT_DESIGN)) {
     const v = (raw as Record<string, unknown>)[key]
-    if (typeof def === 'number') out[key] = typeof v === 'number' && Number.isFinite(v) ? Math.max(-1000, Math.min(1000, v)) : def
+    if (Array.isArray(def)) out[key] = Array.isArray(v) ? v.filter((c): c is string => typeof c === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(c)).slice(0, 12) : def
+    else if (typeof def === 'number') out[key] = typeof v === 'number' && Number.isFinite(v) ? Math.max(-1000, Math.min(1000, v)) : def
     else if (ENUMS[key]) out[key] = typeof v === 'string' && ENUMS[key].includes(v) ? v : def
     else out[key] = typeof v === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(v) ? v : def
   }
