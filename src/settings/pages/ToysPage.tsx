@@ -64,9 +64,10 @@ function Scores(_props: { tab: string }) {
       <div className="st-scores">
         <div><b>{scores.basketBest}</b><small>Basketbol rekoru (60 sn)</small><em>toplam {scores.basket}</em></div>
         <div><b>{scores.footballBest}</b><small>Futbol rekoru (60 sn)</small><em>toplam {scores.football}</em></div>
+        <div><b>{scores.juggleBest}</b><small>Futbol sektirme rekoru (60 sn)</small><em>en uzun seri {scores.juggleCombo}</em></div>
         <div><b>{scores.bounceBest}</b><small>Top sektirme rekoru (60 sn)</small><em>en uzun seri {scores.bounceCombo}</em></div>
       </div>
-      <Row label="Skorları sıfırla"><button className="st-btn" onClick={() => invoke('toys:scores', { basket: 0, basketBest: 0, football: 0, footballBest: 0, bounceBest: 0, bounceCombo: 0 }).then(setScores)}><Icon name="refresh" size={15} />Sıfırla</button></Row>
+      <Row label="Skorları sıfırla"><button className="st-btn" onClick={() => invoke('toys:scores', { basket: 0, basketBest: 0, football: 0, footballBest: 0, bounceBest: 0, bounceCombo: 0, juggleBest: 0, juggleCombo: 0 }).then(setScores)}><Icon name="refresh" size={15} />Sıfırla</button></Row>
     </Card>
   )
 }
@@ -86,9 +87,9 @@ export function ToysTab({ s, set }: { s: DockSettings; set: Update }) {
   return (
     <Pages id="toys">
       {game('toyBasket', 'toyBasketMode', 'basket', 'Basketbol', 'Sağ kenarda bir pota, yerde bir top.', 'İmleç topun yanına gelince ele dönüşür: topu tutup fırlat, potadan geçerse basket sayılır. Uzaktan atış üç sayı, hiçbir yere değmeden giren atış deliksiz.')}
-      {game('toyFootball', 'toyFootballMode', 'football', 'Futbol', 'Serbest vuruş ya da penaltı.', 'Serbest vuruşta imleç topun yanına gelince krampona dönüşür: topa hızlıca vur, kenardaki kalelere sok. Penaltıda topu sapan gibi geri çek, yön ve gücü çekişin belirler; fare tekerleği falsoyu ayarlar, kaleci seni durdurmaya çalışır.', (
+      {game('toyFootball', 'toyFootballMode', 'football', 'Futbol', 'Serbest vuruş, penaltı ya da top sektirme.', 'Serbest vuruşta imleç topun yanına gelince krampona dönüşür: topa hızlıca vur, kenardaki kalelere sok. Penaltıda topu sapan gibi geri çek, yön ve gücü çekişin belirler; fare tekerleği falsoyu ayarlar, kaleci seni durdurmaya çalışır. Top sektirmede topa tıkla, krampon sana geçer; topu yere düşürmeden havada tut, her vuruş bir puan.', (
         <>
-          <Row label="Futbol türü" hint="Serbest vuruş: iki kale. Penaltı: tek kale ve kaleci"><Segmented<'free' | 'penalty'> value={s.toyFootballStyle === 'penalty' ? 'penalty' : 'free'} onChange={(toyFootballStyle) => set({ toyFootballStyle })} options={[['free', 'Serbest vuruş'], ['penalty', 'Penaltı']]} /></Row>
+          <Row label="Futbol türü" hint="Serbest vuruş: iki kale. Penaltı: tek kale ve kaleci. Top sektirme: topu kramponla havada tut"><Segmented<'free' | 'penalty' | 'juggle'> value={s.toyFootballStyle} onChange={(toyFootballStyle) => set({ toyFootballStyle })} options={[['free', 'Serbest vuruş'], ['penalty', 'Penaltı'], ['juggle', 'Top sektirme']]} /></Row>
           {s.toyFootballStyle === 'penalty' && <Row label="Kaleci de sana atsın" hint="Sen attıktan sonra kaleci karşı kaleye şut çeker; imleçle kalenin önünde eldiven olarak savunursun"><Switch label="Kaleci sana da atsın" value={s.toyKeeperShoots} onChange={(toyKeeperShoots) => set({ toyKeeperShoots })} /></Row>}
         </>
       ))}

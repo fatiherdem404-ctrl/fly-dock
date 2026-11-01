@@ -28,6 +28,12 @@ const GAME_INFO: Record<GameId, { title: string; unit: string }> = {
 }
 const BEST_KEY: Record<GameId, keyof ToyScores> = { basket: 'basketBest', football: 'footballBest', bounce: 'bounceBest' }
 
+/** Football set to keep-it-up: the football takes the part of the rally ball and the boot that of the racket. */
+const jugglingOf = (s: DockSettings) => s.toyFootball && s.toyFootballStyle === 'juggle'
+/** The record each game keeps for a timed round (juggling has its own, apart from the goals). */
+const bestKeyOf = (s: DockSettings, id: GameId): keyof ToyScores => (id === 'football' && jugglingOf(s) ? 'juggleBest' : BEST_KEY[id])
+const unitOf = (s: DockSettings, id: GameId) => (id === 'football' && jugglingOf(s) ? 'vuruş' : GAME_INFO[id].unit)
+
 const modeOf = (s: DockSettings, id: GameId): ToyMode => (id === 'basket' ? s.toyBasketMode : id === 'football' ? s.toyFootballMode : s.toyBounceMode)
 const enabledOf = (s: DockSettings, id: GameId): boolean => (id === 'basket' ? s.toyBasket : id === 'football' ? s.toyFootball : s.toyBounce)
 
@@ -486,7 +492,7 @@ function drawScene(c: CanvasRenderingContext2D, s: DockSettings, sim: Sim, width
     c.stroke()
   }
   if (s.toyFootball && s.toyFootballStyle === 'penalty') drawPenalty(c, s, sim, width, floor)
-  else if (s.toyFootball) {
+  else if (s.toyFootball && s.toyFootballStyle !== 'juggle') {
     const top = floor - GOAL_HEIGHT
     const goal = (x: number, w: number) => {
       c.fillStyle = 'rgba(255,255,255,0.1)'
@@ -645,18 +651,23 @@ function Toys({ s }: { s: DockSettings }) {
     const endRound = (id: GameId) => {
       const g = st.games[id]
       g.round.active = false
-      const key = BEST_KEY[id]
+      const key = bestKeyOf(settingsRef.current, id)
       const best = st.scores[key]
       const record = g.round.score > best
       if (record) saveScores({ [key]: g.round.score })
-      st.result = { game: GAME_INFO[id].title, title: record ? 'Yeni rekor!' : 'Süre doldu', score: g.round.score, unit: GAME_INFO[id].unit, best: record ? g.round.score : best, record, left: 4.5 }
+      st.result = { game: GAME_INFO[id].title, title: record ? 'Yeni rekor!' : 'Süre doldu', score: g.round.score, unit: unitOf(settingsRef.current, id), best: record ? g.round.score : best, record, left: 4.5 }
       const sound = settingsRef.current.toySound
       if (record) [523, 659, 784, 1047].forEach((f, i) => tone(sound, f, f, 0.2, 'triangle', 0.1, i * 0.12))
       else tone(sound, 400, 200, 0.4, 'triangle', 0.1)
     }
     /** What can be picked up or started at a point: the basketball or the baseball. */
+    const juggling = () => jugglingOf(settingsRef.current)
+    const isRally = (kind: BallKind) => kind === 'bounce' || (kind === 'football' && juggling())
+    const rallyId = (): GameId => (juggling() ? 'football' : 'bounce')
+    const comboKey = (): keyof ToyScores => (juggling() ? 'juggleCombo' : 'bounceCombo')
     const grabAt = (x: number, y: number): { kind: 'ball'; ball: BallKind } | null => {
-      for (const kind of ['bounce', 'basket'] as BallKind[]) {
+      for (const kind of ['bounce', 'football', 'basket'] as BallKind[]) {
+        if (kind === 'football' && !juggling()) continue
         const b = st.balls[kind]
         if (b && Math.hypot(b.x - x, b.y - y) <= b.r + 8) return { kind: 'ball', ball: kind }
       }
@@ -665,7 +676,7 @@ function Toys({ s }: { s: DockSettings }) {
     /** Is the pointer close enough to a ball to turn into a hand, a boot or a racket? */
     const penaltyOn = () => settingsRef.current.toyFootball && settingsRef.current.toyFootballStyle === 'penalty'
     const armedFor = (x: number, y: number): 'basket' | 'football' | null => {
-      for (const kind of penaltyOn() ? (['basket'] as const) : (['football', 'basket'] as const)) {
+      for (const kind of penaltyOn() || juggling() ? (['basket'] as const) : (['football', 'basket'] as const)) {
         const b = st.balls[kind]
         if (b && !b.grabbed && Math.hypot(b.x - x, b.y - y) <= b.r + AURA[kind]) return kind
       }
@@ -694,9 +705,9 @@ function Toys({ s }: { s: DockSettings }) {
     /** A rally of the racket and the baseball has ended: the ball touched the floor. */
     const dropBounce = () => {
       const b = st.bounce
-      if (b.combo > st.scores.bounceCombo) saveScores({ bounceCombo: b.combo })
+      if (b.combo > st.scores[comboKey()]) saveScores({ [comboKey()]: b.combo })
       b.combo = 0
-      const timed = st.games.bounce.round.active
+      const timed = st.games[rallyId()].round.active
       if (timed) b.respawn = 0.9
       else b.playing = false
       tone(settingsRef.current.toySound, 300, 110, 0.3, 'sawtooth', 0.08)
@@ -751,14 +762,14 @@ function Toys({ s }: { s: DockSettings }) {
       if (!over) return
       st.samples = [[e.clientX, e.clientY, performance.now()]]
       st.armed = null
-      if (over.kind === 'ball' && over.ball === 'bounce') {
-        // serve: the baseball is thrown up and the pointer becomes the racket
-        const ball = st.balls.bounce!
+      if (over.kind === 'ball' && isRally(over.ball)) {
+        // serve: the ball is thrown up and the pointer becomes the racket (or the boot)
+        const ball = st.balls[over.ball]!
         ball.vx = (Math.random() - 0.5) * 160
         ball.vy = -1150
         ball.floorHits = 0
         st.bounce = { playing: true, combo: 0, respawn: 0 }
-        startRound('bounce')
+        startRound(over.ball as GameId)
         tone(settingsRef.current.toySound, 220, 520, 0.14, 'triangle', 0.1)
         refresh(e.clientX, e.clientY)
         return
@@ -809,10 +820,10 @@ function Toys({ s }: { s: DockSettings }) {
       if (!st.bounce.playing) return
       e.preventDefault()
       const b = st.bounce
-      if (b.combo > st.scores.bounceCombo) saveScores({ bounceCombo: b.combo })
+      if (b.combo > st.scores[comboKey()]) saveScores({ [comboKey()]: b.combo })
       b.playing = false
       b.combo = 0
-      if (st.games.bounce.round.active) endRound('bounce')
+      if (st.games[rallyId()].round.active) endRound(rallyId())
       const p = st.pointer
       if (p) refresh(p.x, p.y)
     }
@@ -837,12 +848,13 @@ function Toys({ s }: { s: DockSettings }) {
         const g = st.games[id]
         const sc = st.scores
         let best = ''
-        if (timed) best = `Rekor ${sc[BEST_KEY[id]]}`
+        if (timed) best = `Rekor ${sc[bestKeyOf(cur, id)]}`
         else if (id === 'basket') best = `Toplam ${sc.basket} sayı`
+        else if (id === 'football' && jugglingOf(cur)) best = `Seri ${st.bounce.combo}  ·  Rekor ${sc.juggleCombo}`
         else if (id === 'football') best = cur.toyFootballStyle === 'penalty' ? `Gol ${st.pen.goals}  ·  Kurtarılan ${st.pen.saves}${cur.toyKeeperShoots ? `  ·  Yenilen ${st.pen.conceded}` : ''}` : `Toplam ${sc.football}`
         else best = `Seri ${st.bounce.combo}  ·  Rekor ${sc.bounceCombo}`
-        const hint = id === 'basket' ? 'Hazır: topu tutunca başlar' : id === 'bounce' ? 'Hazır: topa tıkla ve başla' : cur.toyFootballStyle === 'penalty' ? 'Hazır: topu geri çek, bırak' : 'Hazır: topa vurunca başlar'
-        cards.push({ id, title: GAME_INFO[id].title, unit: GAME_INFO[id].unit, timed, active: g.round.active, score: timed ? g.round.score : g.session, left: Math.round(g.round.left * 10) / 10, best, hint })
+        const hint = id === 'basket' ? 'Hazır: topu tutunca başlar' : id === 'bounce' || jugglingOf(cur) ? 'Hazır: topa tıkla ve başla' : cur.toyFootballStyle === 'penalty' ? 'Hazır: topu geri çek, bırak' : 'Hazır: topa vurunca başlar'
+        cards.push({ id, title: GAME_INFO[id].title, unit: unitOf(cur, id), timed, active: g.round.active, score: timed ? g.round.score : g.session, left: Math.round(g.round.left * 10) / 10, best, hint })
       }
       const result = st.result ? { game: st.result.game, title: st.result.title, score: st.result.score, unit: st.result.unit, best: st.result.best, record: st.result.record } : null
       const key = JSON.stringify([cards, result])
@@ -888,7 +900,7 @@ function Toys({ s }: { s: DockSettings }) {
         if (!enabled[kind]) {
           if (st.balls[kind]) {
             delete st.balls[kind]
-            if (kind === 'bounce') st.bounce = { playing: false, combo: 0, respawn: 0 }
+            if (kind === 'bounce' || kind === 'football') st.bounce = { playing: false, combo: 0, respawn: 0 }
           }
         } else if (!st.balls[kind]) {
           const [x, y] = startPosition(kind, w, floor, side)
@@ -907,7 +919,7 @@ function Toys({ s }: { s: DockSettings }) {
       let toolPath: { x: number; y: number }[] = []
       let toolKind: 'football' | 'bounce' | null = null
       if (p) {
-        toolKind = st.bounce.playing ? 'bounce' : st.armed === 'football' ? st.armed : null
+        toolKind = st.bounce.playing ? (juggling() ? 'football' : 'bounce') : st.armed === 'football' ? st.armed : null
         const from = st.toolPos ?? { x: p.x, y: p.y }
         const mdx = p.x - from.x
         const mdy = p.y - from.y
@@ -979,7 +991,7 @@ function Toys({ s }: { s: DockSettings }) {
         const prevY = ball.y
         const speedBefore = Math.abs(ball.vy)
         // a ball being served up off the floor, or waiting to be put back, stays out of the physics
-        if (kind === 'bounce' && st.bounce.respawn > 0) {
+        if (isRally(kind) && st.bounce.respawn > 0) {
           st.bounce.respawn -= dt
           if (st.bounce.respawn <= 0) {
             ball.x = w * (0.3 + Math.random() * 0.4)
@@ -990,7 +1002,7 @@ function Toys({ s }: { s: DockSettings }) {
           }
           continue
         }
-        stepBall(ball, dt, world, segmentsFor(kind, w, floor, side))
+        stepBall(ball, dt, world, kind === 'football' && juggling() ? [] : segmentsFor(kind, w, floor, side))
         if (ball.floorHits > hitsBefore && speedBefore > 260) tone(cur.toySound, 150, 70, 0.09, 'sine', Math.min(0.2, speedBefore / 6000))
         if (ball.y > floor - ball.r) ball.y = floor - ball.r
 
@@ -1002,7 +1014,7 @@ function Toys({ s }: { s: DockSettings }) {
               const e = toolKind === 'football' ? 0.7 : 0.95
               if (bounceOffMover(ball, circle.x, circle.y, circle.r, tv.vx, tv.vy, e)) {
                 touched = true
-                if (toolKind === 'bounce') {
+                if (isRally(kind)) {
                   // a rally ball is kept alive: it always goes back up, steered by where on the racket it landed
                   if (ball.vy > -720) ball.vy = -720 - Math.min(260, Math.abs(tv.vy) * 0.2)
                   ball.vx = Math.max(-900, Math.min(900, ball.vx * 0.5 + (ball.x - circle.x) * 5 + tv.vx * 0.2))
@@ -1011,11 +1023,11 @@ function Toys({ s }: { s: DockSettings }) {
             }
           }
           if (touched && hitOk(kind)) {
-            if (kind === 'football') {
+            if (kind === 'football' && !juggling()) {
               startRound('football')
               tone(cur.toySound, 220, 90, 0.11, 'triangle', 0.18)
             } else {
-              point('bounce')
+              point(rallyId())
               st.bounce.combo += 1
               tone(cur.toySound, 380 + Math.min(st.bounce.combo, 14) * 35, 260, 0.08, 'square', 0.08)
             }
@@ -1042,7 +1054,7 @@ function Toys({ s }: { s: DockSettings }) {
             tone(cur.toySound, 990, 990, 0.2, 'sine', 0.12, 0.1)
             if (swish) tone(cur.toySound, 1320, 1320, 0.25, 'sine', 0.1, 0.22)
           }
-        } else if (kind === 'football' && st.respawn <= 0 && !ball.grabbed) {
+        } else if (kind === 'football' && !juggling() && st.respawn <= 0 && !ball.grabbed) {
           if (inGoal(ball, 'left', w, GOAL_DEPTH, floor, GOAL_HEIGHT) || inGoal(ball, 'right', w, GOAL_DEPTH, floor, GOAL_HEIGHT)) {
             saveScores({ football: st.scores.football + 1 })
             point('football')
@@ -1052,7 +1064,8 @@ function Toys({ s }: { s: DockSettings }) {
             tone(cur.toySound, 659, 659, 0.14, 'square', 0.07, 0.12)
             tone(cur.toySound, 784, 784, 0.3, 'square', 0.07, 0.24)
           }
-        } else if (kind === 'bounce' && st.bounce.playing && st.bounce.respawn <= 0 && ball.y >= floor - ball.r - 1 && (ball.floorHits > 0 || (st.bounce.combo > 0 && ball.vy > -40))) {
+        }
+        if (isRally(kind) && st.bounce.playing && st.bounce.respawn <= 0 && ball.y >= floor - ball.r - 1 && (ball.floorHits > 0 || (st.bounce.combo > 0 && ball.vy > -40))) {
           dropBounce()
         }
       }
@@ -1072,10 +1085,10 @@ function Toys({ s }: { s: DockSettings }) {
           r.left -= dt
           if (r.left <= 0) {
             endRound(id)
-            if (id === 'bounce') {
+            if (id === rallyId() && (id === 'bounce' || juggling())) {
               st.bounce.playing = false
               st.bounce.respawn = 0
-              if (st.bounce.combo > st.scores.bounceCombo) saveScores({ bounceCombo: st.bounce.combo })
+              if (st.bounce.combo > st.scores[comboKey()]) saveScores({ [comboKey()]: st.bounce.combo })
               st.bounce.combo = 0
             }
           }

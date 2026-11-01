@@ -273,7 +273,7 @@ export interface DockSettings {
   toyHoopSide: 'left' | 'right'
 }
 
-export const DEFAULT_TOY_SCORES: ToyScores = { basket: 0, basketBest: 0, football: 0, footballBest: 0, bounceBest: 0, bounceCombo: 0 }
+export const DEFAULT_TOY_SCORES: ToyScores = { basket: 0, basketBest: 0, football: 0, footballBest: 0, bounceBest: 0, bounceCombo: 0, juggleBest: 0, juggleCombo: 0 }
 
 export type ToyMode = 'free' | 'timed'
 
@@ -291,6 +291,9 @@ export interface ToyScores {
   bounceBest: number
   /** Longest run of hits without letting the baseball fall (free play). */
   bounceCombo: number
+  /** Most keep-ups with the football in one 60-second round, and the longest run. */
+  juggleBest: number
+  juggleCombo: number
 }
 
 export type WidgetType = 'clock' | 'analog' | 'calendar' | 'weather' | 'system' | 'media' | 'battery' | 'note'
